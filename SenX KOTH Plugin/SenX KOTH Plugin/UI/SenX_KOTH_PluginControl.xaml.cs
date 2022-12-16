@@ -20,7 +20,7 @@ namespace SenX_KOTH_Plugin
 
         private void SendTestWebHook_Click(object sender, RoutedEventArgs e)
         {
-            DiscordService.SendDiscordWebHook("Fweeox Is Dominating The KOTH Zone!!!!  Unknown Wins (he makes them dissapear...), 0 Losses... Pure Brutality!!");
+            DiscordService.SendDiscordWebHook("This is a test... test test test... you've just been tested... did it work?");
         }
     }
 }

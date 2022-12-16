@@ -200,7 +200,7 @@
     <Compile Include="SenX KOTH Plugin\DiscordAPI\WebHook_Exceptions.cs" />
     <Compile Include="SenX KOTH Plugin\DiscordAPI\WebHook_Extensions.cs" />
     <Compile Include="SenX KOTH Plugin\Network\NetworkService.cs" />
-    <Compile Include="SenX KOTH Plugin\SenX_KOTH_PluginControl.xaml.cs">
+    <Compile Include="SenX KOTH Plugin\UI\SenX_KOTH_PluginControl.xaml.cs">
       <DependentUpon>SenX_KOTH_PluginControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="SenX KOTH Plugin\Properties\AssemblyInfo.cs">
@@ -219,6 +219,7 @@
     <Compile Include="SenX KOTH Plugin\SenX_KOTH_PluginCommands.cs" />
     <Compile Include="SenX KOTH Plugin\SenX_KOTH_PluginConfig.cs" />
     <Compile Include="SenX KOTH Plugin\SenX_KOTH_Plugin.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\Classes.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\DiscordService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ScoreManager.cs" />
     <EmbeddedResource Include="SenX KOTH Plugin\Properties\Resources.resx">
@@ -233,7 +234,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="SenX KOTH Plugin\SenX_KOTH_PluginControl.xaml">
+    <Page Include="SenX KOTH Plugin\UI\SenX_KOTH_PluginControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

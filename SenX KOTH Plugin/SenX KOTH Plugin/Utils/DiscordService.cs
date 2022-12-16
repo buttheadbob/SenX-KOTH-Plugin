@@ -12,7 +12,7 @@ namespace SenX_KOTH_Plugin.Utils
 {    
     public class DiscordService
     {
-        public static readonly Logger Log = LogManager.GetLogger("KOTH => DiscordService");
+        public static readonly Logger Log = LogManager.GetLogger("KoTH => DiscordService");
 
 
         public static async void SendDiscordWebHook(string msg)
@@ -40,9 +40,9 @@ namespace SenX_KOTH_Plugin.Utils
                 Thumbnail = new EmbedMedia() { Url = "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg" }
             };
 
-            if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessagePrefix))
+            if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessegePrefix))
             {
-                msg = $"{SenX_KOTH_PluginMain.Instance.Config.MessagePrefix} {msg}";
+                msg = $"{SenX_KOTH_PluginMain.Instance.Config.MessegePrefix} {msg}";
             }
 
             try

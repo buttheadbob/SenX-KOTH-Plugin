@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
+    // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
     public class DiscordMessage
     {
         public DiscordMessage()

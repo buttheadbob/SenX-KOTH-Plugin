@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -57,7 +58,7 @@ namespace SenX_KOTH_Plugin.Utils
             foreach (var score in kothdata.PlanetScores)
             {
                 foreach (var Location in score.PlanetDescription)
-                {                    
+                {
                     // The original Author is an idiot, he has a list inside of a list for no reason...
                     foreach (var ListOfScores in Location.Scores)
                     {
@@ -78,12 +79,9 @@ namespace SenX_KOTH_Plugin.Utils
                             SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord.Add(data);
                             SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord.Add(data);
                         }
-                    }                    
-                }                   
+                    }
+                }
             }
-
-
-            
 
             Network.NetworkService.SendPacket("clear"); // Tells the KOTH mod to clear the scores.
         }
@@ -100,5 +98,73 @@ namespace SenX_KOTH_Plugin.Utils
         public DateTime Creation { get; set; }
     }
 
+    public static class GenerateQuickReport
+    {
+        public static Dictionary<string,int> WeekToDate()
+        {
+            Dictionary<string, int> Report = new Dictionary<string, int>();
+            
+            foreach(ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
 
+            return Report;
+        }
+
+        public static Dictionary<string, int> MonthToDate()
+        {
+            Dictionary<string, int> Report = new Dictionary<string, int>();
+            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
+
+            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
+
+            return Report;
+        }
+
+        public static Dictionary<string, int> YearToDate()
+        {
+            Dictionary<string, int> Report = new Dictionary<string, int>();
+            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
+
+            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
+
+            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord)
+            {
+                if (Report.ContainsKey(Score.FactionName))
+                    Report[Score.FactionName] += Score.Points;
+                else
+                    Report[Score.FactionName] = Score.Points;
+            }
+
+            return Report;
+        }
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
+    // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
     public static class Extensions
     {
         public static int? ToHex(this Color? color)

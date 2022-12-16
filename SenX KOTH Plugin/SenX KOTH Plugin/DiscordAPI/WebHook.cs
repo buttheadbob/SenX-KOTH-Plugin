@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
+    // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
     public class DiscordWebhook
     {
         /// <summary>
