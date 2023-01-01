@@ -13,7 +13,7 @@ namespace SenX_KOTH_Plugin
         private bool _WebHookEnabled = false;
         public bool WebHookEnabled { get => _WebHookEnabled; set => SetValue(ref _WebHookEnabled, value); }
 
-        private string _WebHookUrl = "https://discord.com/api/webhooks/1051944599519776778/fqQIThVIISBVbQuXQ9Qm8Gm8uX79-WqVaXXUMfpgZjPL9EFuRx9pMh6Mt8R0yWXX-hZG";
+        private string _WebHookUrl = "";
         public string WebHookUrl { get => _WebHookUrl; set => SetValue(ref _WebHookUrl, value); }
 
         private string _MessegePrefix = "➜ ➜ ➜";
