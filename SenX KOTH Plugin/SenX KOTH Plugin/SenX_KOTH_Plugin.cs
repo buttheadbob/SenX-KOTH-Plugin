@@ -11,14 +11,18 @@ using Torch.API.Plugins;
 using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
+using NLog.Filters;
+using System.Net.Configuration;
 
 namespace SenX_KOTH_Plugin
 {
     public class SenX_KOTH_PluginMain : TorchPluginBase, IWpfPlugin
     {
-        public static readonly Logger Log = LogManager.GetLogger("KOTH => Main");
+        public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => Main");
 
         private static readonly string CONFIG_FILE_NAME = "SenX_KOTH_PluginConfig.cfg";
+
+        Utils.LiveAgent resetAgent = new Utils.LiveAgent();
 
         private SenX_KOTH_PluginControl _control;
         public UserControl GetControl() => _control ?? (_control = new SenX_KOTH_PluginControl());
@@ -54,10 +58,12 @@ namespace SenX_KOTH_Plugin
                 case TorchSessionState.Loaded:
                     Log.Info("Session Loaded!");
                     Network.NetworkService.NetworkInit();
+                    resetAgent.Run();                    
                     break;
 
                 case TorchSessionState.Unloading:
                     Log.Info("Session Unloading!");
+                    resetAgent.Dispose();
                     break;
             }
         }

@@ -12,7 +12,7 @@ namespace SenX_KOTH_Plugin.Utils
 {    
     public class DiscordService
     {
-        public static readonly Logger Log = LogManager.GetLogger("KoTH => DiscordService");
+        public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");
 
 
         public static async void SendDiscordWebHook(string msg)
@@ -20,12 +20,12 @@ namespace SenX_KOTH_Plugin.Utils
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
             
-            if (msg.Contains("under attack"))
+            if (msg.Contains("under attack") && !SenX_KOTH_PluginMain.Instance.Config.Show_AttackMessages)
                 return;
 
             if (string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl))
             {
-                Log.Error("discord Webhook is enabled but the Webhook url is empty? you should fix that!");
+                Log.Error("discord Webhook is enabled but the Webhook url is empty? That's not really going to accomplishing much.");
                 return;
             }
 
@@ -50,7 +50,7 @@ namespace SenX_KOTH_Plugin.Utils
                
                 if (SenX_KOTH_PluginMain.Instance.Config.EmbedEnabled)
                 {
-                    embed.Fields.Add(new EmbedField() { Name = "Man Your BattleStations!!!", Value= msg });
+                    embed.Fields.Add(new EmbedField() { Name = "Man Your BattleStations!!!", Value = msg });
                     message.Embeds.Add(embed);                   
                 }
 
@@ -63,7 +63,7 @@ namespace SenX_KOTH_Plugin.Utils
             }
             catch (Exception e)
             {
-                Log.Error(e, "discord Webhook is most likely bad or discord is down");
+                Log.Error(e, "Discord could be down or there is something wrong with your webhook.");
             }
         }
     }

@@ -4,6 +4,7 @@ using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Xml.Serialization;
 
 namespace SenX_KOTH_Plugin.Utils
@@ -49,9 +50,9 @@ namespace SenX_KOTH_Plugin.Utils
         [XmlElement] public string Gridname { get; set; }
     }
 
-    public class ResetScores
+    public sealed class ResetScores
     {
-        public void ProcessScores()
+        public static void ProcessScoresAndReset()
         {
             var kothdata = SenX_KOTH_PluginMain.ScoresFromStorage();
 
@@ -59,7 +60,6 @@ namespace SenX_KOTH_Plugin.Utils
             {
                 foreach (var Location in score.PlanetDescription)
                 {
-                    // The original Author is an idiot, he has a list inside of a list for no reason...
                     foreach (var ListOfScores in Location.Scores)
                     {
                         foreach (var Score in ListOfScores.ScoreDescription)
@@ -67,7 +67,7 @@ namespace SenX_KOTH_Plugin.Utils
                             ScoreData data = new ScoreData()
                             {
                                 KothName = Score.PlanetId,
-                                Creation = DateTime.Now,
+                                LogTime = DateTime.Now,
                                 FactionId = Score.FactionId,
                                 FactionName = Score.FactionName,
                                 FactionTAG = Score.FactionTag,
@@ -83,7 +83,8 @@ namespace SenX_KOTH_Plugin.Utils
                 }
             }
 
-            Network.NetworkService.SendPacket("clear"); // Tells the KOTH mod to clear the scores.
+            // Tells the KOTH mod to clear the scores.  Plugin will provide commands for players.
+            Network.NetworkService.SendPacket("clear");
         }
     }
 
@@ -95,76 +96,6 @@ namespace SenX_KOTH_Plugin.Utils
         public string FactionName { get; set; }
         public int Points { get; set; }
         public string GridName { get; set; }
-        public DateTime Creation { get; set; }
-    }
-
-    public static class GenerateQuickReport
-    {
-        public static Dictionary<string,int> WeekToDate()
-        {
-            Dictionary<string, int> Report = new Dictionary<string, int>();
-            
-            foreach(ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            return Report;
-        }
-
-        public static Dictionary<string, int> MonthToDate()
-        {
-            Dictionary<string, int> Report = new Dictionary<string, int>();
-            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            return Report;
-        }
-
-        public static Dictionary<string, int> YearToDate()
-        {
-            Dictionary<string, int> Report = new Dictionary<string, int>();
-            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            foreach (ScoreData Score in SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord)
-            {
-                if (Report.ContainsKey(Score.FactionName))
-                    Report[Score.FactionName] += Score.Points;
-                else
-                    Report[Score.FactionName] = Score.Points;
-            }
-
-            return Report;
-        }
+        public DateTime LogTime { get; set; }
     }
 }

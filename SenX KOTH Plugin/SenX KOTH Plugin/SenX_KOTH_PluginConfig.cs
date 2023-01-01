@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Torch;
 using SenX_KOTH_Plugin.Utils;
 using System.Diagnostics.Eventing.Reader;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace SenX_KOTH_Plugin
 {
@@ -20,7 +22,7 @@ namespace SenX_KOTH_Plugin
         private string _Color = "";
         public string Color { get => _Color; set=> SetValue(ref _Color, value); }
 
-        private bool _EmbedEnabled  = false;
+        private bool _EmbedEnabled = false;
         public bool EmbedEnabled { get => _EmbedEnabled; set=> SetValue(ref _EmbedEnabled, value);}
 
         private string _EmbedTitle = "Notice";
@@ -29,8 +31,11 @@ namespace SenX_KOTH_Plugin
         private string _EmbedPic = "";
         public string EmbedPic { get => _EmbedPic; set => SetValue(ref _EmbedPic, value); }
 
-        private DateTime _ResetDayOfMonth = DateTime.Today;
-        public DateTime ResetDayOfMonth { get => _ResetDayOfMonth; set => SetValue(ref _ResetDayOfMonth, value); }
+        private DateTime _LastWeeklyReset = DateTime.MinValue;
+        public DateTime LastWeeklyReset { get => _LastWeeklyReset; set => SetValue(ref _LastWeeklyReset, value); }
+
+        private DateTime _LastMonthlyReset = DateTime.MinValue;
+        public DateTime LastMonthlyReset { get => _LastMonthlyReset; set => SetValue(ref _LastMonthlyReset, value); }
 
         private List<ScoreData> _YearlyScoreRecord = new List<ScoreData>();
         public List<ScoreData> YearlyScoreRecord { get => _YearlyScoreRecord; set => SetValue(ref _YearlyScoreRecord, value); }
@@ -56,13 +61,7 @@ namespace SenX_KOTH_Plugin
         private string _CustomMessege = "";
         public string CustomMessege { get => _CustomMessege; set=> SetValue(ref _CustomMessege, value);}
 
-        private FastObservableCollection<string> _WTD = new FastObservableCollection<string>();
-        public FastObservableCollection<string> WTD { get => _WTD; set=> SetValue(ref _WTD, value);}
-
-        private FastObservableCollection<string> _MTD = new FastObservableCollection<string>();
-        public FastObservableCollection<string> MTD { get => _MTD; set => SetValue(ref _MTD, value); }
-
-        private FastObservableCollection<string> _YTD = new FastObservableCollection<string>();
-        public FastObservableCollection<string> YTD { get => _YTD; set => SetValue(ref _YTD, value); }
+        private DayOfReset _ResetDay = 0;
+        public DayOfReset ResetDay { get => _ResetDay; set => SetValue(ref _ResetDay, value);}
     }
 }

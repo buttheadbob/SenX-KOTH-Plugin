@@ -1,0 +1,17 @@
+# SenX-KOTH-Plugin
+
+### This plugin requires the KoTH mod to work: https://steamcommunity.com/sharedfiles/filedetails/?id=2388326362  
+This is not a KoTH itself, only a helper plugin for the KoTH mod.
+
+This version contains no extra webpage functionality also.  See https://torchapi.com/plugins/view/b0d36189-1afe-46d6-8edd-5499b6d87579 KoTH plugin if this is required.  
+
+This plugin will reset the KoTH scores every 5 minutes and track the scores weekly, monthly, and yearly.  Using a Discord Webhook to publish the weekly and/or
+monthly.  There are also player commands to display the weekly, monthly, and yearly scores
+
+### [PLAYER COMMANDS]  
+`!KoTH Week` To display the standings for the current week.  
+`!KoTH Month` To display the standings for the current month.  
+`!KoTH Year` To display the standings for the current year.
+
+### [ADMIN COMMANDS]
+`!KoTH ForceUpdate` Forces the scores to update, if you dont want to wait the 5 minutes... 

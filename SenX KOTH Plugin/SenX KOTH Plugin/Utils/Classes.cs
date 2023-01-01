@@ -1,156 +1,128 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Windows.Threading;
+using System.Text;
+using Sandbox.Game.World;
 
 namespace SenX_KOTH_Plugin.Utils
 {
-    public class FastObservableCollection<T> : ObservableCollection<T>
+    public enum DayOfReset
     {
-        private readonly object locker = new object();
+        Sunday = 0,
+        Monday = 1
+    }
 
-        /// <summary>
-        /// This private variable holds the flag to
-        /// turn on and off the collection changed notification.
-        /// </summary>
-        private bool suspendCollectionChangeNotification;
+    public sealed class LiveAgent
+    {
+        // If today is reset day, used to check for reset time and initiate the reset process.
+        private System.Timers.Timer ResetChecker = new System.Timers.Timer();
+        private SenX_KOTH_PluginConfig Config => SenX_KOTH_PluginMain.Instance.Config;
 
-        /// <summary>
-        /// Initializes a new instance of the FastObservableCollection class.
-        /// </summary>
-        public FastObservableCollection() : base()
+        public void Run()
         {
-            this.suspendCollectionChangeNotification = false;
-        }
+            ResetChecker.Interval = 300000; // run once every five mins.
+            ResetChecker.Elapsed += Reset;
+            ResetChecker.Start();
 
-        /// <summary>
-        /// This event is overriden CollectionChanged event of the observable collection.
-        /// </summary>
-        public override event NotifyCollectionChangedEventHandler CollectionChanged;
+            // Start the game instance with most up to date information
+            ResetScores.ProcessScoresAndReset();
 
-        /// <summary>
-        /// This method adds the given generic list of items
-        /// as a range into current collection by casting them as type T.
-        /// It then notifies once after all items are added.
-        /// </summary>
-        /// <param name="items">The source collection.</param>
-        public void AddItems(IList<T> items)
-        {
-            lock (locker)
+            // Need to reset weekly and months scores when due..
+            if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday && Config.LastWeeklyReset.Date != DateTime.Today.Date && Config.ResetDay == DayOfReset.Sunday)
             {
-                this.SuspendCollectionChangeNotification();
-                foreach (var i in items)
+                // Announce weekly score if enabled.
+                StringBuilder WeekResults = new StringBuilder();
+
+                List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
+
+                // Create a formatted ranking list
+                foreach (var Result in Config.WeekScoreData)
                 {
-                    InsertItem(Count, i);
+                    weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
                 }
-                this.NotifyChanges();
-            }
-        }
 
-        /// <summary>
-        /// Raises collection change event.
-        /// </summary>
-        public void NotifyChanges()
-        {
-            this.ResumeCollectionChangeNotification();
-            var arg = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
-            this.OnCollectionChanged(arg);
-        }
+                // Sort the list.
+                weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
-        /// <summary>
-        /// This method removes the given generic list of items as a range
-        /// into current collection by casting them as type T.
-        /// It then notifies once after all items are removed.
-        /// </summary>
-        /// <param name="items">The source collection.</param>
-        public void RemoveItems(IList<T> items)
-        {
-            lock (locker)
-            {
-                this.SuspendCollectionChangeNotification();
-                foreach (var i in items)
+                // Push list to weekresults
+                foreach (var Result in weeklist)
                 {
-                    Remove(i);
+                    WeekResults.AppendLine(Result.ToString());
                 }
-                this.NotifyChanges();
+
+                DiscordService.SendDiscordWebHook(WeekResults.ToString());
+
+                Config.WeekScoreData.Clear();
+                Config.LastWeeklyReset = DateTime.Now;                
             }
-        }
-
-        /// <summary>
-        /// This method clears the given generic list of items as a range
-        /// into current collection by casting them as type T.
-        /// It then notifies once after all items are removed.
-        /// </summary>
-        /// <param name="items">The source collection.</param>
-        public new void Clear()
-        {
-            lock (locker)
+            if (DateTime.Now.DayOfWeek == DayOfWeek.Monday && Config.LastWeeklyReset.Date != DateTime.Today.Date && Config.ResetDay == DayOfReset.Monday)
             {
-                this.SuspendCollectionChangeNotification();
-                Items.Clear();
-                this.NotifyChanges();
-            }
-        }
+                // Announce weekly score if enabled.
+                StringBuilder WeekResults = new StringBuilder();
 
-        /// <summary>
-        /// Resumes collection changed notification.
-        /// </summary>
-        public void ResumeCollectionChangeNotification()
-        {
-            this.suspendCollectionChangeNotification = false;
-        }
+                List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
 
-        /// <summary>
-        /// Suspends collection changed notification.
-        /// </summary>
-        public void SuspendCollectionChangeNotification()
-        {
-            this.suspendCollectionChangeNotification = true;
-        }
-
-        /// <summary>
-        /// This collection changed event performs thread safe event raising.
-        /// </summary>
-        /// <param name="e">The event argument.</param>
-        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
-        {
-            // Recommended is to avoid reentry 
-            // in collection changed event while collection
-            // is getting changed on other thread.
-            using (BlockReentrancy())
-            {
-                if (!this.suspendCollectionChangeNotification)
+                // Create a formatted ranking list
+                foreach (var Result in Config.WeekScoreData)
                 {
-                    NotifyCollectionChangedEventHandler eventHandler = this.CollectionChanged;
-                    if (eventHandler == null)
-                    {
-                        return;
-                    }
-
-                    // Walk thru invocation list.
-                    Delegate[] delegates = eventHandler.GetInvocationList();
-
-                    foreach
-                    (NotifyCollectionChangedEventHandler handler in delegates)
-                    {
-                        // If the subscriber is a DispatcherObject and different thread.
-                        DispatcherObject dispatcherObject = handler.Target as DispatcherObject;
-
-                        if (dispatcherObject != null && !dispatcherObject.CheckAccess())
-                        {
-                            // Invoke handler in the target dispatcher's thread... 
-                            // asynchronously for better responsiveness.
-                            dispatcherObject.Dispatcher.BeginInvoke(DispatcherPriority.DataBind, handler, this, e);
-                        }
-                        else
-                        {
-                            // Execute handler as is.
-                            handler(this, e);
-                        }
-                    }
+                    weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
                 }
+
+                // Sort the list.
+                weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+
+                // Push list to weekresults
+                foreach (var Result in weeklist)
+                {
+                    WeekResults.AppendLine(Result.ToString());
+                }
+
+                DiscordService.SendDiscordWebHook(WeekResults.ToString());
+
+                Config.WeekScoreData.Clear();
+                Config.LastWeeklyReset = DateTime.Now;
             }
+
+            if (DateTime.Now.Day == 1 && Config.LastMonthlyReset.Date.Month != DateTime.Now.Month)
+            {
+                // Announce monthly score if enabled.
+                StringBuilder MonthResults = new StringBuilder();
+
+                List<KeyValuePair<string, int>> monthlist = new List<KeyValuePair<string, int>>();
+
+                // Create a formatted ranking list
+                foreach (var Result in Config.WeekScoreData)
+                {
+                    monthlist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
+                }
+
+                // Sort the list.
+                monthlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+
+                // Push list to weekresults
+                foreach (var Result in monthlist)
+                {
+                    MonthResults.AppendLine(Result.ToString());
+                }
+
+                DiscordService.SendDiscordWebHook(MonthResults.ToString());
+
+                Config.MonthScoreRecord.Clear();
+                Config.LastMonthlyReset = DateTime.Now;
+            }
+        }
+
+        public void Reset(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (!MySession.Static.IsSaveInProgress)
+            ResetScores.ProcessScoresAndReset();
+        }
+
+        public void Dispose()
+        {
+            ResetChecker.Stop();
+            ResetChecker.Dispose();
         }
     }
+
+    
 }
