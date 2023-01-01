@@ -1,22 +1,31 @@
 ﻿using NLog;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Torch.Utils.SteamWorkshopTools;
 using SenX_KOTH_Plugin.DiscordAPI;
 
 namespace SenX_KOTH_Plugin.Utils
-{    
+{
     public class DiscordService
     {
-        public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");
+        public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");        
+        /// <summary>
+        /// Send messages straight to discord
+        /// </summary>
+        /// <param name="msg">The message</param>
+        /// <param name="EmbedColor">Embed bar color</param>
+        /// <param name="AlertType">0 for contest alerts, 1 for rank listing</param>
+        public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null, byte AlertType = 0)
+        { // 0 = Koth under attack,  1 = rank announcement
+            string tempTitle = "";
+            if (SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false)
+            {
+                tempTitle = "Hank Says";
+            }
+            else
+            {
+                tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
+            }
 
-
-        public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null)
-        {
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
             
@@ -34,10 +43,13 @@ namespace SenX_KOTH_Plugin.Utils
             Webhook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
             DiscordEmbed embed = new DiscordEmbed()
             {
-                Title = "Hank Says",
+                Title = tempTitle,
                 Timestamp = DateTime.Now,
                 Thumbnail = new EmbedMedia() { Url = "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg" }
             };
+
+            //Embed Title
+            
 
             if (EmbedColor == null)
             { embed.Color = Color.Red; }
@@ -50,17 +62,19 @@ namespace SenX_KOTH_Plugin.Utils
             }
 
             try
-            {
-               
+            {               
                 if (SenX_KOTH_PluginMain.Instance.Config.EmbedEnabled)
                 {
-                    embed.Fields.Add(new EmbedField() { Name = "Man Your BattleStations!!!", Value = msg });
+                    if (AlertType == 0)
+                        embed.Fields.Add(new EmbedField() { Name = "Man Your Battle Stations!!!", Value = msg });
+                    else
+                        embed.Fields.Add(new EmbedField() { Name = "Rank Update", Value = msg });
                     message.Embeds.Add(embed);                   
                 }
 
                 else
                 {
-                   message.Content= msg;
+                   message.Content = $"***{tempTitle}*** {msg}";
                 }
 
                 await Webhook.SendAsync(message);

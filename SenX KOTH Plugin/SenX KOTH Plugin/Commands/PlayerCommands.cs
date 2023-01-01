@@ -1,17 +1,14 @@
-﻿using Sandbox.ModAPI;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Windows.Documents;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using Torch.Mod;
 using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
-using VRage.Library.Collections;
+using VRageMath;
 
 namespace SenX_KOTH_Plugin.Commands
-{    
+{
 
     [Category("KoTH")]
     public sealed class KothPlayerCommands : CommandModule
@@ -42,7 +39,13 @@ namespace SenX_KOTH_Plugin.Commands
                 WeekResults.AppendLine(Result.ToString());
             }
 
-            ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, WeekResults.ToString()), Context.Player.SteamUserId);
+            if (Context.Player != null)
+            {
+                ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, WeekResults.ToString()), Context.Player.SteamUserId);
+            } else
+            {
+                Context.Respond(WeekResults.ToString(), Color.Gold, "KoTH");
+            }
         }
 
         [Command("Month", "Shows the current KoTH ranking and points for the month.")]
@@ -69,7 +72,14 @@ namespace SenX_KOTH_Plugin.Commands
                 MonthResults.AppendLine(Result.ToString());
             }
 
-            ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, MonthResults.ToString()), Context.Player.SteamUserId);
+            if (Context.Player != null)
+            {
+                ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, MonthResults.ToString()), Context.Player.SteamUserId);
+            }
+            else
+            {
+                Context.Respond(MonthResults.ToString(), Color.Gold, "KoTH");
+            }
         }
 
         [Command("Year", "Shows the current KoTH ranking and points for the year.")]
@@ -96,7 +106,14 @@ namespace SenX_KOTH_Plugin.Commands
                 YearResults.AppendLine(Result.ToString());
             }
 
-            ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, YearResults.ToString()), Context.Player.SteamUserId);
+            if (Context.Player != null)
+            {
+                ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, YearResults.ToString()), Context.Player.SteamUserId);
+            }
+            else
+            {
+                Context.Respond(YearResults.ToString(), Color.Gold, "KoTH");
+            }
         }
     }
 }

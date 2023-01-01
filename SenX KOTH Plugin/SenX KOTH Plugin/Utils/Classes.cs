@@ -50,11 +50,12 @@ namespace SenX_KOTH_Plugin.Utils
                     WeekResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold);
+                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
 
                 Config.WeekScoreData.Clear();
                 Config.LastWeeklyReset = DateTime.Now;                
             }
+
             if (DateTime.Now.DayOfWeek == DayOfWeek.Monday && Config.LastWeeklyReset.Date != DateTime.Today.Date && Config.ResetDay == DayOfReset.Monday)
             {
                 // Announce weekly score if enabled.
@@ -77,7 +78,7 @@ namespace SenX_KOTH_Plugin.Utils
                     WeekResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold);
+                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
 
                 Config.WeekScoreData.Clear();
                 Config.LastWeeklyReset = DateTime.Now;
@@ -105,7 +106,7 @@ namespace SenX_KOTH_Plugin.Utils
                     MonthResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(MonthResults.ToString(), Color.Silver);
+                DiscordService.SendDiscordWebHook(MonthResults.ToString(), Color.Silver, 1);
 
                 Config.MonthScoreRecord.Clear();
                 Config.LastMonthlyReset = DateTime.Now;

@@ -1,10 +1,6 @@
-﻿using NLog.Fluent;
-using Sandbox.ModAPI;
+﻿using Sandbox.ModAPI;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using NLog;
 using SenX_KOTH_Plugin.Utils;
 
@@ -26,7 +22,14 @@ namespace SenX_KOTH_Plugin.Network
                 {
                     var message = Encoding.ASCII.GetString(msg);
                     if (message.Equals("clear")) return;
-                    DiscordService.SendDiscordWebHook(message);
+
+                    if (SenX_KOTH_PluginMain.Instance.Config.CustomMessegeEnable)
+                    {
+                        DiscordService.SendDiscordWebHook(SenX_KOTH_PluginMain.Instance.Config.CustomMessege);
+                    } else
+                    {
+                        DiscordService.SendDiscordWebHook(message);
+                    }                    
                 }
             }
             catch (Exception error)

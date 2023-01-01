@@ -11,7 +11,7 @@
     <UserControl.Resources>
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
     </UserControl.Resources>
-    
+
     <Grid>
 
         <Grid.ColumnDefinitions>
@@ -40,8 +40,9 @@
 
         <Rectangle Fill="#FF1E1E1E"  Grid.Column="0" Grid.ColumnSpan="20" Grid.Row="0" Grid.RowSpan="20"/>
 
+        <Button x:Name="SendSampleRankWebHook" Grid.Row="1" Grid.Column="1" HorizontalAlignment="right" Click="SendSampleRankkWebHook_Click">Send Sample Rank WebHook</Button>
         <TextBlock Grid.Column="0" Grid.Row ="0" VerticalAlignment="Center" FontWeight="Bold" FontSize="16" Grid.ColumnSpan="2" Margin="5" Foreground="#FF27E915" ><Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Language="en-ca" Text="+"/><Run Text=" Plugin"/></TextBlock>
-        <Button x:Name="SendSampleWebHook" Grid.Row="1" Grid.Column="4" Width="130" HorizontalAlignment="Left" Click="SendSampleWebHook_Click">Send Sample WebHook</Button>
+        <Button x:Name="SendSampleAttackWebHook" Grid.Row="1" Grid.Column="4" HorizontalAlignment="Left" Click="SendSampleAttackWebHook_Click">Send Sample Attack WebHook</Button>
 
         <TextBlock Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left" VerticalAlignment="Center" Text="Always SAVE after any changes ➜ ➜" Foreground="#FF27E915" />
         <Button Grid.Column="4" Grid.Row="0" HorizontalAlignment="Right" Content="Save Config" Margin="5" Click="SaveButton_OnClick"></Button>
@@ -54,9 +55,6 @@
         <TextBlock Grid.Row="3" Grid.Column="1" Text="WebHook URL" HorizontalAlignment="Right" ToolTip="This is the link given from your discord server when you setup a webhook to any channel." Foreground="#FF27E915" VerticalAlignment="Center"/>
         <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding WebHookUrl}" />
 
-        <TextBlock Grid.Row="4" Grid.Column="1" Text="WebHook Embed Title" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-        <TextBox x:Name="EmbedTitle" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="3" Text="{Binding EmbedTitle}" Margin="5" />
-
         <TextBlock Grid.Row="5" Grid.Column="1" Text="URL for Embed Image (Optional)" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right" />
         <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding EmbedPic}" />
 
@@ -64,20 +62,22 @@
         <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessegePrefix}" />
 
         <TextBlock Grid.Row="7" Grid.Column="1" Text="Reset Weekly Scores" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
-        <RadioButton Grid.Row="7" Grid.Column="2" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding DayOfReset, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}">Sunday</RadioButton>
-        <RadioButton Grid.Row="7" Grid.Column="3" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding DayOfReset, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Monday}">Monday</RadioButton>
+        <RadioButton Grid.Row="7" Grid.Column="2" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding ResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}">Sunday</RadioButton>
+        <RadioButton Grid.Row="7" Grid.Column="3" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding ResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Monday}">Monday</RadioButton>
 
         <TextBlock Grid.Row="8" Grid.Column="1" Text="Scheduled Announcements" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5" />
-        <CheckBox Grid.Row="8" Grid.Column="2" IsChecked="{Binding Show_WeeklyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center">Weekly Results</CheckBox>
-        <CheckBox Grid.Row="8" Grid.Column="3" IsChecked="{Binding Show_MonthlyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center">Monthly Results</CheckBox>
+        <CheckBox Grid.Row="8" Grid.Column="2" IsChecked="{Binding Show_WeeklyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Center" VerticalAlignment="Center">Weekly Results</CheckBox>
+        <CheckBox Grid.Row="8" Grid.Column="3" IsChecked="{Binding Show_MonthlyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Center" VerticalAlignment="Center">Monthly Results</CheckBox>
 
         <TextBlock Grid.Row="9" Grid.Column="1" Text="Do not show 'Under Attack' messages" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         <CheckBox Grid.Row="9" Grid.Column="2" IsChecked="{Binding Show_AttackMessages}" Margin="5"/>
 
         <TextBlock Grid.Row="10" Grid.Column="1" Text="Set custom capture messege" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <TextBox x:Name="CustomMessege" Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomMessege}" />
-        <CheckBox x:Name="EnableCustomMessege" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915">Enable</CheckBox>
-        <StackPanel Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="6" Orientation="Horizontal" />
+        <CheckBox x:Name="EnableCustomMessege" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomMessegeEnable}">Enable</CheckBox>
+        <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom capture title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        <TextBox x:Name="CustomTitle" Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomTitle}" />
+        <CheckBox x:Name="EnableCustomTitle" Grid.Row="11" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomTitleEnable}">Enable</CheckBox>
 
     </Grid>
 </UserControl>

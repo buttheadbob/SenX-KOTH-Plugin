@@ -11,8 +11,6 @@ using Torch.API.Plugins;
 using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
-using NLog.Filters;
-using System.Net.Configuration;
 
 namespace SenX_KOTH_Plugin
 {
