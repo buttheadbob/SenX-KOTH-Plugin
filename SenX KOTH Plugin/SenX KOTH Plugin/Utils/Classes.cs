@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using Sandbox.Game.World;
 
@@ -49,7 +50,7 @@ namespace SenX_KOTH_Plugin.Utils
                     WeekResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(WeekResults.ToString());
+                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold);
 
                 Config.WeekScoreData.Clear();
                 Config.LastWeeklyReset = DateTime.Now;                
@@ -76,7 +77,7 @@ namespace SenX_KOTH_Plugin.Utils
                     WeekResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(WeekResults.ToString());
+                DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold);
 
                 Config.WeekScoreData.Clear();
                 Config.LastWeeklyReset = DateTime.Now;
@@ -104,7 +105,7 @@ namespace SenX_KOTH_Plugin.Utils
                     MonthResults.AppendLine(Result.ToString());
                 }
 
-                DiscordService.SendDiscordWebHook(MonthResults.ToString());
+                DiscordService.SendDiscordWebHook(MonthResults.ToString(), Color.Silver);
 
                 Config.MonthScoreRecord.Clear();
                 Config.LastMonthlyReset = DateTime.Now;

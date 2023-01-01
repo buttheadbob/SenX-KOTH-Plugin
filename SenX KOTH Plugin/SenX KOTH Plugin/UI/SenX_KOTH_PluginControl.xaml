@@ -43,7 +43,7 @@
         <TextBlock Grid.Column="0" Grid.Row ="0" VerticalAlignment="Center" FontWeight="Bold" FontSize="16" Grid.ColumnSpan="2" Margin="5" Foreground="#FF27E915" ><Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Language="en-ca" Text="+"/><Run Text=" Plugin"/></TextBlock>
         <Button x:Name="SendSampleWebHook" Grid.Row="1" Grid.Column="4" Width="130" HorizontalAlignment="Left" Click="SendSampleWebHook_Click">Send Sample WebHook</Button>
 
-        <TextBlock Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left" VerticalAlignment="Center" Text="Always SAVE after any changes ➜ ➜ ➜" Foreground="#FF27E915" />
+        <TextBlock Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left" VerticalAlignment="Center" Text="Always SAVE after any changes ➜ ➜" Foreground="#FF27E915" />
         <Button Grid.Column="4" Grid.Row="0" HorizontalAlignment="Right" Content="Save Config" Margin="5" Click="SaveButton_OnClick"></Button>
 
         <CheckBox x:Name="WebhookEnabled" Grid.Row="1" Grid.Column="2" Margin="3" IsChecked="{Binding WebHookEnabled}" VerticalAlignment="Center" Foreground="#FF27E915">Webhooks Enabled</CheckBox>
@@ -52,16 +52,16 @@
         <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="20" Grid.Row="2" Height="8"/>
 
         <TextBlock Grid.Row="3" Grid.Column="1" Text="WebHook URL" HorizontalAlignment="Right" ToolTip="This is the link given from your discord server when you setup a webhook to any channel." Foreground="#FF27E915" VerticalAlignment="Center"/>
-        <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" Text="{Binding WebHookUrl}" MaxWidth="241"/>
+        <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding WebHookUrl}" />
 
         <TextBlock Grid.Row="4" Grid.Column="1" Text="WebHook Embed Title" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-        <TextBox x:Name="EmbedTitle" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding EmbedTitle}" Margin="5" />
+        <TextBox x:Name="EmbedTitle" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="3" Text="{Binding EmbedTitle}" Margin="5" />
 
         <TextBlock Grid.Row="5" Grid.Column="1" Text="URL for Embed Image (Optional)" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right" />
-        <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" Text="{Binding EmbedPic}" />
+        <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding EmbedPic}" />
 
         <TextBlock Grid.Row="6" Grid.Column="1" Text="Prefix Text (Optional)" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-        <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" Text="{Binding MessegePrefix}" />
+        <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessegePrefix}" />
 
         <TextBlock Grid.Row="7" Grid.Column="1" Text="Reset Weekly Scores" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <RadioButton Grid.Row="7" Grid.Column="2" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding DayOfReset, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}">Sunday</RadioButton>

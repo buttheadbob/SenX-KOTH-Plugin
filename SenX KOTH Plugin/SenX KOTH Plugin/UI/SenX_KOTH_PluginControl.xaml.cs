@@ -21,14 +21,9 @@ namespace SenX_KOTH_Plugin
             SenX_KOTH_PluginMain.Instance.Save();
         }
 
-        private void SendTestWebHook_Click(object sender, RoutedEventArgs e)
-        {
-            DiscordService.SendDiscordWebHook("This is a test... test test test... you've just been tested... did it work?");
-        }
-
         private void SendSampleWebHook_Click(object sender, RoutedEventArgs e)
         {
-
+            DiscordService.SendDiscordWebHook("This is a test... test test test... you've just been tested... did it work?");
         }
     }
 }

@@ -15,7 +15,7 @@ namespace SenX_KOTH_Plugin.Utils
         public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");
 
 
-        public static async void SendDiscordWebHook(string msg)
+        public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null)
         {
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
@@ -30,15 +30,19 @@ namespace SenX_KOTH_Plugin.Utils
             }
 
             DiscordWebhook Webhook = new DiscordWebhook();
-            DiscordMessage message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg" };
+            DiscordMessage message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "" };
             Webhook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
             DiscordEmbed embed = new DiscordEmbed()
             {
                 Title = "Hank Says",
                 Timestamp = DateTime.Now,
-                Color = Color.DarkGray,
                 Thumbnail = new EmbedMedia() { Url = "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg" }
             };
+
+            if (EmbedColor == null)
+            { embed.Color = Color.Red; }
+            else
+            { embed.Color = EmbedColor; }
 
             if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessegePrefix))
             {
