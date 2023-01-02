@@ -9,7 +9,6 @@ using VRageMath;
 
 namespace SenX_KOTH_Plugin.Commands
 {
-
     [Category("KoTH")]
     public sealed class KothPlayerCommands : CommandModule
     {

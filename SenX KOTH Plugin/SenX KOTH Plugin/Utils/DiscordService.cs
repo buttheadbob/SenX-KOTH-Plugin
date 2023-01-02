@@ -49,8 +49,6 @@ namespace SenX_KOTH_Plugin.Utils
             };
 
             //Embed Title
-            
-
             if (EmbedColor == null)
             { embed.Color = Color.Red; }
             else

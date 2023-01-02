@@ -11,6 +11,7 @@ using Torch.API.Plugins;
 using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
+using Sandbox.ModAPI;
 
 namespace SenX_KOTH_Plugin
 {
@@ -105,19 +106,19 @@ namespace SenX_KOTH_Plugin
             }
         }
 
-        public static void SetPath()
+        public static Session ScoresFromStorage()
         {
-            var kothScoreName = MySandboxGame.ConfigDedicated.LoadWorld;
-            KothScorePath = Path.Combine(kothScoreName, @"Storage\2388326362.sbm_koth\Scores.data");
-        }
-
-        public static session ScoresFromStorage()
-        {
-            var serializer = new XmlSerializer(typeof(session));
-            using (var reader = new StreamReader(KothScorePath))
+            Session UpdateScore = new Session();
+            using (TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
             {
-                return (session)serializer.Deserialize(reader);
+                string text = reader.ReadToEnd();
+                reader.Close();
+
+                UpdateScore = MyAPIGateway.Utilities.SerializeFromXML<Session>(text);
             }
+            
+            return UpdateScore;
+            
         }
     }
 }

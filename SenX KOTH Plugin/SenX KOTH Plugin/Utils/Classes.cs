@@ -27,7 +27,7 @@ namespace SenX_KOTH_Plugin.Utils
             // Start the game instance with most up to date information
             ResetScores.ProcessScoresAndReset();
 
-            // Need to reset weekly and months scores when due..
+            // Need to reset weekly and monthly scores when due..
             if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday && Config.LastWeeklyReset.Date != DateTime.Today.Date && Config.ResetDay == DayOfReset.Sunday)
             {
                 // Announce weekly score if enabled.

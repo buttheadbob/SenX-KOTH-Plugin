@@ -1,49 +1,52 @@
-﻿using System;
+﻿using ProtoBuf;
+using SenX_KOTH_Plugin;
+using SenX_KOTH_Plugin.Network;
+using SenX_KOTH_Plugin.Utils;
+using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace SenX_KOTH_Plugin.Utils
 {
-    [Serializable()]
-    [XmlRoot(ElementName = "Session")]
-    public class session
+    [ProtoContract]
+    public class Session
     {
-        [XmlElement("PlanetScores")] public List<PlanetScores> PlanetScores { get; set; }
+        [ProtoMember(1)]
+        public List<PlanetDescription> PlanetScores { get; set; } = new List<PlanetDescription>();
     }
 
-    [Serializable()]
-    [XmlRoot(ElementName = "PlanetScores")]
-    public class PlanetScores
-    {
-        [XmlElement] public List<PlanetDescription> PlanetDescription { get; set; }
-    }
-
-    [Serializable()]
-    [XmlRoot(ElementName = "PlanetDescription")]
+    [ProtoContract]
     public class PlanetDescription
     {
-        [XmlElement] public string Name { get; set; }
-        [XmlElement] public List<Scores> Scores { get; set; }
-    }
+        [ProtoMember(1)]
+        public string Name { get; set; }
 
-    [Serializable()]
-    [XmlRoot(ElementName = "Scores")]
-    public class Scores
-    {
-        [XmlElement] public List<ScoreDescription> ScoreDescription { get; set; }
+        [ProtoMember(2)]
+        public List<ScoreDescription> Scores { get; set; } = new List<ScoreDescription>();
     }
-
-    [Serializable()]
-    [XmlRoot(ElementName = "ScoreDescription")]
+        
+    [ProtoContract]
     public class ScoreDescription
     {
-        [XmlElement] public long FactionId { get; set; }
-        [XmlElement] public string FactionName { get; set; }
-        [XmlElement] public string FactionTag { get; set; }
-        [XmlElement] public int Points { get; set; }
-        [XmlElement] public string PlanetId { get; set; }
-        [XmlElement] public string Gridname { get; set; }
+        [ProtoMember(1)]
+        public long FactionId { get; set; }
+
+        [ProtoMember(2)]
+        public string FactionName { get; set; }
+
+        [ProtoMember(3)]
+        public string FactionTag { get; set; }
+
+        [ProtoMember(4)]
+        public int Points { get; set; }
+
+        [ProtoMember(5)]
+        public string PlanetId { get; set; }
+
+        [ProtoMember(6)]
+        public string GridName { get; set; }
     }
+}
 
     public sealed class ResetScores
     {
@@ -51,35 +54,28 @@ namespace SenX_KOTH_Plugin.Utils
         {
             var kothdata = SenX_KOTH_PluginMain.ScoresFromStorage();
 
-            foreach (var score in kothdata.PlanetScores)
+            foreach (PlanetDescription Planet in kothdata.PlanetScores)
             {
-                foreach (var Location in score.PlanetDescription)
+                foreach (ScoreDescription Points in Planet.Scores)
                 {
-                    foreach (var ListOfScores in Location.Scores)
+                    ScoreData data = new ScoreData()
                     {
-                        foreach (var Score in ListOfScores.ScoreDescription)
-                        {
-                            ScoreData data = new ScoreData()
-                            {
-                                KothName = Score.PlanetId,
-                                LogTime = DateTime.Now,
-                                FactionId = Score.FactionId,
-                                FactionName = Score.FactionName,
-                                FactionTAG = Score.FactionTag,
-                                GridName = Score.Gridname,
-                                Points = Score.Points
-                            };
+                        KothName = Points.PlanetId,
+                        FactionId = Points.FactionId,
+                        FactionName = Points.FactionName,
+                        FactionTAG = Points.FactionTag,
+                        GridName = Points.GridName,
+                        Points = Points.Points
+                    };
 
-                            SenX_KOTH_PluginMain.Instance.Config.WeekScoreData.Add(data);
-                            SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord.Add(data);
-                            SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord.Add(data);
-                        }
-                    }
+                    SenX_KOTH_PluginMain.Instance.Config.WeekScoreData.Add(data);
+                    SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord.Add(data);
+                    SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord.Add(data);
                 }
             }
 
             // Tells the KOTH mod to clear the scores.  Plugin will provide commands for players.
-            Network.NetworkService.SendPacket("clear");
+            NetworkService.SendPacket("clear");
         }
     }
 
@@ -93,4 +89,4 @@ namespace SenX_KOTH_Plugin.Utils
         public string GridName { get; set; }
         public DateTime LogTime { get; set; }
     }
-}
+
