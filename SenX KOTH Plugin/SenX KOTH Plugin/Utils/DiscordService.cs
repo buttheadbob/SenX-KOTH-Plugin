@@ -14,7 +14,7 @@ namespace SenX_KOTH_Plugin.Utils
         /// <param name="msg">The message</param>
         /// <param name="EmbedColor">Embed bar color</param>
         /// <param name="AlertType">0 for contest alerts, 1 for rank listing</param>
-        public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null, byte AlertType = 0)
+        public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null, int AlertType = 0)
         { // 0 = Koth under attack,  1 = rank announcement
             string tempTitle = "";
             if (SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false)
@@ -29,7 +29,7 @@ namespace SenX_KOTH_Plugin.Utils
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
             
-            if (msg.Contains("under attack") && !SenX_KOTH_PluginMain.Instance.Config.Show_AttackMessages)
+            if (AlertType == 0 && !SenX_KOTH_PluginMain.Instance.Config.Show_AttackMessages)
                 return;
 
             if (string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl))

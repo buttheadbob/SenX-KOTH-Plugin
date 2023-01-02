@@ -70,6 +70,7 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="ProtoBuf.Net.Core">
       <HintPath>E:\Torch\DedicatedServer64\ProtoBuf.Net.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>

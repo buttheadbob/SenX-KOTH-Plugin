@@ -65,7 +65,8 @@ namespace SenX_KOTH_Plugin.Utils
                         FactionName = Points.FactionName,
                         FactionTAG = Points.FactionTag,
                         GridName = Points.GridName,
-                        Points = Points.Points
+                        Points = Points.Points,
+                        LogTime = DateTime.Now,
                     };
 
                     SenX_KOTH_PluginMain.Instance.Config.WeekScoreData.Add(data);

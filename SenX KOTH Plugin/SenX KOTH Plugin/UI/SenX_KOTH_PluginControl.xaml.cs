@@ -46,10 +46,17 @@ namespace SenX_KOTH_Plugin
             weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
             // Push list to weekresults
-            foreach (var Result in weeklist)
+            for (int a = 0; a < weeklist.Count; a++) 
             {
-                WeekResults.AppendLine(Result.ToString());
+                if (a < 3)
+                {
+                    DiscordService.SendDiscordWebHook($"**Rank {a}** {weeklist[a].Key} with {weeklist[a].Value} points.", Color.Gold, 1);
+                    continue;
+                }
+
+                WeekResults.AppendLine($"**Rank {a}** {weeklist[a].Key} with {weeklist[a].Value} points.");
             }
+                       
 
             DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
         }
