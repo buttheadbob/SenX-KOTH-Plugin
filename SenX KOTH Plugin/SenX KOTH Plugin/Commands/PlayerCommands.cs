@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
 using Torch.Commands;
 using Torch.Commands.Permissions;
@@ -19,15 +22,13 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowWeek()
         {
             StringBuilder WeekResults = new StringBuilder();
+            WeekResults.AppendLine();
             string Prefix = "Standing Weekly Results";
 
-            List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
-            
+
             // Create a formatted ranking list
-            foreach(var Result in Config.WeekScoreData)
-            {
-                weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-            }
+
+            var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
             // Sort the list.
             weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -35,7 +36,7 @@ namespace SenX_KOTH_Plugin.Commands
             // Push list to weekresults
             foreach(var Result in weeklist)
             {
-                WeekResults.AppendLine(Result.ToString());
+                WeekResults.AppendLine($"{Result.Key} => {Result.Value}");
             }
 
             if (Context.Player != null)
@@ -52,15 +53,12 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowMonth()
         {
             StringBuilder MonthResults = new StringBuilder();
-            string Prefix = "Standing Month Results";
-
-            List<KeyValuePair<string, int>> Monthlist = new List<KeyValuePair<string, int>>();
+            MonthResults.AppendLine();
+            string Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture); ;
 
             // Create a formatted ranking list
-            foreach (var Result in Config.MonthScoreRecord)
-            {
-                Monthlist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-            }
+
+            var Monthlist = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
 
             // Sort the list.
             Monthlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -68,7 +66,7 @@ namespace SenX_KOTH_Plugin.Commands
             // Push list to weekresults
             foreach (var Result in Monthlist)
             {
-                MonthResults.AppendLine(Result.ToString());
+                MonthResults.AppendLine($"{Result.Key} => {Result.Value}");
             }
 
             if (Context.Player != null)
@@ -86,15 +84,11 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowYear()
         {
             StringBuilder YearResults = new StringBuilder();
-            string Prefix = "Standing Month Results";
-
-            List<KeyValuePair<string, int>> Yearlist = new List<KeyValuePair<string, int>>();
-
+            YearResults.AppendLine();
+            string Prefix = "Standing Results for " + DateTime.Now.Year;
+                        
             // Create a formatted ranking list
-            foreach (var Result in Config.MonthScoreRecord)
-            {
-                Yearlist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-            }
+            var Yearlist = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
 
             // Sort the list.
             Yearlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -102,7 +96,7 @@ namespace SenX_KOTH_Plugin.Commands
             // Push list to weekresults
             foreach (var Result in Yearlist)
             {
-                YearResults.AppendLine(Result.ToString());
+                YearResults.AppendLine($"{Result.Key} => {Result.Value}");
             }
 
             if (Context.Player != null)

@@ -1,11 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Text;
 using Sandbox.Game.World;
 
 namespace SenX_KOTH_Plugin.Utils
 {
+    [Serializable]
+    public class SerializableKeyValuePair<TKey, TValue>
+    {
+        public SerializableKeyValuePair()
+        {
+        }
+
+        public SerializableKeyValuePair(TKey key, TValue value)
+        {
+            Key = key;
+            Value = value;
+        }
+
+        public TKey Key { get; set; }
+        public TValue Value { get; set; }
+
+    }
     public enum DayOfReset
     {
         Sunday = 0,
@@ -33,13 +51,8 @@ namespace SenX_KOTH_Plugin.Utils
                 // Announce weekly score if enabled.
                 StringBuilder WeekResults = new StringBuilder();
 
-                List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
-
                 // Create a formatted ranking list
-                foreach (var Result in Config.WeekScoreData)
-                {
-                    weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-                }
+                var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
                 // Sort the list.
                 weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -52,8 +65,9 @@ namespace SenX_KOTH_Plugin.Utils
 
                 DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
 
-                Config.WeekScoreData.Clear();
-                Config.LastWeeklyReset = DateTime.Now;                
+                SenX_KOTH_PluginMain.MasterScore.WeekScores.Clear();
+                Config.LastWeeklyReset = DateTime.Now;
+                SenX_KOTH_PluginMain.Save_MasterData(SenX_KOTH_PluginMain.MasterScore);
             }
 
             if (DateTime.Now.DayOfWeek == DayOfWeek.Monday && Config.LastWeeklyReset.Date != DateTime.Today.Date && Config.ResetDay == DayOfReset.Monday)
@@ -61,13 +75,8 @@ namespace SenX_KOTH_Plugin.Utils
                 // Announce weekly score if enabled.
                 StringBuilder WeekResults = new StringBuilder();
 
-                List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
-
                 // Create a formatted ranking list
-                foreach (var Result in Config.WeekScoreData)
-                {
-                    weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-                }
+                var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
                 // Sort the list.
                 weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -80,8 +89,9 @@ namespace SenX_KOTH_Plugin.Utils
 
                 DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
 
-                Config.WeekScoreData.Clear();
+                SenX_KOTH_PluginMain.MasterScore.WeekScores.Clear();
                 Config.LastWeeklyReset = DateTime.Now;
+                SenX_KOTH_PluginMain.Save_MasterData(SenX_KOTH_PluginMain.MasterScore);
             }
 
             if (DateTime.Now.Day == 1 && Config.LastMonthlyReset.Date.Month != DateTime.Now.Month)
@@ -89,13 +99,8 @@ namespace SenX_KOTH_Plugin.Utils
                 // Announce monthly score if enabled.
                 StringBuilder MonthResults = new StringBuilder();
 
-                List<KeyValuePair<string, int>> monthlist = new List<KeyValuePair<string, int>>();
-
                 // Create a formatted ranking list
-                foreach (var Result in Config.WeekScoreData)
-                {
-                    monthlist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-                }
+                var monthlist = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
 
                 // Sort the list.
                 monthlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -108,8 +113,9 @@ namespace SenX_KOTH_Plugin.Utils
 
                 DiscordService.SendDiscordWebHook(MonthResults.ToString(), Color.Silver, 1);
 
-                Config.MonthScoreRecord.Clear();
+                SenX_KOTH_PluginMain.MasterScore.MonthScores.Clear();
                 Config.LastMonthlyReset = DateTime.Now;
+                SenX_KOTH_PluginMain.Save_MasterData(SenX_KOTH_PluginMain.MasterScore);
             }
         }
 

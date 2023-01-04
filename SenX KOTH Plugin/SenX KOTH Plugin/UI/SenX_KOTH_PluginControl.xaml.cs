@@ -9,6 +9,7 @@ using SenX_KOTH_Plugin.Utils;
 using Torch.Mod.Messages;
 using Torch.Mod;
 using System.Drawing;
+using System.Linq;
 
 namespace SenX_KOTH_Plugin
 {
@@ -34,13 +35,8 @@ namespace SenX_KOTH_Plugin
         {
             StringBuilder WeekResults = new StringBuilder();
 
-            List<KeyValuePair<string, int>> weeklist = new List<KeyValuePair<string, int>>();
-
             // Create a formatted ranking list
-            foreach (var Result in SenX_KOTH_PluginMain.Instance.Config.WeekScoreData)
-            {
-                weeklist.Add(new KeyValuePair<string, int>(Result.FactionName, Result.Points));
-            }
+            var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
             // Sort the list.
             weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -56,7 +52,6 @@ namespace SenX_KOTH_Plugin
 
                 WeekResults.AppendLine($"**Rank {a}** {weeklist[a].Key} with {weeklist[a].Value} points.");
             }
-                       
 
             DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
         }

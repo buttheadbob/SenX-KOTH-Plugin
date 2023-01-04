@@ -37,15 +37,6 @@ namespace SenX_KOTH_Plugin
         private DateTime _LastMonthlyReset = DateTime.MinValue;
         public DateTime LastMonthlyReset { get => _LastMonthlyReset; set => SetValue(ref _LastMonthlyReset, value); }
 
-        private List<ScoreData> _YearlyScoreRecord = new List<ScoreData>();
-        public List<ScoreData> YearlyScoreRecord { get => _YearlyScoreRecord; set => SetValue(ref _YearlyScoreRecord, value); }
-
-        private List<ScoreData> _MonthScoreRecord = new List<ScoreData>();
-        public List<ScoreData> MonthScoreRecord { get => _MonthScoreRecord; set => SetValue(ref _MonthScoreRecord, value); }
-
-        private List<ScoreData> _WeekScoreData = new List<ScoreData>();
-        public List<ScoreData> WeekScoreData { get => _WeekScoreData; set => SetValue(ref _WeekScoreData, value); }
-
         private bool _Show_AttackMessages = true;
         public bool Show_AttackMessages { get => _Show_AttackMessages; set => SetValue(ref _Show_AttackMessages, value); }
 

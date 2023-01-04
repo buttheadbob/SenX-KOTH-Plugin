@@ -4,7 +4,10 @@ using SenX_KOTH_Plugin.Network;
 using SenX_KOTH_Plugin.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Documents;
 using System.Xml.Serialization;
+using static SenX_KOTH_Plugin.SenX_KOTH_PluginMain;
 
 namespace SenX_KOTH_Plugin.Utils
 {
@@ -24,7 +27,7 @@ namespace SenX_KOTH_Plugin.Utils
         [ProtoMember(2)]
         public List<ScoreDescription> Scores { get; set; } = new List<ScoreDescription>();
     }
-        
+
     [ProtoContract]
     public class ScoreDescription
     {
@@ -46,48 +49,91 @@ namespace SenX_KOTH_Plugin.Utils
         [ProtoMember(6)]
         public string GridName { get; set; }
     }
-}
+
 
     public sealed class ResetScores
     {
+        
         public static void ProcessScoresAndReset()
         {
-            var kothdata = SenX_KOTH_PluginMain.ScoresFromStorage();
+            Session kothdata = SenX_KOTH_PluginMain.ScoresFromStorage();
+
+            if (kothdata == null)
+                return;
 
             foreach (PlanetDescription Planet in kothdata.PlanetScores)
             {
                 foreach (ScoreDescription Points in Planet.Scores)
-                {
-                    ScoreData data = new ScoreData()
-                    {
-                        KothName = Points.PlanetId,
-                        FactionId = Points.FactionId,
-                        FactionName = Points.FactionName,
-                        FactionTAG = Points.FactionTag,
-                        GridName = Points.GridName,
-                        Points = Points.Points,
-                        LogTime = DateTime.Now,
-                    };
+                {     
+                    if (Points == null)
+                        continue;
 
-                    SenX_KOTH_PluginMain.Instance.Config.WeekScoreData.Add(data);
-                    SenX_KOTH_PluginMain.Instance.Config.MonthScoreRecord.Add(data);
-                    SenX_KOTH_PluginMain.Instance.Config.YearlyScoreRecord.Add(data);
+                    if (!MasterScore.WeekScores.Any())
+                    {
+                        MasterScore.WeekScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < MasterScore.WeekScores.Count; i++)
+                        {
+                            if (MasterScore.WeekScores[i].Key == Points.FactionName)
+                            {
+                                MasterScore.WeekScores[i] = new SerializableKeyValuePair<string, int>(MasterScore.WeekScores[i].Key, MasterScore.WeekScores[i].Value + Points.Points);
+                                break;
+                            }
+
+                            MasterScore.WeekScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                        }
+                    }
+
+                    if (!MasterScore.MonthScores.Any())
+                    {
+                        MasterScore.MonthScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < MasterScore.MonthScores.Count; i++)
+                        {
+                            if (MasterScore.MonthScores[i].Key == Points.FactionName)
+                            {
+                                MasterScore.MonthScores[i] = new SerializableKeyValuePair<string, int>(MasterScore.MonthScores[i].Key, MasterScore.MonthScores[i].Value + Points.Points);
+                                break;
+                            }
+
+                            MasterScore.MonthScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                        }
+                    }
+
+                    if (!MasterScore.YearScores.Any())
+                    {
+                        MasterScore.YearScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < MasterScore.YearScores.Count; i++)
+                        {
+                            if (MasterScore.YearScores[i].Key == Points.FactionName)
+                            {
+                                MasterScore.YearScores[i] = new SerializableKeyValuePair<string, int>(MasterScore.YearScores[i].Key, MasterScore.YearScores[i].Value + Points.Points);
+                                break;
+                            }
+
+                            MasterScore.YearScores.Add(new SerializableKeyValuePair<string, int>(Points.FactionName, Points.Points));
+                        }
+                    }
                 }
             }
-
-            // Tells the KOTH mod to clear the scores.  Plugin will provide commands for players.
+            SenX_KOTH_PluginMain.Save_MasterData(MasterScore);
+            // Tells the KOTH mod to clear the scores.  Plugin will provide commands for players to see current scores.
             NetworkService.SendPacket("clear");
         }
     }
 
-    public struct ScoreData
+    public struct ScoreFile
     {
-        public string KothName { get; set; }
-        public long FactionId { get; set; }
-        public string FactionTAG { get; set; }
-        public string FactionName { get; set; }
-        public int Points { get; set; }
-        public string GridName { get; set; }
-        public DateTime LogTime { get; set; }
-    }
+        public List<SerializableKeyValuePair<string,int>> WeekScores { get; set; }
+        public List<SerializableKeyValuePair<string, int>> MonthScores { get; set; }
+        public List<SerializableKeyValuePair<string, int>> YearScores { get; set; }
 
+    }
+}
