@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
     // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
-    public class DiscordWebhook
+    public class DiscordWebHook
     {
         /// <summary>
-        /// Webhook url
+        /// WebHook url
         /// </summary>
         public Uri Uri { get; set; }
 
         /// <summary>
-        /// Send webhook message
+        /// Send WebHook message
         /// </summary>
         public async Task SendAsync(DiscordMessage message)
         {
@@ -24,7 +24,7 @@ namespace SenX_KOTH_Plugin.DiscordAPI
             string bound = "------------------------" + DateTime.Now.Ticks.ToString("x");
             var httpContent = new MultipartFormDataContent(bound);
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(message));
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(message));
             jsonContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             httpContent.Add(jsonContent, "payload_json");
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -15,26 +14,24 @@ namespace SenX_KOTH_Plugin.Commands
     [Category("KoTH")]
     public sealed class KothPlayerCommands : CommandModule
     {
-        SenX_KOTH_PluginConfig Config => SenX_KOTH_PluginMain.Instance.Config;
-
         [Command("Week", "Shows the current KoTH ranking and points for the week.")]
         [Permission(MyPromoteLevel.None)]
         public void ShowWeek()
         {
-            StringBuilder WeekResults = new StringBuilder();
+            var WeekResults = new StringBuilder();
             WeekResults.AppendLine();
-            string Prefix = "Standing Weekly Results";
+            const string Prefix = "Standing Weekly Results";
 
 
             // Create a formatted ranking list
 
-            var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
+            var weekList = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
             // Sort the list.
-            weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+            weekList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
-            // Push list to weekresults
-            foreach(var Result in weeklist)
+            // Push list to weekResults
+            foreach(var Result in weekList)
             {
                 WeekResults.AppendLine($"{Result.Key} => {Result.Value}");
             }
@@ -52,19 +49,19 @@ namespace SenX_KOTH_Plugin.Commands
         [Permission(MyPromoteLevel.None)]
         public void ShowMonth()
         {
-            StringBuilder MonthResults = new StringBuilder();
+            var MonthResults = new StringBuilder();
             MonthResults.AppendLine();
-            string Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture); ;
+            var Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture); ;
 
             // Create a formatted ranking list
 
-            var Monthlist = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
+            var monthList = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
 
             // Sort the list.
-            Monthlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+            monthList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
-            // Push list to weekresults
-            foreach (var Result in Monthlist)
+            // Push list to weekResults
+            foreach (var Result in monthList)
             {
                 MonthResults.AppendLine($"{Result.Key} => {Result.Value}");
             }
@@ -83,18 +80,48 @@ namespace SenX_KOTH_Plugin.Commands
         [Permission(MyPromoteLevel.None)]
         public void ShowYear()
         {
-            StringBuilder YearResults = new StringBuilder();
+            var YearResults = new StringBuilder();
             YearResults.AppendLine();
-            string Prefix = "Standing Results for " + DateTime.Now.Year;
+            var Prefix = "Standing Results for " + DateTime.Now.Year;
                         
             // Create a formatted ranking list
-            var Yearlist = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
+            var yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
 
             // Sort the list.
-            Yearlist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+            yearList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
-            // Push list to weekresults
-            foreach (var Result in Yearlist)
+            // Push list to weekResults
+            foreach (var Result in yearList)
+            {
+                YearResults.AppendLine($"{Result.Key} => {Result.Value}");
+            }
+
+            if (Context.Player != null)
+            {
+                ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, YearResults.ToString()), Context.Player.SteamUserId);
+            }
+            else
+            {
+                Context.Respond(YearResults.ToString(), Color.Gold, "KoTH");
+            }
+        }
+
+        [Command("About", "Shows the current KoTH ranking and points for the week/month/year with a few added options.  For any feature request, contact SentorX#0001 on Discord.")]
+        [Permission(MyPromoteLevel.None)]
+        public void About()
+        {
+            var YearResults = new StringBuilder();
+            YearResults.AppendLine();
+            var Prefix = "Standing Results for " + DateTime.Now.Year;
+
+            // Create a formatted ranking list
+            var yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
+
+            // Sort the list.
+            yearList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+
+            // Push list to weekResults
+            foreach (var Result in yearList)
             {
                 YearResults.AppendLine($"{Result.Key} => {Result.Value}");
             }

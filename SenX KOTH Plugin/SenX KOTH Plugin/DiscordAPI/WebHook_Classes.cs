@@ -1,50 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
+// ReSharper disable InvalidXmlDocComment
+
+// ReSharper disable once CheckNamespace
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
     // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
+
+    
+
     public class DiscordMessage
     {
+        readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings()
+        {
+            Formatting = Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore
+        };
+
         public DiscordMessage()
         {
             Embeds = new List<DiscordEmbed>();
         }
 
-        [JsonPropertyName("content")]
+        [JsonProperty(PropertyName = "content")]
         /// <summary>
         /// Message content
         /// </summary>
         public string Content { get; set; }
 
-        [JsonPropertyName("tts")]
+        [JsonProperty(PropertyName = "tts")]
         /// <summary>
         /// Read message to everyone on the channel
         /// </summary>
         public bool TTS { get; set; }
 
-        [JsonPropertyName("username")]
+        [JsonProperty(PropertyName = "username")]
         /// <summary>
         /// Webhook profile username to be shown
         /// </summary>
         public string Username { get; set; }
 
-        [JsonPropertyName("avatar_url")]
+        [JsonProperty(PropertyName = "avatar_url")]
         /// <summary>
         /// Webhook profile avater to be shown
         /// </summary>
         public string AvatarUrl { get; set; }
 
-        [JsonPropertyName("embeds")]
+        [JsonProperty(PropertyName = "embeds")]
         /// <summary>
         /// List of embeds
         /// </summary>
         public List<DiscordEmbed> Embeds { get; set; }
-
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("allowed_mentions")]
+        
+        [JsonProperty(PropertyName = "allowed_mentions")]
         /// <summary>
         /// Allowed mentions for this message
         /// </summary>
@@ -58,28 +69,24 @@ namespace SenX_KOTH_Plugin.DiscordAPI
             Fields = new List<EmbedField>();
         }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("title")]
+        [JsonProperty(PropertyName = "title")]
         /// <summary>
         /// Embed title
         /// </summary>
         public string Title { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("description")]
+        [JsonProperty(PropertyName = "description")]
         /// <summary>
         /// Embed description
         /// </summary>
         public string Description { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("url")]
+        [JsonProperty(PropertyName = "url")]
         /// <summary>
         /// Embed url
         /// </summary>
         public string Url { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         /// <summary>
         /// Embed timestamp
         /// </summary>
@@ -89,68 +96,54 @@ namespace SenX_KOTH_Plugin.DiscordAPI
             set => StringTimestamp = value?.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz");
         }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("timestamp")]
+        [JsonProperty(PropertyName = "timestamp")]
         public string StringTimestamp { get; private set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
         /// <summary>
         /// Embed color
         /// </summary>
-        public Color? Color
-        {
-            get => HexColor.ToColor();
-            set => HexColor = value.ToHex();
-        }
+        public Color? Color { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("color")]
+        [JsonProperty(PropertyName = "color")]
         public int? HexColor { get; private set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("footer")]
+        [JsonProperty(PropertyName = "footer")]
         /// <summary>
         /// Embed footer
         /// </summary>
         public EmbedFooter Footer { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("image")]
+        [JsonProperty(PropertyName = "image")]
         /// <summary>
         /// Embed image
         /// </summary>
         public EmbedMedia Image { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("thumbnail")]
+        [JsonProperty(PropertyName = "thumbnail")]
         /// <summary>
         /// Embed thumbnail
         /// </summary>
         public EmbedMedia Thumbnail { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("video")]
+        [JsonProperty(PropertyName = "video")]
         /// <summary>
         /// Embed video
         /// </summary>
         public EmbedMedia Video { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("provider")]
+        [JsonProperty(PropertyName = "provider")]
         /// <summary>
         /// Embed provider
         /// </summary>
         public EmbedProvider Provider { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("author")]
+        [JsonProperty(PropertyName = "author")]
         /// <summary>
         /// Embed author
         /// </summary>
         public EmbedAuthor Author { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("fields")]
+        [JsonProperty(PropertyName = "fields")]
         /// <summary>
         /// Embed fields list
         /// </summary>
@@ -159,21 +152,19 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class EmbedFooter
     {
-        [JsonPropertyName("text")]
+        [JsonProperty(PropertyName = "text")]
         /// <summary>
         /// Footer text
         /// </summary>
         public string Text { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("icon_url")]
+        [JsonProperty(PropertyName = "icon_url")]
         /// <summary>
         /// Footer icon
         /// </summary>
         public string IconUrl { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("proxy_icon_url")]
+        [JsonProperty(PropertyName = "proxy_icon_url")]
         /// <summary>
         /// Footer icon proxy
         /// </summary>
@@ -182,29 +173,25 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class EmbedMedia
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("url")]
+        [JsonProperty(PropertyName = "url")]
         /// <summary>
         /// Media url
         /// </summary>
         public string Url { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("proxy_url")]
+        [JsonProperty(PropertyName = "proxy_url")]
         /// <summary>
         /// Media proxy url
         /// </summary>
         public string ProxyUrl { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("height")]
+        [JsonProperty(PropertyName = "height")]
         /// <summary>
         /// Media height
         /// </summary>
         public int? Height { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("width")]
+        [JsonProperty(PropertyName = "width")]
         /// <summary>
         /// Media width
         /// </summary>
@@ -213,15 +200,13 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class EmbedProvider
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("name")]
+        [JsonProperty(PropertyName = "name")]
         /// <summary>
         /// Provider name
         /// </summary>
         public string Name { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("url")]
+        [JsonProperty(PropertyName = "url")]
         /// <summary>
         /// Provider url
         /// </summary>
@@ -230,29 +215,25 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class EmbedAuthor
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("name")]
+        [JsonProperty(PropertyName = "name")]
         /// <summary>
         /// Author name
         /// </summary>
         public string Name { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("url")]
+        [JsonProperty(PropertyName = "url")]
         /// <summary>
         /// Author url
         /// </summary>
         public string Url { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("icon_url")]
+        [JsonProperty(PropertyName = "icon_url")]
         /// <summary>
         /// Author icon
         /// </summary>
         public string IconUrl { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("proxy_icon_url")]
+        [JsonProperty(PropertyName = "proxy_icon_url")]
         /// <summary>
         /// Author icon proxy
         /// </summary>
@@ -261,20 +242,19 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class EmbedField
     {
-        [JsonPropertyName("name")]
+        [JsonProperty(PropertyName = "name")]
         /// <summary>
         /// Field name
         /// </summary>
         public string Name { get; set; }
 
-        [JsonPropertyName("value")]
+        [JsonProperty(PropertyName = "value")]
         /// <summary>
         /// Field value
         /// </summary>
         public string Value { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("inline")]
+        [JsonProperty(PropertyName = "inline")]
         /// <summary>
         /// Field align
         /// </summary>
@@ -283,22 +263,21 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     public class AllowedMentions
     {
-        [JsonPropertyName("parse")]
+        [JsonProperty(PropertyName = "parse")]
         /// <summary>
         /// List of allowd mention types to parse from the content
         /// </summary>
         public List<string> Parse { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("roles")]
+        [JsonProperty(PropertyName = "roles")]
         /// <summary>
         /// List of role_ids to mention
         /// </summary>
         public List<ulong> Roles { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("users")]
+        [JsonProperty(PropertyName = "users")]
         /// <summary>
         /// List of user_ids to mention
         /// </summary>
         public List<ulong> Users { get; set; }
     }
+    
 }

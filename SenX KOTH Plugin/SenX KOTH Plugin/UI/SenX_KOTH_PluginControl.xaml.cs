@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Sandbox.Engine.Utils;
 using SenX_KOTH_Plugin.Utils;
-using Torch.Mod.Messages;
-using Torch.Mod;
 using System.Drawing;
 using System.Linq;
+using static SenX_KOTH_Plugin.SenX_KOTH_PluginMain;
+using System.Collections.Generic;
 
 namespace SenX_KOTH_Plugin
 {
@@ -17,13 +15,13 @@ namespace SenX_KOTH_Plugin
     {
         public SenX_KOTH_PluginControl()
         {
-            DataContext = SenX_KOTH_PluginMain.Instance.Config;
+            DataContext = Instance.Config;
             InitializeComponent();
         }
 
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)
         {
-            SenX_KOTH_PluginMain.Instance.Save();
+            Instance.Save();
         }
 
         private void SendSampleAttackWebHook_Click(object sender, RoutedEventArgs e)
@@ -31,29 +29,51 @@ namespace SenX_KOTH_Plugin
             DiscordService.SendDiscordWebHook("This is a test... test test test... you've just been tested... did it work?");
         }
 
-        private void SendSampleRankkWebHook_Click(object sender, RoutedEventArgs e)
+        private void SendSampleRankWebHook_Click(object sender, RoutedEventArgs e)
         {
-            StringBuilder WeekResults = new StringBuilder();
+            var WeekResults = new StringBuilder();
+            var weekList = new List<SerializableKeyValuePair<string, int>>();
 
             // Create a formatted ranking list
-            var weeklist = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
+            if (MasterScore.WeekScores != null)
+            {
+                weekList = MasterScore.WeekScores.ToList();
+            } 
 
             // Sort the list.
-            weeklist.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
-
-            // Push list to weekresults
-            for (int a = 0; a < weeklist.Count; a++) 
+            weekList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+             
+            // Push list to WeekResults
+            for (var a = 0; a < weekList.Count; a++) 
             {
                 if (a < 3)
                 {
-                    DiscordService.SendDiscordWebHook($"**Rank {a}** {weeklist[a].Key} with {weeklist[a].Value} points.", Color.Gold, 1);
+                    DiscordService.SendDiscordWebHook($"**Rank {a}** {weekList[a].Key} with {weekList[a].Value} points.", Color.Gold, 1);
                     continue;
                 }
 
-                WeekResults.AppendLine($"**Rank {a}** {weeklist[a].Key} with {weeklist[a].Value} points.");
+                WeekResults.AppendLine($"**Rank {a}** {weekList[a].Key} with {weekList[a].Value} points.");
             }
 
             DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            switch (SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic)
+            {
+                case true:
+                    Instance.Config.DefaultEmbedPic = false;
+                    EmbedPicture.IsEnabled = true;
+                    Instance.Save();
+                    break;
+
+                case false: 
+                    Instance.Config.DefaultEmbedPic = true;
+                    EmbedPicture.IsEnabled = false;
+                    Instance.Save();
+                    break;
+            }
         }
     }
 }
@@ -65,22 +85,20 @@ namespace KoTH.Converters
         #region IValueConverter Members
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            string parameterString = parameter as string;
-            if (parameterString == null)
+            if (!(parameter is string parameterString))
                 return DependencyProperty.UnsetValue;
 
             if (Enum.IsDefined(value.GetType(), value) == false)
                 return DependencyProperty.UnsetValue;
 
-            object parameterValue = Enum.Parse(value.GetType(), parameterString);
+            var parameterValue = Enum.Parse(value.GetType(), parameterString);
 
             return parameterValue.Equals(value);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            string parameterString = parameter as string;
-            if (parameterString == null)
+            if (!(parameter is string parameterString))
                 return DependencyProperty.UnsetValue;
 
             return Enum.Parse(targetType, parameterString);

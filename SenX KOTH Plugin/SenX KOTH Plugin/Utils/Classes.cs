@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -130,7 +129,5 @@ namespace SenX_KOTH_Plugin.Utils
             ResetChecker.Stop();
             ResetChecker.Dispose();
         }
-    }
-
-    
+    }    
 }

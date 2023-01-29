@@ -1,12 +1,7 @@
 ﻿using ProtoBuf;
-using SenX_KOTH_Plugin;
 using SenX_KOTH_Plugin.Network;
-using SenX_KOTH_Plugin.Utils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Documents;
-using System.Xml.Serialization;
 using static SenX_KOTH_Plugin.SenX_KOTH_PluginMain;
 
 namespace SenX_KOTH_Plugin.Utils

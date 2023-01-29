@@ -7,7 +7,7 @@ namespace SenX_KOTH_Plugin.Utils
 {
     public class DiscordService
     {
-        public static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");        
+        private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");        
         /// <summary>
         /// Send messages straight to discord
         /// </summary>
@@ -16,15 +16,7 @@ namespace SenX_KOTH_Plugin.Utils
         /// <param name="AlertType">0 for contest alerts, 1 for rank listing</param>
         public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null, int AlertType = 0)
         { // 0 = Koth under attack,  1 = rank announcement
-            string tempTitle = "";
-            if (SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false)
-            {
-                tempTitle = "Hank Says";
-            }
-            else
-            {
-                tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
-            }
+            var tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false ? "Hank Says" : SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
 
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
@@ -38,21 +30,22 @@ namespace SenX_KOTH_Plugin.Utils
                 return;
             }
 
-            DiscordWebhook Webhook = new DiscordWebhook();
-            DiscordMessage message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "" };
-            Webhook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
-            DiscordEmbed embed = new DiscordEmbed()
+            var WebHook = new DiscordWebHook();
+            var message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "" };
+            WebHook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
+
+            string EmbedURL = SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic == true
+                ? "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg"
+                : SenX_KOTH_PluginMain.Instance.Config.EmbedPic;
+
+            var embed = new DiscordEmbed
             {
                 Title = tempTitle,
                 Timestamp = DateTime.Now,
-                Thumbnail = new EmbedMedia() { Url = "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg" }
+                Thumbnail = new EmbedMedia() { Url = EmbedURL },
+                //Embed Title
+                Color = EmbedColor ?? Color.Red
             };
-
-            //Embed Title
-            if (EmbedColor == null)
-            { embed.Color = Color.Red; }
-            else
-            { embed.Color = EmbedColor; }
 
             if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessegePrefix))
             {
@@ -63,11 +56,10 @@ namespace SenX_KOTH_Plugin.Utils
             {               
                 if (SenX_KOTH_PluginMain.Instance.Config.EmbedEnabled)
                 {
-                    if (AlertType == 0)
-                        embed.Fields.Add(new EmbedField() { Name = "Man Your Battle Stations!!!", Value = msg });
-                    else
-                        embed.Fields.Add(new EmbedField() { Name = "Rank Update", Value = msg });
-                    message.Embeds.Add(embed);                   
+                    embed.Fields.Add(AlertType == 0
+                        ? new EmbedField() {Name = "Man Your Battle Stations!!!", Value = msg}
+                        : new EmbedField() {Name = "Rank Update", Value = msg});
+                    message.Embeds.Add(embed);
                 }
 
                 else
@@ -75,7 +67,7 @@ namespace SenX_KOTH_Plugin.Utils
                    message.Content = $"***{tempTitle}*** {msg}";
                 }
 
-                await Webhook.SendAsync(message);
+                await WebHook.SendAsync(message);
             }
             catch (Exception e)
             {

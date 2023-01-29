@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using Torch;
 using SenX_KOTH_Plugin.Utils;
-using System.Diagnostics.Eventing.Reader;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 
 namespace SenX_KOTH_Plugin
 {
@@ -27,6 +23,9 @@ namespace SenX_KOTH_Plugin
 
         private string _EmbedTitle = "Notice";
         public string EmbedTitle { get => _EmbedTitle; set => SetValue(ref _EmbedTitle, value); }
+
+        private bool _DefaultEmbedPic = false;
+        public bool DefaultEmbedPic { get => _DefaultEmbedPic; set => SetValue(ref _DefaultEmbedPic, value); }
 
         private string _EmbedPic = "";
         public string EmbedPic { get => _EmbedPic; set => SetValue(ref _EmbedPic, value); }

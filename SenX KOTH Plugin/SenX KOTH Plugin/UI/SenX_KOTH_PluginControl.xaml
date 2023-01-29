@@ -40,7 +40,7 @@
 
         <Rectangle Fill="#FF1E1E1E"  Grid.Column="0" Grid.ColumnSpan="20" Grid.Row="0" Grid.RowSpan="20"/>
 
-        <Button x:Name="SendSampleRankWebHook" Grid.Row="1" Grid.Column="1" HorizontalAlignment="right" Click="SendSampleRankkWebHook_Click">Send Sample Rank WebHook</Button>
+        <Button x:Name="SendSampleRankWebHook" Grid.Row="1" Grid.Column="1" HorizontalAlignment="right" Click="SendSampleRankWebHook_Click">Send Sample Rank WebHook</Button>
         <TextBlock Grid.Column="0" Grid.Row ="0" VerticalAlignment="Center" FontWeight="Bold" FontSize="16" Grid.ColumnSpan="2" Margin="5" Foreground="#FF27E915" ><Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Language="en-ca" Text="+"/><Run Text=" Plugin"/></TextBlock>
         <Button x:Name="SendSampleAttackWebHook" Grid.Row="1" Grid.Column="4" HorizontalAlignment="Left" Click="SendSampleAttackWebHook_Click">Send Sample Attack WebHook</Button>
 
@@ -56,7 +56,8 @@
         <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding WebHookUrl}" />
 
         <TextBlock Grid.Row="5" Grid.Column="1" Text="URL for Embed Image (Optional)" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right" />
-        <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding EmbedPic}" />
+        <CheckBox x:Name="EmbedDefaultCheckBox" Grid.Row="5" Grid.Column="2" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Center" Unchecked="CheckBox_Checked" Checked="CheckBox_Checked"> Use Default</CheckBox>
+        <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="3" Grid.ColumnSpan="2" Margin="5" Text="{Binding EmbedPic}" />
 
         <TextBlock Grid.Row="6" Grid.Column="1" Text="Prefix Text (Optional)" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessegePrefix}" />

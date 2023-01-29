@@ -12,9 +12,7 @@ using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
 using Sandbox.ModAPI;
-using System.Runtime.CompilerServices;
 using VRage;
-using System.Xml;
 
 namespace SenX_KOTH_Plugin
 {
