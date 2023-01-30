@@ -12,7 +12,7 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
     
 
-    public class DiscordMessage
+    public sealed class DiscordMessage
     {
         readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings()
         {
@@ -98,14 +98,9 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 
         [JsonProperty(PropertyName = "timestamp")]
         public string StringTimestamp { get; private set; }
-
-        /// <summary>
-        /// Embed color
-        /// </summary>
-        public Color? Color { get; set; }
-
+        
         [JsonProperty(PropertyName = "color")]
-        public int? HexColor { get; private set; }
+        public int? Color { get; set; }
 
         [JsonProperty(PropertyName = "footer")]
         /// <summary>

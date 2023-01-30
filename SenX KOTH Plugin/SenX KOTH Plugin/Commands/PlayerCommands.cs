@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -22,19 +23,25 @@ namespace SenX_KOTH_Plugin.Commands
             WeekResults.AppendLine();
             const string Prefix = "Standing Weekly Results";
 
-
             // Create a formatted ranking list
-
-            var weekList = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
+            List<KeyValuePair<string, int>> weekList = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
 
             // Sort the list.
             weekList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
             // Push list to weekResults
-            foreach(var Result in weekList)
+            if (weekList.Count > 0)
             {
-                WeekResults.AppendLine($"{Result.Key} => {Result.Value}");
+                foreach(KeyValuePair<string, int> Result in weekList)
+                {
+                    WeekResults.AppendLine($"{Result.Key} => {Result.Value}");
+                }
             }
+            else
+            {
+                WeekResults.AppendLine("No results for this week to show.");
+            }
+            
 
             if (Context.Player != null)
             {
@@ -51,20 +58,28 @@ namespace SenX_KOTH_Plugin.Commands
         {
             var MonthResults = new StringBuilder();
             MonthResults.AppendLine();
-            var Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture); ;
+            var Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
 
             // Create a formatted ranking list
 
-            var monthList = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
+            List<KeyValuePair<string, int>> monthList = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
 
             // Sort the list.
             monthList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
             // Push list to weekResults
-            foreach (var Result in monthList)
+            if (monthList.Count > 0)
             {
-                MonthResults.AppendLine($"{Result.Key} => {Result.Value}");
+                foreach (KeyValuePair<string, int> Result in monthList)
+                {
+                    MonthResults.AppendLine($"{Result.Key} => {Result.Value}");
+                }
             }
+            else
+            {
+                MonthResults.AppendLine("No results for the month.. now's your chance!");
+            }
+            
 
             if (Context.Player != null)
             {
@@ -91,10 +106,18 @@ namespace SenX_KOTH_Plugin.Commands
             yearList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
             // Push list to weekResults
-            foreach (var Result in yearList)
+            if (yearList.Count > 0)
             {
-                YearResults.AppendLine($"{Result.Key} => {Result.Value}");
+                foreach (KeyValuePair<string, int> Result in yearList)
+                {
+                    YearResults.AppendLine($"{Result.Key} => {Result.Value}");
+                }
             }
+            else
+            {
+                YearResults.AppendLine("No scores for the.. whole.. year....... hmmm?");
+            }
+            
 
             if (Context.Player != null)
             {

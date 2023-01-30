@@ -4,27 +4,27 @@ using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin
 {
-    public class SenX_KOTH_PluginConfig : ViewModel
+    public sealed class SenX_KOTH_PluginConfig : ViewModel
     {
-        private bool _WebHookEnabled = false;
+        private bool _WebHookEnabled;
         public bool WebHookEnabled { get => _WebHookEnabled; set => SetValue(ref _WebHookEnabled, value); }
 
         private string _WebHookUrl = "";
         public string WebHookUrl { get => _WebHookUrl; set => SetValue(ref _WebHookUrl, value); }
 
-        private string _MessegePrefix = "➜ ➜ ➜";
-        public string MessegePrefix { get => _MessegePrefix; set => SetValue(ref _MessegePrefix, value);}
+        private string _MessagePrefix = "➜ ➜ ➜";
+        public string MessagePrefix { get => _MessagePrefix; set => SetValue(ref _MessagePrefix, value);}
 
         private string _Color = "";
         public string Color { get => _Color; set=> SetValue(ref _Color, value); }
 
-        private bool _EmbedEnabled = false;
+        private bool _EmbedEnabled;
         public bool EmbedEnabled { get => _EmbedEnabled; set=> SetValue(ref _EmbedEnabled, value);}
 
         private string _EmbedTitle = "Notice";
         public string EmbedTitle { get => _EmbedTitle; set => SetValue(ref _EmbedTitle, value); }
 
-        private bool _DefaultEmbedPic = false;
+        private bool _DefaultEmbedPic = true;
         public bool DefaultEmbedPic { get => _DefaultEmbedPic; set => SetValue(ref _DefaultEmbedPic, value); }
 
         private string _EmbedPic = "";
@@ -51,13 +51,13 @@ namespace SenX_KOTH_Plugin
         private string _CustomMessege = "";
         public string CustomMessege { get => _CustomMessege; set=> SetValue(ref _CustomMessege, value); }
 
-        private bool _CustomMessegeEnable = false;
+        private bool _CustomMessegeEnable;
         public bool CustomMessegeEnable { get => _CustomMessegeEnable; set => SetValue(ref _CustomMessegeEnable, value); }
 
         private string _CustomTitle = "";
         public string CustomTitle { get => _CustomTitle; set => SetValue(ref _CustomTitle, value); }
 
-        private bool _CustomTitleEnable = false;  
+        private bool _CustomTitleEnable;  
         public bool CustomTitleEnable { get => _CustomTitleEnable; set => SetValue(ref _CustomTitleEnable, value); }
 
         private DayOfReset _ResetDay = DayOfReset.Monday;

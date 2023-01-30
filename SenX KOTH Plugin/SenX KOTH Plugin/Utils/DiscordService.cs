@@ -2,10 +2,11 @@
 using System;
 using System.Drawing;
 using SenX_KOTH_Plugin.DiscordAPI;
+using Extensions = SenX_KOTH_Plugin.DiscordAPI.Extensions;
 
 namespace SenX_KOTH_Plugin.Utils
 {
-    public class DiscordService
+    public sealed class DiscordService
     {
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");        
         /// <summary>
@@ -16,8 +17,34 @@ namespace SenX_KOTH_Plugin.Utils
         /// <param name="AlertType">0 for contest alerts, 1 for rank listing</param>
         public static async void SendDiscordWebHook(string msg, Color? EmbedColor = null, int AlertType = 0)
         { // 0 = Koth under attack,  1 = rank announcement
-            var tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false ? "Hank Says" : SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
-
+            string tempTitle = "";
+            
+            if (msg.Contains("First Place"))
+            {
+                tempTitle = "FIRST PLACE";
+                msg = msg.Replace("First Place", "");
+            }
+            else if (msg.Contains("Second Place"))
+            {
+                tempTitle = "SECOND PLACE";
+                msg = msg.Replace("Second Place", "");
+            }
+            else if (msg.Contains("Third Place"))
+            {
+                tempTitle = "THIRD PLACE";
+                msg = msg.Replace("Third Place", "");
+            }
+            else if (msg.Contains("The Other People...."))
+            {
+                tempTitle = "The Other People....";
+                msg = msg.Replace("The Other People....", "");
+            }
+            else
+            {
+                tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false
+                    ? "Hank Says"
+                    : SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
+            }
             if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
                 return;
             
@@ -34,7 +61,7 @@ namespace SenX_KOTH_Plugin.Utils
             var message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "" };
             WebHook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
 
-            string EmbedURL = SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic == true
+            string EmbedURL = SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic
                 ? "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg"
                 : SenX_KOTH_PluginMain.Instance.Config.EmbedPic;
 
@@ -44,12 +71,12 @@ namespace SenX_KOTH_Plugin.Utils
                 Timestamp = DateTime.Now,
                 Thumbnail = new EmbedMedia() { Url = EmbedURL },
                 //Embed Title
-                Color = EmbedColor ?? Color.Red
+                Color = EmbedColor == null ? Extensions.ToHex(Color.Red) : EmbedColor.ToHex()
             };
 
-            if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessegePrefix))
+            if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessagePrefix))
             {
-                msg = $"{SenX_KOTH_PluginMain.Instance.Config.MessegePrefix} {msg}";
+                msg = $"{SenX_KOTH_PluginMain.Instance.Config.MessagePrefix}\n{msg}";
             }
 
             try
@@ -58,7 +85,7 @@ namespace SenX_KOTH_Plugin.Utils
                 {
                     embed.Fields.Add(AlertType == 0
                         ? new EmbedField() {Name = "Man Your Battle Stations!!!", Value = msg}
-                        : new EmbedField() {Name = "Rank Update", Value = msg});
+                        : new EmbedField() {Name = "***Rank Update***", Value = msg});
                     message.Embeds.Add(embed);
                 }
 

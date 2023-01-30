@@ -6,31 +6,25 @@ using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin.Network
 {
-    public class NetworkService
+    public sealed class NetworkService
     {
-        public static readonly Logger Log = LogManager.GetLogger("KOTH => Network Log");
+        private static readonly Logger Log = LogManager.GetLogger("KOTH => Network Log");
         public static void NetworkInit()
         {
             MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(8008, HandleIncomingPacket);
         }
 
-        private static void HandleIncomingPacket(ushort comId, byte[] msg, ulong id, bool relible)
+        private static void HandleIncomingPacket(ushort comId, byte[] msg, ulong id, bool reliable)
         {
             try
             {
-                if (!msg.IsNullOrEmpty())
-                {
-                    var message = Encoding.ASCII.GetString(msg);
-                    if (message.Equals("clear")) return;
+                if (msg.IsNullOrEmpty()) return;
+                string message = Encoding.ASCII.GetString(msg);
+                if (message.Equals("clear")) return;
 
-                    if (SenX_KOTH_PluginMain.Instance.Config.CustomMessegeEnable)
-                    {
-                        DiscordService.SendDiscordWebHook(SenX_KOTH_PluginMain.Instance.Config.CustomMessege);
-                    } else
-                    {
-                        DiscordService.SendDiscordWebHook(message);
-                    }                    
-                }
+                DiscordService.SendDiscordWebHook(SenX_KOTH_PluginMain.Instance.Config.CustomMessegeEnable
+                    ? SenX_KOTH_PluginMain.Instance.Config.CustomMessege
+                    : message);
             }
             catch (Exception error)
             {

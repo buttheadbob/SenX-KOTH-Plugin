@@ -32,7 +32,7 @@ namespace SenX_KOTH_Plugin
         private void SendSampleRankWebHook_Click(object sender, RoutedEventArgs e)
         {
             var WeekResults = new StringBuilder();
-            var weekList = new List<SerializableKeyValuePair<string, int>>();
+            var weekList = new List<KeyValuePair<string, int>>();
 
             // Create a formatted ranking list
             if (MasterScore.WeekScores != null)
@@ -64,13 +64,11 @@ namespace SenX_KOTH_Plugin
             {
                 case true:
                     Instance.Config.DefaultEmbedPic = false;
-                    EmbedPicture.IsEnabled = true;
                     Instance.Save();
                     break;
 
                 case false: 
                     Instance.Config.DefaultEmbedPic = true;
-                    EmbedPicture.IsEnabled = false;
                     Instance.Save();
                     break;
             }
