@@ -105,6 +105,12 @@ namespace SenX_KOTH_Plugin
         public static Session ScoresFromStorage()
         {
             Session UpdateScore;
+
+            if (!File.Exists(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
+            {
+                File.Create(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data"));
+            }
+            
             using (TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
             {
                 string text = reader.ReadToEnd();
