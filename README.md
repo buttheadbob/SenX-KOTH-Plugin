@@ -14,4 +14,6 @@ monthly scores.  There are also player commands to display the current weekly, m
 `!KoTH Year` To display the standings for the current year.
 
 ### [ADMIN COMMANDS]
-`!KoTH ForceUpdate` Forces the scores to update, if you dont want to wait the 5 minutes... 
+`!KoTH ForceUpdate` Forces the scores to update, if you dont want to wait the 5 minutes...   
+
+For more information or help, join my discord server --> https://discord.gg/rSuxGrHrrt
