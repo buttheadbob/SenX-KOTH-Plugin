@@ -1,3 +1,12 @@
+<p align="center">
+  <a href="https://discord.gg/rSuxGrHrrt">
+    <img src="https://img.shields.io/badge/VERSION-1.0.1.3-red" alt="Discord Server">
+  </a>
+  <a href="https://discord.gg/rSuxGrHrrt">
+    <img src="https://discordapp.com/api/guilds/1089078620829536269/widget.png?style=shield" alt="Discord Server">
+  </a>
+  </p> 
+
 # SenX-KOTH-Plugin
 
 ### This plugin requires the KoTH mod to work: https://steamcommunity.com/sharedfiles/filedetails/?id=2388326362  
