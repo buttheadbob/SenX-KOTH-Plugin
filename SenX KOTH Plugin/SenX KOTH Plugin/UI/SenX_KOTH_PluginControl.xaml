@@ -76,7 +76,7 @@
         <TextBlock Grid.Row="10" Grid.Column="1" Text="Set custom capture messege" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <TextBox x:Name="CustomMessege" Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomMessege}" />
         <CheckBox x:Name="EnableCustomMessege" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomMessegeEnable}">Enable</CheckBox>
-        <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom capture title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <TextBox x:Name="CustomTitle" Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomTitle}" />
         <CheckBox x:Name="EnableCustomTitle" Grid.Row="11" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomTitleEnable}">Enable</CheckBox>
 

@@ -62,7 +62,7 @@ namespace SenX_KOTH_Plugin.Utils
             WebHook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
 
             string EmbedURL = SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic
-                ? "https://flxt.tmsimg.com/assets/p1976161_e_v8_ab.jpg"
+                ? "https://i.ibb.co/4W1gG3d/oie-png-1.png"
                 : SenX_KOTH_PluginMain.Instance.Config.EmbedPic;
 
             var embed = new DiscordEmbed

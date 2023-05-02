@@ -82,7 +82,7 @@ namespace SenX_KOTH_Plugin.Utils
                             continue;
 
                         default:
-                            if (index == 3)
+                            if (index >= 3)
                                 WeekResults.AppendLine("Weekly Rank The Other People....");
                             
                             KeyValuePair<string, int> Result = weekList[index];

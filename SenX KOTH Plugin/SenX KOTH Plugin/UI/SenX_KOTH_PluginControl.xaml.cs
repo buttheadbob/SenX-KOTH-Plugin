@@ -5,9 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using SenX_KOTH_Plugin.Utils;
 using System.Drawing;
-using System.Linq;
 using static SenX_KOTH_Plugin.SenX_KOTH_PluginMain;
-using System.Collections.Generic;
+using System.Threading;
 
 namespace SenX_KOTH_Plugin
 {
@@ -31,36 +30,24 @@ namespace SenX_KOTH_Plugin
 
         private void SendSampleRankWebHook_Click(object sender, RoutedEventArgs e)
         {
-            var WeekResults = new StringBuilder();
-            var weekList = new List<KeyValuePair<string, int>>();
-
-            // Create a formatted ranking list
-            if (MasterScore.WeekScores != null)
-            {
-                weekList = MasterScore.WeekScores.ToList();
-            } 
-
-            // Sort the list.
-            weekList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
-             
-            // Push list to WeekResults
-            for (var a = 0; a < weekList.Count; a++) 
-            {
-                if (a < 3)
-                {
-                    DiscordService.SendDiscordWebHook($"**Rank {a}** {weekList[a].Key} with {weekList[a].Value} points.", Color.Gold, 1);
-                    continue;
-                }
-
-                WeekResults.AppendLine($"**Rank {a}** {weekList[a].Key} with {weekList[a].Value} points.");
-            }
-
-            DiscordService.SendDiscordWebHook(WeekResults.ToString(), Color.Gold, 1);
+            DiscordService.SendDiscordWebHook("First Place Vengeful Idiots with 2565 Points!", Color.Gold, 1);
+            Thread.Sleep(5000);
+            DiscordService.SendDiscordWebHook("Second Place Space Nuggets with 1954 Points!", Color.Silver, 1);
+            Thread.Sleep(5000);
+            DiscordService.SendDiscordWebHook("Third Place Legionly Legions with 584 Points!", Color.SandyBrown, 1);
+            Thread.Sleep(5000);
+            
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("The Other People....");
+            sb.AppendLine("Hamsters of Europa with 486 Points!");
+            sb.AppendLine("TRex's with 386 Points!");
+            sb.AppendLine("Muppet Empire with 212 Points!");
+            DiscordService.SendDiscordWebHook(sb.ToString(), Color.Brown, 1);
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            switch (SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic)
+            switch (Instance.Config.DefaultEmbedPic)
             {
                 case true:
                     Instance.Config.DefaultEmbedPic = false;

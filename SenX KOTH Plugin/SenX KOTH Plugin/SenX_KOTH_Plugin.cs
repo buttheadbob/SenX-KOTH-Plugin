@@ -1,7 +1,9 @@
 ﻿using NLog;
 using Sandbox;
 using System;
+using System.Drawing.Text;
 using System.IO;
+using System.Threading;
 using System.Windows.Controls;
 using Torch;
 using Torch.API;
@@ -21,7 +23,8 @@ namespace SenX_KOTH_Plugin
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => Main");
         public static ScoreFile MasterScore;
         private static readonly string CONFIG_FILE_NAME = "SenX_KOTH_PluginConfig.cfg";
-        private static readonly FastResourceLock resourceLock = new FastResourceLock();
+        private static object _fileLock = new object();
+        private static TimeSpan _lockTimeOut = TimeSpan.FromMilliseconds(500);
         LiveAgent resetAgent = new LiveAgent();
 
         private SenX_KOTH_PluginControl _control;
@@ -30,14 +33,14 @@ namespace SenX_KOTH_Plugin
         public SenX_KOTH_PluginConfig Config => _config?.Data;
 
         public static SenX_KOTH_PluginMain Instance { get; private set; }
-        
+
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
 
             SetupConfig();
 
-            var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
+            TorchSessionManager sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
                 sessionManager.SessionStateChanged += SessionChanged;
             else
@@ -55,7 +58,7 @@ namespace SenX_KOTH_Plugin
                     Log.Info("Session Loaded!");
                     Network.NetworkService.NetworkInit();
                     MasterScore = Load_MasterData();
-                    resetAgent.Run();                    
+                    resetAgent.Run();
                     break;
 
                 case TorchSessionState.Unloading:
@@ -104,70 +107,114 @@ namespace SenX_KOTH_Plugin
 
         public static Session ScoresFromStorage()
         {
+            bool lockTaken = false;
             Session UpdateScore;
 
             if (!File.Exists(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
             {
                 File.Create(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data"));
             }
-            
-            using (TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
-            {
-                string text = reader.ReadToEnd();
-                reader.Dispose();
 
-                UpdateScore = MyAPIGateway.Utilities.SerializeFromXML<Session>(text);
+            try
+            {
+                Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
+                if (lockTaken)
+                {
+                    using (TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
+                    {
+                        string text = reader.ReadToEnd();
+                        reader.Dispose();
+
+                        UpdateScore = MyAPIGateway.Utilities.SerializeFromXML<Session>(text);
+                    }
+                    return UpdateScore;
+                }
+
             }
-            
-            return UpdateScore;            
+            catch (Exception e)
+            {
+                Log.Warn(e);
+                return new Session();
+            }
+            finally
+            {
+                if (lockTaken)
+                    Monitor.Exit(_fileLock);
+            }
+
+            return new Session();
         }
 
         private static ScoreFile Load_MasterData()
         {
+            string data = "";
+            bool lockTaken = false;
             ScoreFile ScoreFile;
 
-            if (!File.Exists(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+            try
             {
-                using (StreamWriter sw = File.CreateText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+                Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
+                if (lockTaken)
                 {
-                    var Empty_MasterScore = new ScoreFile();
-                    string text = JsonConvert.SerializeObject(Empty_MasterScore);
-                    sw.Write(text);
+                    if (!File.Exists(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+                    {
+                        using (StreamWriter sw = File.CreateText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+                        {
+                            ScoreFile Empty_MasterScore = new ScoreFile();
+                            data = JsonConvert.SerializeObject(Empty_MasterScore);
+                            sw.Write(data);
+                        }
+                    }
+                    
+                    using (StreamReader sr = new StreamReader(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+                    {
+                        data = sr.ReadToEnd();
+                    }
                 }
+            }catch(Exception e)
+            {
+                Log.Warn(e);
+            }
+            finally
+            {
+                if (lockTaken)
+                    Monitor.Exit(_fileLock);
             }
 
-            using (resourceLock.AcquireExclusiveUsing())
+            if (string.IsNullOrEmpty(data))
             {
-                TextReader reader = File.OpenText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"));
-                string text = reader.ReadToEnd();
-                reader.Dispose();
-
-                if (string.IsNullOrEmpty(text))
-                {
-                    return new ScoreFile();
-                }
-
-                if (text.Contains("<?xml version=\"1.0\" encoding=\"utf-8\"?>")) // Original version used XML, now it uses JSON.
-                {
-                    Log.Warn("KoTH plugin data file was not compatible for an upgrade.  This was caused because the plugin " +
-                             "no longer uses XML but JSON instead and I this change was made early in the plugins " +
-                             "lifetime cycle.");
-                    return new ScoreFile();
-                }
-
-                ScoreFile = JsonConvert.DeserializeObject<ScoreFile>(text);
+                return new ScoreFile();
             }
 
+            ScoreFile = JsonConvert.DeserializeObject<ScoreFile>(data);
             return ScoreFile;
         }
 
         public static bool Save_MasterData(ScoreFile MasterData)
-        {            
-            using (resourceLock.AcquireExclusiveUsing())
+        {
+            bool lockTaken = false;
+            try
             {
-                File.WriteAllText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"),JsonConvert.SerializeObject(MasterData, Formatting.Indented));
+                Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
+                if (lockTaken)
+                {
+                    File.WriteAllText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"),JsonConvert.SerializeObject(MasterData, Formatting.Indented));
+                    return true;
+                }
             }
-            return true;
+            catch (Exception e)
+            {
+                Log.Warn(e);
+                return false;
+            }
+            finally
+            {
+                if (lockTaken)
+                    Monitor.Exit(_fileLock);
+            }
+            Log.Warn("Unable to save KoTH_ScoreCard.dat, lock timed out while file in use.");
+            return false;
         }
     }
+
 }
