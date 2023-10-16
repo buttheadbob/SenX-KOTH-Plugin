@@ -14,13 +14,13 @@ namespace SenX_KOTH_Plugin
     {
         public SenX_KOTH_PluginControl()
         {
-            DataContext = Instance.Config;
+            DataContext = Instance?.Config;
             InitializeComponent();
         }
 
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)
         {
-            Instance.Save();
+            Instance?.Save();
         }
 
         private void SendSampleAttackWebHook_Click(object sender, RoutedEventArgs e)
@@ -37,7 +37,7 @@ namespace SenX_KOTH_Plugin
             DiscordService.SendDiscordWebHook("Third Place Legionly Legions with 584 Points!", Color.SandyBrown, 1);
             Thread.Sleep(5000);
             
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new ();
             sb.AppendLine("The Other People....");
             sb.AppendLine("Hamsters of Europa with 486 Points!");
             sb.AppendLine("TRex's with 386 Points!");
@@ -47,7 +47,7 @@ namespace SenX_KOTH_Plugin
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            switch (Instance.Config.DefaultEmbedPic)
+            switch (Instance?.Config?.DefaultEmbedPic)
             {
                 case true:
                     Instance.Config.DefaultEmbedPic = false;
@@ -68,20 +68,23 @@ namespace KoTH.Converters
     public class EnumBooleanConverter : IValueConverter
     {
         #region IValueConverter Members
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
         {
             if (!(parameter is string parameterString))
                 return DependencyProperty.UnsetValue;
 
+            if (value is null)
+                return DependencyProperty.UnsetValue;
+            
             if (Enum.IsDefined(value.GetType(), value) == false)
                 return DependencyProperty.UnsetValue;
 
-            var parameterValue = Enum.Parse(value.GetType(), parameterString);
+            object parameterValue = Enum.Parse(value.GetType(), parameterString);
 
             return parameterValue.Equals(value);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object ConvertBack(object? value, Type targetType, object? parameter, System.Globalization.CultureInfo culture)
         {
             if (!(parameter is string parameterString))
                 return DependencyProperty.UnsetValue;

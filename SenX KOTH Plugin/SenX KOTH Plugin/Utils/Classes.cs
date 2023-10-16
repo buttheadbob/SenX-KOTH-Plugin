@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Timers;
 using Sandbox.Game.World;
 
 namespace SenX_KOTH_Plugin.Utils
@@ -16,7 +17,7 @@ namespace SenX_KOTH_Plugin.Utils
     public sealed class LiveAgent
     {
         // If today is reset day, used to check for reset time and initiate the reset process.
-        private System.Timers.Timer ResetChecker = new System.Timers.Timer();
+        private readonly Timer ResetChecker = new ();
         private SenX_KOTH_PluginConfig Config => SenX_KOTH_PluginMain.Instance.Config;
 
         public void Run()
@@ -42,7 +43,7 @@ namespace SenX_KOTH_Plugin.Utils
             // Announce weekly score if enabled.
             if (Config.Show_WeeklyResults)
             {
-                var WeekResults = new StringBuilder();
+                StringBuilder WeekResults = new ();
 
                 // Create a formatted ranking list
                 List<KeyValuePair<string, int>> weekList = SenX_KOTH_PluginMain.MasterScore.WeekScores.ToList();
@@ -105,7 +106,7 @@ namespace SenX_KOTH_Plugin.Utils
             else
             {
                 // Announce monthly score if enabled.
-                var monthResults = new StringBuilder();
+                StringBuilder monthResults = new ();
 
                 // Create a formatted ranking list
                 List<KeyValuePair<string, int>> monthList = SenX_KOTH_PluginMain.MasterScore.MonthScores;
@@ -114,7 +115,7 @@ namespace SenX_KOTH_Plugin.Utils
                 monthList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
                 // Push list to weekResults 
-                foreach (var Result in monthList)
+                foreach (KeyValuePair<string, int> Result in monthList)
                 {
                     monthResults.AppendLine(Result.ToString());
                 }
@@ -127,7 +128,7 @@ namespace SenX_KOTH_Plugin.Utils
             }
         }
 
-        private static void Reset(object sender, System.Timers.ElapsedEventArgs e)
+        private static void Reset(object sender, ElapsedEventArgs e)
         {
             if (!MySession.Static.IsSaveInProgress)
                 ResetScores.ProcessScoresAndReset();

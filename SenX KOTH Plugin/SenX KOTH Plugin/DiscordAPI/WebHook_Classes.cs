@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using Newtonsoft.Json;
 
 // ReSharper disable InvalidXmlDocComment
@@ -9,8 +8,6 @@ using Newtonsoft.Json;
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
     // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
-
-    
 
     public sealed class DiscordMessage
     {

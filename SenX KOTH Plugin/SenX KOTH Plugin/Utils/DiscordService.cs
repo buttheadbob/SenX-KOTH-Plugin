@@ -41,11 +41,11 @@ namespace SenX_KOTH_Plugin.Utils
             }
             else
             {
-                tempTitle = SenX_KOTH_PluginMain.Instance.Config.CustomTitleEnable == false
+                tempTitle = SenX_KOTH_PluginMain.Instance!.Config!.CustomTitleEnable == false
                     ? "Hank Says"
                     : SenX_KOTH_PluginMain.Instance.Config.CustomTitle;
             }
-            if (!SenX_KOTH_PluginMain.Instance.Config.WebHookEnabled)
+            if (!SenX_KOTH_PluginMain.Instance!.Config!.WebHookEnabled)
                 return;
             
             if (AlertType == 0 && !SenX_KOTH_PluginMain.Instance.Config.Show_AttackMessages)
@@ -58,14 +58,14 @@ namespace SenX_KOTH_Plugin.Utils
             }
 
             var WebHook = new DiscordWebHook();
-            var message = new DiscordMessage() { Username = "KoTH", AvatarUrl = "" };
+            var message = new DiscordMessage { Username = "KoTH", AvatarUrl = "" };
             WebHook.Uri = new Uri(SenX_KOTH_PluginMain.Instance.Config.WebHookUrl);
 
             string EmbedURL = SenX_KOTH_PluginMain.Instance.Config.DefaultEmbedPic
                 ? "https://i.ibb.co/4W1gG3d/oie-png-1.png"
                 : SenX_KOTH_PluginMain.Instance.Config.EmbedPic;
 
-            var embed = new DiscordEmbed
+            DiscordEmbed embed = new ()
             {
                 Title = tempTitle,
                 Timestamp = DateTime.Now,
@@ -75,9 +75,7 @@ namespace SenX_KOTH_Plugin.Utils
             };
 
             if (!string.IsNullOrEmpty(SenX_KOTH_PluginMain.Instance.Config.MessagePrefix))
-            {
                 msg = $"{SenX_KOTH_PluginMain.Instance.Config.MessagePrefix}\n{msg}";
-            }
 
             try
             {               
@@ -86,13 +84,12 @@ namespace SenX_KOTH_Plugin.Utils
                     embed.Fields.Add(AlertType == 0
                         ? new EmbedField() {Name = "Man Your Battle Stations!!!", Value = msg}
                         : new EmbedField() {Name = "***Rank Update***", Value = msg});
+                    
                     message.Embeds.Add(embed);
                 }
 
                 else
-                {
                    message.Content = $"***{tempTitle}*** {msg}";
-                }
 
                 await WebHook.SendAsync(message);
             }

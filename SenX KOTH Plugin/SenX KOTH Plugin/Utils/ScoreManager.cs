@@ -9,7 +9,7 @@ namespace SenX_KOTH_Plugin.Utils
     public sealed class Session
     {
         [ProtoMember(1)]
-        public List<PlanetDescription> PlanetScores { get; set; } = new List<PlanetDescription>();
+        public List<PlanetDescription> PlanetScores { get; set; } = new ();
     }
 
     [ProtoContract]
@@ -19,7 +19,7 @@ namespace SenX_KOTH_Plugin.Utils
         public string Name { get; set; }
 
         [ProtoMember(2)]
-        public List<ScoreDescription> Scores { get; set; } = new List<ScoreDescription>();
+        public List<ScoreDescription> Scores { get; set; } = new ();
     }
 
     [ProtoContract]
@@ -49,76 +49,52 @@ namespace SenX_KOTH_Plugin.Utils
     {
         public static void ProcessScoresAndReset()
         {
-            var kothData = ScoresFromStorage();
+            Session? kothData = ScoresFromStorage();
 
             if (kothData == null)
                 return;
 
-            foreach (var Planet in kothData.PlanetScores)
+            foreach (PlanetDescription? Planet in kothData.PlanetScores)
             {
-                foreach (var Points in Planet.Scores)
+                foreach (ScoreDescription? Points in Planet.Scores)
                 {
                     if (Points == null)
                         continue;
-
-                    if (MasterScore.WeekScores == null)
+                    
+                    KeyValuePair<string, int> weekScore = MasterScore.WeekScores.Find(x => x.Key == Points.FactionName);
+                    if (weekScore.Key != null)
                     {
-                        MasterScore.WeekScores = new List<KeyValuePair<string, int>> {new KeyValuePair<string, int>(Points.FactionName, Points.Points)};
+                        MasterScore.WeekScores.Remove(weekScore);
+                        weekScore = new KeyValuePair<string, int>(weekScore.Key, weekScore.Value + Points.Points);
+                        MasterScore.WeekScores.Add(weekScore);
                     }
                     else
                     {
-                        for (int i = 0; i < MasterScore.WeekScores.Count; i++)
-                        {
-                            if (MasterScore.WeekScores[i].Key == Points.FactionName)
-                            {
-                                MasterScore.WeekScores[i] = new KeyValuePair<string, int>(MasterScore.WeekScores[i].Key,
-                                    MasterScore.WeekScores[i].Value + Points.Points);
-                                break;
-                            }
-
-                            MasterScore.WeekScores.Add(new KeyValuePair<string, int>(Points.FactionName,
-                                Points.Points));
-                        }
+                        MasterScore.WeekScores.Add(new KeyValuePair<string, int>(Points.FactionName, Points.Points));
                     }
-
-                    if (MasterScore.MonthScores == null)
+                    
+                    KeyValuePair<string, int> monthScore = MasterScore.MonthScores.Find(x => x.Key == Points.FactionName);
+                    if (monthScore.Key != null)
                     {
-                        MasterScore.MonthScores = new List<KeyValuePair<string, int>> {new KeyValuePair<string, int>(Points.FactionName, Points.Points)};
+                        MasterScore.MonthScores.Remove(monthScore);
+                        monthScore = new KeyValuePair<string, int>(monthScore.Key, monthScore.Value + Points.Points);
+                        MasterScore.MonthScores.Add(monthScore);
                     }
                     else
                     {
-                        for (int i = 0; i < MasterScore.MonthScores.Count; i++)
-                        {
-                            if (MasterScore.MonthScores[i].Key == Points.FactionName)
-                            {
-                                MasterScore.MonthScores[i] = new KeyValuePair<string, int>(
-                                    MasterScore.MonthScores[i].Key, MasterScore.MonthScores[i].Value + Points.Points);
-                                break;
-                            }
-
-                            MasterScore.MonthScores.Add(
-                                new KeyValuePair<string, int>(Points.FactionName, Points.Points));
-                        }
+                        MasterScore.MonthScores.Add(new KeyValuePair<string, int>(Points.FactionName, Points.Points));
                     }
-
-                    if (MasterScore.YearScores == null)
+                    
+                    KeyValuePair<string, int> yearScore = MasterScore.YearScores.Find(x => x.Key == Points.FactionName);
+                    if (yearScore.Key != null)
                     {
-                        MasterScore.YearScores = new List<KeyValuePair<string, int>> {new KeyValuePair<string, int>(Points.FactionName, Points.Points)};
+                        MasterScore.YearScores.Remove(yearScore);
+                        yearScore = new KeyValuePair<string, int>(yearScore.Key, yearScore.Value + Points.Points);
+                        MasterScore.YearScores.Add(yearScore);
                     }
                     else
                     {
-                        for (int i = 0; i < MasterScore.YearScores.Count; i++)
-                        {
-                            if (MasterScore.YearScores[i].Key == Points.FactionName)
-                            {
-                                MasterScore.YearScores[i] = new KeyValuePair<string, int>(MasterScore.YearScores[i].Key,
-                                    MasterScore.YearScores[i].Value + Points.Points);
-                                break;
-                            }
-
-                            MasterScore.YearScores.Add(new KeyValuePair<string, int>(Points.FactionName,
-                                Points.Points));
-                        }
+                        MasterScore.YearScores.Add(new KeyValuePair<string, int>(Points.FactionName, Points.Points));
                     }
                 }
             }
@@ -129,11 +105,11 @@ namespace SenX_KOTH_Plugin.Utils
         }
     }
 
-    public struct ScoreFile
+    public class ScoreFile
     {
-        public List<KeyValuePair<string,int>> WeekScores { get; set; }
-        public List<KeyValuePair<string, int>> MonthScores { get; set; }
-        public List<KeyValuePair<string, int>> YearScores { get; set; }
+        public List<KeyValuePair<string, int>> WeekScores { get; set; } = new();
+        public List<KeyValuePair<string, int>> MonthScores { get; set; } = new();
+        public List<KeyValuePair<string, int>> YearScores { get; set; } = new();
 
     }
 }

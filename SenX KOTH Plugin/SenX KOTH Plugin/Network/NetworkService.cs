@@ -22,8 +22,8 @@ namespace SenX_KOTH_Plugin.Network
                 string message = Encoding.ASCII.GetString(msg);
                 if (message.Equals("clear")) return;
 
-                DiscordService.SendDiscordWebHook(SenX_KOTH_PluginMain.Instance.Config.CustomMessegeEnable
-                    ? SenX_KOTH_PluginMain.Instance.Config.CustomMessege
+                DiscordService.SendDiscordWebHook(SenX_KOTH_PluginMain.Instance.Config.CustomMessageEnable
+                    ? SenX_KOTH_PluginMain.Instance.Config.CustomMessage
                     : message);
             }
             catch (Exception error)
@@ -36,7 +36,7 @@ namespace SenX_KOTH_Plugin.Network
         {
             try
             {
-                var bytes = Encoding.ASCII.GetBytes(data);
+                byte[] bytes = Encoding.ASCII.GetBytes(data);
                 MyAPIGateway.Multiplayer.SendMessageToServer(8008, bytes);
             }
             catch (Exception error)

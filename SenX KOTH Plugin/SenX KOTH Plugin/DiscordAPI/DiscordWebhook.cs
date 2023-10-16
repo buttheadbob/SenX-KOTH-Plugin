@@ -19,16 +19,16 @@ namespace SenX_KOTH_Plugin.DiscordAPI
         /// </summary>
         public async Task SendAsync(DiscordMessage message)
         {
-            var httpClient = new HttpClient();
+            HttpClient httpClient = new ();
 
             string bound = "------------------------" + DateTime.Now.Ticks.ToString("x");
-            var httpContent = new MultipartFormDataContent(bound);
+            MultipartFormDataContent httpContent = new (bound);
 
-            var jsonContent = new StringContent(JsonConvert.SerializeObject(message));
+            StringContent jsonContent = new (JsonConvert.SerializeObject(message));
             jsonContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             httpContent.Add(jsonContent, "payload_json");
 
-            var response = await httpClient.PostAsync(Uri, httpContent);
+            HttpResponseMessage? response = await httpClient.PostAsync(Uri, httpContent);
             if (!response.IsSuccessStatusCode)
             {
                 throw new DiscordException(await response.Content.ReadAsStringAsync());

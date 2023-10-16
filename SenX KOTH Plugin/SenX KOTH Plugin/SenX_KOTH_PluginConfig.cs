@@ -48,11 +48,11 @@ namespace SenX_KOTH_Plugin
         private bool _Show_YearlyResults = true;
         public bool Show_YearlyResults { get => _Show_YearlyResults; set => SetValue(ref _Show_YearlyResults, value); }
 
-        private string _CustomMessege = "";
-        public string CustomMessege { get => _CustomMessege; set=> SetValue(ref _CustomMessege, value); }
+        private string _CustomMessage = "";
+        public string CustomMessage { get => _CustomMessage; set=> SetValue(ref _CustomMessage, value); }
 
-        private bool _CustomMessegeEnable;
-        public bool CustomMessegeEnable { get => _CustomMessegeEnable; set => SetValue(ref _CustomMessegeEnable, value); }
+        private bool _CustomMessageEnable;
+        public bool CustomMessageEnable { get => _CustomMessageEnable; set => SetValue(ref _CustomMessageEnable, value); }
 
         private string _CustomTitle = "";
         public string CustomTitle { get => _CustomTitle; set => SetValue(ref _CustomTitle, value); }

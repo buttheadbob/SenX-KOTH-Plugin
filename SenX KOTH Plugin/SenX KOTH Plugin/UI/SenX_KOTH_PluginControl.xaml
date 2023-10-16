@@ -1,19 +1,19 @@
-﻿<UserControl x:Class="SenX_KOTH_Plugin.SenX_KOTH_PluginControl"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:SenX_KOTH_Plugin"
-      mc:Ignorable="d"
-      xmlns:converters="clr-namespace:KoTH.Converters"
-      d:DesignHeight="450" d:DesignWidth="800">
+﻿<!-- ReSharper disable once Xaml.RedundantNamespaceAlias -->
+<UserControl x:Class="SenX_KOTH_Plugin.SenX_KOTH_PluginControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SenX_KOTH_Plugin"
+             mc:Ignorable="d"
+             xmlns:converters="clr-namespace:KoTH.Converters"
+             d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
     </UserControl.Resources>
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="30" />
             <ColumnDefinition Width="Auto"/>
@@ -38,7 +38,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Rectangle Fill="#FF1E1E1E"  Grid.Column="0" Grid.ColumnSpan="20" Grid.Row="0" Grid.RowSpan="20"/>
+        <Rectangle Fill="#FF1E1E1E"  Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="0" Grid.RowSpan="14"/>
 
         <Button x:Name="SendSampleRankWebHook" Grid.Row="1" Grid.Column="1" HorizontalAlignment="right" Click="SendSampleRankWebHook_Click">Send Sample Rank WebHook</Button>
         <TextBlock Grid.Column="0" Grid.Row ="0" VerticalAlignment="Center" FontWeight="Bold" FontSize="16" Grid.ColumnSpan="2" Margin="5" Foreground="#FF27E915" ><Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Language="en-ca" Text="+"/><Run Text=" Plugin"/></TextBlock>
@@ -50,7 +50,7 @@
         <CheckBox x:Name="WebhookEnabled" Grid.Row="1" Grid.Column="2" Margin="3" IsChecked="{Binding WebHookEnabled}" VerticalAlignment="Center" Foreground="#FF27E915">Webhooks Enabled</CheckBox>
         <CheckBox x:Name="EmbedEnabled" Grid.Row="1" Grid.Column="3" Margin="3" IsChecked="{Binding EmbedEnabled}" VerticalAlignment="Center" Foreground="#FF27E915">Embeds Enabled</CheckBox>
 
-        <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="20" Grid.Row="2" Height="8"/>
+        <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="2" Height="8"/>
 
         <TextBlock Grid.Row="3" Grid.Column="1" Text="WebHook URL" HorizontalAlignment="Right" ToolTip="This is the link given from your discord server when you setup a webhook to any channel." Foreground="#FF27E915" VerticalAlignment="Center"/>
         <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding WebHookUrl}" />
@@ -60,7 +60,7 @@
         <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="3" Grid.ColumnSpan="2" Margin="5" Text="{Binding EmbedPic}" />
 
         <TextBlock Grid.Row="6" Grid.Column="1" Text="Prefix Text (Optional)" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-        <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessegePrefix}" />
+        <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessagePrefix}" />
 
         <TextBlock Grid.Row="7" Grid.Column="1" Text="Reset Weekly Scores" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <RadioButton Grid.Row="7" Grid.Column="2" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding ResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}">Sunday</RadioButton>
@@ -73,9 +73,9 @@
         <TextBlock Grid.Row="9" Grid.Column="1" Text="Show 'Under Attack' messages" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         <CheckBox Grid.Row="9" Grid.Column="2" IsChecked="{Binding Show_AttackMessages}" Margin="5"/>
 
-        <TextBlock Grid.Row="10" Grid.Column="1" Text="Set custom capture messege" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
-        <TextBox x:Name="CustomMessege" Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomMessege}" />
-        <CheckBox x:Name="EnableCustomMessege" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomMessegeEnable}">Enable</CheckBox>
+        <TextBlock Grid.Row="10" Grid.Column="1" Text="Set custom capture message" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        <TextBox x:Name="CustomMessage" Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomMessage}" />
+        <CheckBox x:Name="EnableCustomMessage" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomMessageEnable}">Enable</CheckBox>
         <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <TextBox x:Name="CustomTitle" Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomTitle}" />
         <CheckBox x:Name="EnableCustomTitle" Grid.Row="11" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomTitleEnable}">Enable</CheckBox>

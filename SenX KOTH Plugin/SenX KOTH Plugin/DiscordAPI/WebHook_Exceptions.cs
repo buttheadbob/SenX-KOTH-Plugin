@@ -9,13 +9,11 @@ namespace SenX_KOTH_Plugin.DiscordAPI
         {
         }
 
-        public DiscordException(string message)
-            : base(message)
+        public DiscordException(string message) : base(message)
         {
         }
 
-        public DiscordException(string message, Exception inner)
-            : base(message, inner)
+        public DiscordException(string message, Exception inner) : base(message, inner)
         {
         }
     }

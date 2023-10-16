@@ -1,9 +1,9 @@
 ﻿using NLog;
 using Sandbox;
 using System;
-using System.Drawing.Text;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using Torch;
 using Torch.API;
@@ -13,7 +13,6 @@ using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
 using Sandbox.ModAPI;
-using VRage;
 using Newtonsoft.Json;
 
 namespace SenX_KOTH_Plugin
@@ -21,18 +20,17 @@ namespace SenX_KOTH_Plugin
     public sealed class SenX_KOTH_PluginMain : TorchPluginBase, IWpfPlugin
     {
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => Main");
-        public static ScoreFile MasterScore;
+        public static ScoreFile MasterScore = new();
         private static readonly string CONFIG_FILE_NAME = "SenX_KOTH_PluginConfig.cfg";
-        private static object _fileLock = new object();
-        private static TimeSpan _lockTimeOut = TimeSpan.FromMilliseconds(500);
-        LiveAgent resetAgent = new LiveAgent();
+        private static readonly object _fileLock = new ();
+        private static readonly TimeSpan _lockTimeOut = TimeSpan.FromMilliseconds(500);
+        public static LiveAgent? resetAgent;
 
-        private SenX_KOTH_PluginControl _control;
+        private SenX_KOTH_PluginControl? _control;
         public UserControl GetControl() => _control ?? (_control = new SenX_KOTH_PluginControl());
-        private Persistent<SenX_KOTH_PluginConfig> _config;
-        public SenX_KOTH_PluginConfig Config => _config?.Data;
-
-        public static SenX_KOTH_PluginMain Instance { get; private set; }
+        private Persistent<SenX_KOTH_PluginConfig>? _config;
+        public SenX_KOTH_PluginConfig? Config => _config?.Data;
+        public static SenX_KOTH_PluginMain? Instance;
 
         public override void Init(ITorchBase torch)
         {
@@ -48,6 +46,7 @@ namespace SenX_KOTH_Plugin
 
             Instance = this;
             Save();
+            resetAgent = new LiveAgent();
         }
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
@@ -58,13 +57,13 @@ namespace SenX_KOTH_Plugin
                     Log.Info("Session Loaded!");
                     Network.NetworkService.NetworkInit();
                     MasterScore = Load_MasterData();
-                    resetAgent.Run();
+                    resetAgent?.Run();
                     break;
 
                 case TorchSessionState.Unloading:
                     Log.Info("Session Unloading!");
                     Save_MasterData(MasterScore);
-                    resetAgent.Dispose();
+                    resetAgent?.Dispose();
                     break;
             }
         }
@@ -96,6 +95,7 @@ namespace SenX_KOTH_Plugin
         {
             try
             {
+                if (_config is null) return;
                 _config.Save();
                 Log.Info("Configuration Saved.");
             }
@@ -105,10 +105,9 @@ namespace SenX_KOTH_Plugin
             }
         }
 
-        public static Session ScoresFromStorage()
+        public static Session? ScoresFromStorage()
         {
             bool lockTaken = false;
-            Session UpdateScore;
 
             if (!File.Exists(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
             {
@@ -120,13 +119,12 @@ namespace SenX_KOTH_Plugin
                 Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
                 if (lockTaken)
                 {
-                    using (TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data")))
-                    {
-                        string text = reader.ReadToEnd();
-                        reader.Dispose();
+                    using TextReader reader = File.OpenText(Path.Combine(MySandboxGame.ConfigDedicated.LoadWorld, @"Storage\2388326362.sbm_koth\Scores.data"));
+                    string text = reader.ReadToEnd();
+                    reader.Dispose();
 
-                        UpdateScore = MyAPIGateway.Utilities.SerializeFromXML<Session>(text);
-                    }
+                    Session? UpdateScore = MyAPIGateway.Utilities.SerializeFromXML<Session>(text);
+                    
                     return UpdateScore;
                 }
 
@@ -134,7 +132,7 @@ namespace SenX_KOTH_Plugin
             catch (Exception e)
             {
                 Log.Warn(e);
-                return new Session();
+                return null;
             }
             finally
             {
@@ -142,34 +140,31 @@ namespace SenX_KOTH_Plugin
                     Monitor.Exit(_fileLock);
             }
 
-            return new Session();
+            return null;
         }
 
         private static ScoreFile Load_MasterData()
         {
             string data = "";
             bool lockTaken = false;
-            ScoreFile ScoreFile;
+            ScoreFile? ScoreFile;
 
             try
             {
                 Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
                 if (lockTaken)
                 {
-                    if (!File.Exists(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
+                    if (!File.Exists(Path.Combine(Instance!.StoragePath, "KoTH_ScoreCard.dat")))
                     {
-                        using (StreamWriter sw = File.CreateText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
-                        {
-                            ScoreFile Empty_MasterScore = new ScoreFile();
-                            data = JsonConvert.SerializeObject(Empty_MasterScore);
-                            sw.Write(data);
-                        }
+                        using StreamWriter sw = File.CreateText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"));
+                        ScoreFile Empty_MasterScore = new ();
+                        data = JsonConvert.SerializeObject(Empty_MasterScore);
+                        sw.Write(data);
+                        return new ScoreFile();
                     }
-                    
-                    using (StreamReader sr = new StreamReader(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat")))
-                    {
-                        data = sr.ReadToEnd();
-                    }
+
+                    using StreamReader sr = new (Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"));
+                    data = sr.ReadToEnd();
                 }
             }catch(Exception e)
             {
@@ -187,7 +182,25 @@ namespace SenX_KOTH_Plugin
             }
 
             ScoreFile = JsonConvert.DeserializeObject<ScoreFile>(data);
-            return ScoreFile;
+
+            ScoreFile? file = ScoreFile;
+            
+            // If a new score file is created, make sure the lists are not null as json will store them as null in some versions
+            if (file != null)
+            {
+                if (file.WeekScores is null)
+                    file.WeekScores = new ();
+                
+                if (file.MonthScores is null)
+                    file.MonthScores = new ();
+                
+                if (file.YearScores is null)
+                    file.YearScores = new ();
+                
+                return file;
+            }
+
+            return new ScoreFile();
         }
 
         public static bool Save_MasterData(ScoreFile MasterData)
@@ -198,7 +211,7 @@ namespace SenX_KOTH_Plugin
                 Monitor.TryEnter(_fileLock, _lockTimeOut, ref lockTaken);
                 if (lockTaken)
                 {
-                    File.WriteAllText(Path.Combine(Instance.StoragePath, "KoTH_ScoreCard.dat"),JsonConvert.SerializeObject(MasterData, Formatting.Indented));
+                    File.WriteAllText(Path.Combine(Instance!.StoragePath, "KoTH_ScoreCard.dat"),JsonConvert.SerializeObject(MasterData, Formatting.Indented));
                     return true;
                 }
             }

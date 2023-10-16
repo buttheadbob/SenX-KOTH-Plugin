@@ -19,7 +19,7 @@ namespace SenX_KOTH_Plugin.Commands
         [Permission(MyPromoteLevel.None)]
         public void ShowWeek()
         {
-            var WeekResults = new StringBuilder();
+            StringBuilder WeekResults = new ();
             WeekResults.AppendLine();
             const string Prefix = "Standing Weekly Results";
 
@@ -42,26 +42,21 @@ namespace SenX_KOTH_Plugin.Commands
                 WeekResults.AppendLine("No results for this week to show.");
             }
             
-
             if (Context.Player != null)
-            {
                 ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, WeekResults.ToString()), Context.Player.SteamUserId);
-            } else
-            {
+            else
                 Context.Respond(WeekResults.ToString(), Color.Gold, "KoTH");
-            }
         }
 
         [Command("Month", "Shows the current KoTH ranking and points for the month.")]
         [Permission(MyPromoteLevel.None)]
         public void ShowMonth()
         {
-            var MonthResults = new StringBuilder();
+            StringBuilder MonthResults = new ();
             MonthResults.AppendLine();
-            var Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
+            string Prefix = "Standing Results for " + DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
 
             // Create a formatted ranking list
-
             List<KeyValuePair<string, int>> monthList = SenX_KOTH_PluginMain.MasterScore.MonthScores.ToList();
 
             // Sort the list.
@@ -71,36 +66,28 @@ namespace SenX_KOTH_Plugin.Commands
             if (monthList.Count > 0)
             {
                 foreach (KeyValuePair<string, int> Result in monthList)
-                {
                     MonthResults.AppendLine($"{Result.Key} => {Result.Value}");
-                }
             }
             else
-            {
                 MonthResults.AppendLine("No results for the month.. now's your chance!");
-            }
             
 
             if (Context.Player != null)
-            {
                 ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, MonthResults.ToString()), Context.Player.SteamUserId);
-            }
             else
-            {
                 Context.Respond(MonthResults.ToString(), Color.Gold, "KoTH");
-            }
         }
 
         [Command("Year", "Shows the current KoTH ranking and points for the year.")]
         [Permission(MyPromoteLevel.None)]
         public void ShowYear()
         {
-            var YearResults = new StringBuilder();
+            StringBuilder YearResults = new ();
             YearResults.AppendLine();
-            var Prefix = "Standing Results for " + DateTime.Now.Year;
+            string Prefix = "Standing Results for " + DateTime.Now.Year;
                         
             // Create a formatted ranking list
-            var yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
+            List<KeyValuePair<string, int>> yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
 
             // Sort the list.
             yearList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
@@ -109,9 +96,7 @@ namespace SenX_KOTH_Plugin.Commands
             if (yearList.Count > 0)
             {
                 foreach (KeyValuePair<string, int> Result in yearList)
-                {
                     YearResults.AppendLine($"{Result.Key} => {Result.Value}");
-                }
             }
             else
             {
@@ -120,43 +105,33 @@ namespace SenX_KOTH_Plugin.Commands
             
 
             if (Context.Player != null)
-            {
                 ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, YearResults.ToString()), Context.Player.SteamUserId);
-            }
             else
-            {
                 Context.Respond(YearResults.ToString(), Color.Gold, "KoTH");
-            }
         }
 
-        [Command("About", "Shows the current KoTH ranking and points for the week/month/year with a few added options.  For any feature request, contact SentorX#0001 on Discord.")]
+        [Command("About", "Shows the current KoTH ranking and points for the week/month/year with a few added options.  For any feature request, contact SentorX on Discord.")]
         [Permission(MyPromoteLevel.None)]
         public void About()
         {
-            var YearResults = new StringBuilder();
+            StringBuilder YearResults = new ();
             YearResults.AppendLine();
-            var Prefix = "Standing Results for " + DateTime.Now.Year;
+            string Prefix = "Standing Results for " + DateTime.Now.Year;
 
             // Create a formatted ranking list
-            var yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
+            List<KeyValuePair<string, int>> yearList = SenX_KOTH_PluginMain.MasterScore.YearScores.ToList();
 
             // Sort the list.
             yearList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
 
             // Push list to weekResults
-            foreach (var Result in yearList)
-            {
+            foreach (KeyValuePair<string, int> Result in yearList)
                 YearResults.AppendLine($"{Result.Key} => {Result.Value}");
-            }
 
             if (Context.Player != null)
-            {
                 ModCommunication.SendMessageTo(new DialogMessage("KoTH", Prefix, YearResults.ToString()), Context.Player.SteamUserId);
-            }
             else
-            {
                 Context.Respond(YearResults.ToString(), Color.Gold, "KoTH");
-            }
         }
     }
 }

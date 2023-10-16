@@ -18,18 +18,18 @@ namespace SenX_KOTH_Plugin.Commands
             ResetScores.ProcessScoresAndReset();
         }
         
-        [Command("ForceTest", "Forces the score to update off schedule.")]
+        [Command("ForceTest", "Forces an announcement to test the discord webhook.")]
         [Permission(MyPromoteLevel.Admin)]
         public void ForceWebHookTest()
         {
-            DiscordService.SendDiscordWebHook("First Place Vengeful Idiots with 2565 Points!", Color.Gold, 1);
+            DiscordService.SendDiscordWebHook("First Place: [Vengeful Idiots] with 2565 Points!", Color.Gold, 1);
             Thread.Sleep(5000);
-            DiscordService.SendDiscordWebHook("Second Place Space Nuggets with 1954 Points!", Color.Silver, 1);
+            DiscordService.SendDiscordWebHook("Second Place: [Space Nuggets] with 1954 Points!", Color.Silver, 1);
             Thread.Sleep(5000);
-            DiscordService.SendDiscordWebHook("Third Place Legionly Legions with 584 Points!", Color.SandyBrown, 1);
+            DiscordService.SendDiscordWebHook("Third Place: [Keyboard Warriors] with 584 Points!", Color.SandyBrown, 1);
             Thread.Sleep(5000);
             
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new ();
             sb.AppendLine("The Other People....");
             sb.AppendLine("Hamsters of Europa with 486 Points!");
             sb.AppendLine("TRex's with 386 Points!");
