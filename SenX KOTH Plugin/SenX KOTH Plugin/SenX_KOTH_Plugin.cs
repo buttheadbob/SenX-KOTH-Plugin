@@ -82,7 +82,6 @@ namespace SenX_KOTH_Plugin
             if (!NexusInited)
             {
                 PluginManager? _pluginManager = Torch.Managers.GetManager<PluginManager>();
-                PatchManager? _patchManager = Torch.Managers.GetManager<PatchManager>();
                 
                 if (_pluginManager.Plugins.TryGetValue(NexusGUID, out ITorchPlugin torchPlugin))
                 {
@@ -92,8 +91,7 @@ namespace SenX_KOTH_Plugin
                     {
                         type2.GetMethod("ApplyPatching", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new object[]
                         {
-                            typeof(NexusAPI),
-                            "Distress"
+                            typeof(NexusAPI), "SenX KoTH Plugin"
                         });
                         nexusAPI = new NexusAPI(8542);
                         MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(8542, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
