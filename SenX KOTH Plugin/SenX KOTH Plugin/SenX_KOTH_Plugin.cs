@@ -2,8 +2,8 @@
 using Sandbox;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using Torch;
 using Torch.API;
@@ -14,6 +14,9 @@ using Torch.Session;
 using SenX_KOTH_Plugin.Utils;
 using Sandbox.ModAPI;
 using Newtonsoft.Json;
+using Nexus.API;
+using Torch.Managers;
+using Torch.Managers.PatchManager;
 
 namespace SenX_KOTH_Plugin
 {
@@ -25,6 +28,11 @@ namespace SenX_KOTH_Plugin
         private static readonly object _fileLock = new ();
         private static readonly TimeSpan _lockTimeOut = TimeSpan.FromMilliseconds(500);
         public static LiveAgent? resetAgent;
+        public static NexusAPI? nexusAPI { get; private set; }
+        
+        private static readonly Guid NexusGUID = new ("28a12184-0422-43ba-a6e6-2e228611cca5");
+        public static bool NexusInstalled { get; private set; } = false;
+        public static bool NexusInited;
 
         private SenX_KOTH_PluginControl? _control;
         public UserControl GetControl() => _control ?? (_control = new SenX_KOTH_PluginControl());
@@ -65,6 +73,34 @@ namespace SenX_KOTH_Plugin
                     Save_MasterData(MasterScore);
                     resetAgent?.Dispose();
                     break;
+            }
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            if (!NexusInited)
+            {
+                PluginManager? _pluginManager = Torch.Managers.GetManager<PluginManager>();
+                PatchManager? _patchManager = Torch.Managers.GetManager<PatchManager>();
+                
+                if (_pluginManager.Plugins.TryGetValue(NexusGUID, out ITorchPlugin torchPlugin))
+                {
+                    Type? type = torchPlugin.GetType();
+                    Type? type2 = type != null! ? type.Assembly.GetType("Nexus.API.PluginAPISync") : null;
+                    if (type2 != null)
+                    {
+                        type2.GetMethod("ApplyPatching", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new object[]
+                        {
+                            typeof(NexusAPI),
+                            "Distress"
+                        });
+                        nexusAPI = new NexusAPI(8542);
+                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(8542, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
+                        NexusInstalled = true;
+                    }
+                }
+                NexusInited = true;
             }
         }
 
