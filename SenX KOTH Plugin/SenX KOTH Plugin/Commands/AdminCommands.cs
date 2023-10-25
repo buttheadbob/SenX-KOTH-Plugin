@@ -11,7 +11,7 @@ namespace SenX_KOTH_Plugin.Commands
     [Category("KoTH")]
     public sealed class KothAdminCommands : CommandModule
     {
-        [Command("ForceUpdate", "Forces the score to update off schedule.")]
+        [Command("ForceUpdate", "Forces the score to update off schedule. (For nexus, this will force only the local instance to update)")]
         [Permission(MyPromoteLevel.Admin)]
         public void AnnounceCurrentWeek()
         {

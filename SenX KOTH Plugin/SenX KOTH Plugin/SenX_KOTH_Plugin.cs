@@ -1,9 +1,13 @@
 ﻿using NLog;
 using Sandbox;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using Torch;
 using Torch.API;
@@ -16,7 +20,6 @@ using Sandbox.ModAPI;
 using Newtonsoft.Json;
 using Nexus.API;
 using Torch.Managers;
-using Torch.Managers.PatchManager;
 
 namespace SenX_KOTH_Plugin
 {
@@ -28,10 +31,10 @@ namespace SenX_KOTH_Plugin
         private static readonly object _fileLock = new ();
         private static readonly TimeSpan _lockTimeOut = TimeSpan.FromMilliseconds(500);
         public static LiveAgent? resetAgent;
+
         public static NexusAPI? nexusAPI { get; private set; }
-        
         private static readonly Guid NexusGUID = new ("28a12184-0422-43ba-a6e6-2e228611cca5");
-        public static bool NexusInstalled { get; private set; } = false;
+        public static bool NexusInstalled { get; private set; }
         public static bool NexusInited;
 
         private SenX_KOTH_PluginControl? _control;
@@ -43,9 +46,7 @@ namespace SenX_KOTH_Plugin
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
-
             SetupConfig();
-
             TorchSessionManager sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
                 sessionManager.SessionStateChanged += SessionChanged;
@@ -64,8 +65,10 @@ namespace SenX_KOTH_Plugin
                 case TorchSessionState.Loaded:
                     Log.Info("Session Loaded!");
                     Network.NetworkService.NetworkInit();
+                    ConnectNexus();
                     MasterScore = Load_MasterData();
                     resetAgent?.Run();
+                    ShowNexusServerDetails();
                     break;
 
                 case TorchSessionState.Unloading:
@@ -76,30 +79,83 @@ namespace SenX_KOTH_Plugin
             }
         }
 
-        public override void Update()
+        private void ConnectNexus()
         {
-            base.Update();
             if (!NexusInited)
             {
                 PluginManager? _pluginManager = Torch.Managers.GetManager<PluginManager>();
+                if (_pluginManager is null)
+                    return;
                 
-                if (_pluginManager.Plugins.TryGetValue(NexusGUID, out ITorchPlugin torchPlugin))
+                if (_pluginManager.Plugins.TryGetValue(NexusGUID, out ITorchPlugin? torchPlugin))
                 {
-                    Type? type = torchPlugin.GetType();
-                    Type? type2 = type != null! ? type.Assembly.GetType("Nexus.API.PluginAPISync") : null;
-                    if (type2 != null)
+                    if (torchPlugin is null)
+                        return;
+                        
+                    Type? Plugin = torchPlugin.GetType();
+                    Type? NexusPatcher = Plugin != null! ? Plugin.Assembly.GetType("Nexus.API.PluginAPISync") : null;
+                    if (NexusPatcher != null)
                     {
-                        type2.GetMethod("ApplyPatching", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new object[]
+                        NexusPatcher.GetMethod("ApplyPatching", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new object[]
                         {
                             typeof(NexusAPI), "SenX KoTH Plugin"
                         });
                         nexusAPI = new NexusAPI(8542);
-                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(8542, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
+                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(8542, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage)); 
                         NexusInstalled = true;
                     }
                 }
                 NexusInited = true;
+                NexusAPI.Server thisServer = NexusAPI.GetThisServer();
+                NexusManager.SetServerData(thisServer);
+
+                if (Config!.isLobby)
+                {
+                    // Announce to all other servers that started before the Lobby, that this is the lobby server
+                    List<NexusAPI.Server> servers = NexusAPI.GetAllServers();
+                    foreach (NexusAPI.Server server in servers)
+                    {
+                        if (server.ServerID != thisServer.ServerID)
+                        {
+                            NexusMessage message = new (thisServer.ServerID, server.ServerID, false, thisServer, false, true);
+                            byte[] data = MyAPIGateway.Utilities.SerializeToBinary(message);
+                            nexusAPI?.SendMessageToServer(server.ServerID, data);
+                        }
+                    }
+                }
             }
+        }
+
+        private void ShowNexusServerDetails()
+        {
+            NexusAPI.Server server = NexusAPI.GetThisServer();
+            StringBuilder NexusServerInfo = new ();
+            NexusServerInfo.AppendLine("");
+            NexusServerInfo.AppendLine("------------------------");
+            NexusServerInfo.AppendLine("Nexus Server Info");
+            NexusServerInfo.AppendLine("------------------------");
+            NexusServerInfo.AppendLine($"Name: {server.Name}");
+            NexusServerInfo.AppendLine($"ID: {server.ServerID}");
+
+            switch (server)
+            {
+                case { ServerType: 0 }:
+                    NexusServerInfo.AppendLine($"Type: Synced & Sectored");
+                    break;
+                case { ServerType: 1 }:
+                    NexusServerInfo.AppendLine($"Type: Synced & Non-Sectored");
+                    break;
+                case { ServerType: 2 }:
+                    NexusServerInfo.AppendLine($"Type: Non-Synced & Non-Sectored");
+                    break;
+            }
+            
+            NexusServerInfo.AppendLine($"Total Grids: {server.TotalGrids}");
+            NexusServerInfo.AppendLine($"Max Players: {server.MaxPlayers}");
+            NexusServerInfo.AppendLine($"Server SS: {server.ServerSS}");
+            NexusServerInfo.AppendLine("------------------------");
+                        
+            Log.Info(NexusServerInfo.ToString());
         }
 
         private void SetupConfig()

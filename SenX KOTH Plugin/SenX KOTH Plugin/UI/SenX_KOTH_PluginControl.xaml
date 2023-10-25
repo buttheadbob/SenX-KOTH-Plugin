@@ -79,6 +79,27 @@
         <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
         <TextBox x:Name="CustomTitle" Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomTitle}" />
         <CheckBox x:Name="EnableCustomTitle" Grid.Row="11" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomTitleEnable}">Enable</CheckBox>
-
+        
+        <Grid Name="NexusUI"
+              Grid.Row="12"
+              Grid.Column="0"
+              Grid.ColumnSpan="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="10"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            
+            <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0" Height="8"/>
+            <TextBlock Grid.Column="1" Grid.Row="1" Text="Nexus Settings" Foreground="#FF27E915" FontWeight="Bold" FontSize="16" />
+            <CheckBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Name="chkbxIsLobby" Content="This Server Is Lobby (All other instances will report points to this instance and get command results from this instance.)" Foreground="#FF27E915"/>
+        </Grid>
     </Grid>
 </UserControl>

@@ -62,9 +62,6 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Nexus">
-      <HintPath>D:\Nexus\Controller\lib\Nexus.dll</HintPath>
-    </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>TorchBinaries\NLog.dll</HintPath>
@@ -155,11 +152,12 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="SenX KOTH Plugin\SenX_KOTH_PluginConfig.cs" />
     <Compile Include="SenX KOTH Plugin\SenX_KOTH_Plugin.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\Classes.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\DiscordService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ScoreManager.cs" />
+    <Compile Include="Settings\NexusSettings.cs" />
+    <Compile Include="Settings\SenX_KOTH_PluginConfig.cs" />
     <EmbeddedResource Include="SenX KOTH Plugin\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

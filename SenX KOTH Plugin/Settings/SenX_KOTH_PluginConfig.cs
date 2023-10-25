@@ -4,7 +4,7 @@ using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin
 {
-    public sealed class SenX_KOTH_PluginConfig : ViewModel
+    public partial class SenX_KOTH_PluginConfig : ViewModel
     {
         private bool _WebHookEnabled;
         public bool WebHookEnabled { get => _WebHookEnabled; set => SetValue(ref _WebHookEnabled, value); }
