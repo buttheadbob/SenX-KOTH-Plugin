@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ProtoBuf;
 using Sandbox.ModAPI;
 using SenX_KOTH_Plugin;
 using SenX_KOTH_Plugin.Utils;
@@ -21,7 +22,8 @@ namespace Nexus.API
         
         internal static void HandleNexusMessage(ushort handlerId, byte[] data, ulong steamID, bool fromServer)
         {
-            NexusMessage? message = MyAPIGateway.Utilities.SerializeFromBinary<NexusMessage>(data);
+            NexusAPI.CrossServerMessage nMessage = MyAPIGateway.Utilities.SerializeFromBinary<NexusAPI.CrossServerMessage>(data);
+            NexusMessage? message = MyAPIGateway.Utilities.SerializeFromBinary<NexusMessage>(nMessage.Message);
             if (message == null)
                 return;
 
@@ -43,58 +45,31 @@ namespace Nexus.API
                     sb.AppendLine("Muppet Empire with 212 Points!");
                     DiscordService.SendDiscordWebHook(sb.ToString(), Color.Brown, 1);
                 }
-
-                if (message.requestLobbyServer)
-                    GetLobbyServer();
             }
-        }
-        
-        public static Task<bool> SendMessageToLobbyServer()
-        {
-            if (ThisServer is null) return Task.FromResult(false); // IF not properly configured, this could happen.
-            if (LobbyServer is null)
-            {
-                GetLobbyServer();
-                Task.Delay(5000); // Wait 5 seconds for the lobby to reply with its data.
-
-                if (LobbyServer is null)
-                {
-                    return Task.FromResult(false); // No response from lobby, is it offline?
-                }
-            }
-            
-            NexusMessage message = new(ThisServer.ServerID, LobbyServer.ServerID, false, null, true, false);
-            byte[] data = MyAPIGateway.Utilities.SerializeToBinary(message);
-            SenX_KOTH_PluginMain.nexusAPI?.SendMessageToServer(LobbyServer.ServerID, data);
-            return Task.FromResult(true);
-        }
-        
-        private static void GetLobbyServer()
-        {
-            if (ThisServer is null) return;
-            NexusMessage message = new(ThisServer!.ServerID, ThisServer.ServerID, false, null, true, false);
-            byte[] data = MyAPIGateway.Utilities.SerializeToBinary(message);
-            SenX_KOTH_PluginMain.nexusAPI?.SendMessageToServer(ThisServer.ServerID, data);
         }
     }
 
+    [ProtoContract]
     public class NexusMessage
     {
-        public readonly int fromServerID;
-        public readonly int toServerID;
-        public readonly bool isTestAnnouncement;
-        public readonly bool requestLobbyServer;
-        public readonly NexusAPI.Server? lobbyServerData;
-        public readonly bool isLobbyReply;
+        [ProtoMember(100)] public int fromServerID;
+        [ProtoMember(101)] public int toServerID;
+        [ProtoMember(102)] public bool isTestAnnouncement;
+        [ProtoMember(103)] public bool requestLobbyServer;
+        [ProtoMember(105)] public bool isLobbyReply;
 
-        public NexusMessage(int _fromServerId, int _toServerId, bool _isTestAnnouncement, NexusAPI.Server? _lobbyServerData, bool _requestLobbyServer, bool _isLobbyReply)
+        public NexusMessage(int _fromServerId, int _toServerId, bool _isTestAnnouncement, bool _requestLobbyServer, bool _isLobbyReply)
         {
             fromServerID = _fromServerId;
             toServerID = _toServerId;
             isTestAnnouncement = _isTestAnnouncement;
             requestLobbyServer = _requestLobbyServer;
             isLobbyReply = _isLobbyReply;
-            lobbyServerData = _lobbyServerData;
+        }
+
+        public NexusMessage()
+        {
+            
         }
     }
 }
