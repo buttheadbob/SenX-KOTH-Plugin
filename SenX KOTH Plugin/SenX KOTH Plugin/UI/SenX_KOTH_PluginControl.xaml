@@ -1,105 +1,797 @@
-﻿<!-- ReSharper disable once Xaml.RedundantNamespaceAlias -->
 <UserControl x:Class="SenX_KOTH_Plugin.SenX_KOTH_PluginControl"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SenX_KOTH_Plugin"
              mc:Ignorable="d"
              xmlns:converters="clr-namespace:KoTH.Converters"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="900">
 
     <UserControl.Resources>
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
     </UserControl.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="30" />
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Rectangle Fill="#FF1E1E1E"  Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="0" Grid.RowSpan="14"/>
+        <TextBlock Grid.Row="0" FontWeight="Bold" FontSize="18" Margin="5">
+            <Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Text="+"/><Run Text=" Plugin"/>
+        </TextBlock>
 
-        <Button x:Name="SendSampleRankWebHook" Grid.Row="1" Grid.Column="1" HorizontalAlignment="right" Click="SendSampleRankWebHook_Click">Send Sample Rank WebHook</Button>
-        <TextBlock Grid.Column="0" Grid.Row ="0" VerticalAlignment="Center" FontWeight="Bold" FontSize="16" Grid.ColumnSpan="2" Margin="5" Foreground="#FF27E915" ><Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Language="en-ca" Text="+"/><Run Text=" Plugin"/></TextBlock>
-        <Button x:Name="SendSampleAttackWebHook" Grid.Row="1" Grid.Column="4" HorizontalAlignment="Left" Click="SendSampleAttackWebHook_Click">Send Sample Attack WebHook</Button>
+        <TabControl Grid.Row="1" Margin="5">
+            <!-- ============ ZONES TAB ============ -->
+            <TabItem Header="Zones">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
 
-        <TextBlock Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left" VerticalAlignment="Center" Text="Always SAVE after any changes ➜ ➜" Foreground="#FF27E915" />
-        <Button Grid.Column="4" Grid.Row="0" HorizontalAlignment="Right" Content="Save Config" Margin="5" Click="SaveButton_OnClick"></Button>
+                        <GroupBox Header="Managed Zones" Margin="0,10">
+                            <StackPanel>
+                                <TextBlock Text="Zones are created via !koth createzone or the button below. Edit and delete available here." Margin="5" TextWrapping="Wrap"/>
+                                <Button Content="Create Zone" Click="CreateZoneButton_Click" Margin="5" HorizontalAlignment="Left"/>
 
-        <CheckBox x:Name="WebhookEnabled" Grid.Row="1" Grid.Column="2" Margin="3" IsChecked="{Binding WebHookEnabled}" VerticalAlignment="Center" Foreground="#FF27E915">Webhooks Enabled</CheckBox>
-        <CheckBox x:Name="EmbedEnabled" Grid.Row="1" Grid.Column="3" Margin="3" IsChecked="{Binding EmbedEnabled}" VerticalAlignment="Center" Foreground="#FF27E915">Embeds Enabled</CheckBox>
+                                <ListBox x:Name="ZonesList" MinHeight="60" MaxHeight="250" Margin="5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="500">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center">
+                                                    <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding Radius, StringFormat={}{0:F0}m}"/><Run Text=")"/>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditZone_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteZone_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
 
-        <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="2" Height="8"/>
+                                <GroupBox x:Name="ZoneEditorPanel" Header="Zone Editor" Visibility="Collapsed" Padding="10" Margin="5">
+                                    <StackPanel>
+                                        <TextBlock Text="Zone Name:"/>
+                                        <TextBox x:Name="ZoneEditor_Name" Margin="0,3"/>
+                                        <StackPanel Margin="0,3">
+                                            <TextBlock Text="Position X, Y, Z:"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBox x:Name="ZoneEditor_PosX" Width="150" Margin="2,0"/>
+                                                <TextBox x:Name="ZoneEditor_PosY" Width="150" Margin="2,0"/>
+                                                <TextBox x:Name="ZoneEditor_PosZ" Width="150" Margin="2,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="Radius (10-500m):" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneEditor_Radius" Width="60" Margin="5,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="Color (R,G,B 0-1):" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneEditor_ColorR" Width="40" Margin="5,0" Text="0.5"/>
+                                            <TextBox x:Name="ZoneEditor_ColorG" Width="40" Text="0.8"/>
+                                            <TextBox x:Name="ZoneEditor_ColorB" Width="40" Text="0.9"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="Texture:" VerticalAlignment="Center"/>
+                                            <ComboBox x:Name="ZoneEditor_Texture" Width="200" Margin="5,0" IsEditable="True">
+                                                <ComboBoxItem>SafeZone_Texture_Default</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Aura</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Organic</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Rain</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Dots</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Disco</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Noise</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Hexagon</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Lines</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Digital</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Gloura</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Clang</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Voronoi</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Restricted</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_KeenSWH</ComboBoxItem>
+                                                <ComboBoxItem>SafeZone_Texture_Disabled</ComboBoxItem>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <CheckBox x:Name="ZoneEditor_Enabled" Content="Enabled" VerticalAlignment="Center"/>
+                                            <CheckBox x:Name="ZoneEditor_PersistVisual" Content="Persist Sphere When Disabled" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        </StackPanel>
 
-        <TextBlock Grid.Row="3" Grid.Column="1" Text="WebHook URL" HorizontalAlignment="Right" ToolTip="This is the link given from your discord server when you setup a webhook to any channel." Foreground="#FF27E915" VerticalAlignment="Center"/>
-        <TextBox x:Name="WebHookURL" Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding WebHookUrl}" />
+                                        <GroupBox Header="Schedule" Margin="0,5" Padding="5">
+                                            <StackPanel>
+                                                <WrapPanel Margin="0,3">
+                                                    <CheckBox x:Name="ZoneEditor_SchedMon" Content="Mon" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedTue" Content="Tue" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedWed" Content="Wed" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedThu" Content="Thu" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedFri" Content="Fri" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedSat" Content="Sat" Margin="0,0,5,0"/>
+                                                    <CheckBox x:Name="ZoneEditor_SchedSun" Content="Sun"/>
+                                                </WrapPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                    <TextBlock Text="Start:" VerticalAlignment="Center"/>
+                                                    <TextBox x:Name="ZoneEditor_SchedStartH" Width="30" Margin="3,0"/>
+                                                    <TextBlock Text=":" VerticalAlignment="Center"/>
+                                                    <TextBox x:Name="ZoneEditor_SchedStartM" Width="30" Margin="0,3"/>
+                                                    <TextBlock Text="End:" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                                    <TextBox x:Name="ZoneEditor_SchedEndH" Width="30" Margin="3,0"/>
+                                                    <TextBlock Text=":" VerticalAlignment="Center"/>
+                                                    <TextBox x:Name="ZoneEditor_SchedEndM" Width="30" Margin="0,3"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </GroupBox>
 
-        <TextBlock Grid.Row="5" Grid.Column="1" Text="URL for Embed Image (Optional)" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Right" />
-        <CheckBox x:Name="EmbedDefaultCheckBox" Grid.Row="5" Grid.Column="2" Foreground="#FF27E915" VerticalAlignment="Center" HorizontalAlignment="Center" MouseDown="CheckBox_Checked" IsChecked="{Binding DefaultEmbedPic}" > Use Default</CheckBox>
-        <TextBox x:Name="EmbedPicture" Grid.Row="5" Grid.Column="3" Grid.ColumnSpan="2" Margin="5" Text="{Binding EmbedPic}" />
+                                        <GroupBox Header="Capture Settings" Margin="0,5" Padding="5">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Capture Points Needed:" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_CapturePtsNeeded" Width="60"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Capture Rate — Suits:" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_CapRateSuit" Width="60"/>
+                                                    <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                                                    <TextBox x:Name="ZoneEditor_CapRateGrid" Width="60"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Decay Rate — Suits:" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_DecaySuit" Width="60"/>
+                                                    <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                                                    <TextBox x:Name="ZoneEditor_DecayGrid" Width="60"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Capture Interval (sec):" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_CapInterval" Width="60"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Point Award Interval (sec):" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_AwardInterval" Width="60"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Points — Suits:" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_PtsSuit" Width="60"/>
+                                                    <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                                                    <TextBox x:Name="ZoneEditor_PtsGrid" Width="60"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </GroupBox>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <CheckBox x:Name="ZoneEditor_Dynamic" Content="Dynamic Zone (random placement)" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <TextBlock Text="Min Dist:" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneEditor_MinDist" Width="60" Margin="5,0"/>
+                                            <TextBlock Text="Max Dist:" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneEditor_MaxDist" Width="60" Margin="5,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <TextBlock Text="Move Interval (sec):" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneEditor_MoveInterval" Width="60" Margin="5,0"/>
+                                            <CheckBox x:Name="ZoneEditor_AnnounceGps" Content="Announce GPS" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        </StackPanel>
 
-        <TextBlock Grid.Row="6" Grid.Column="1" Text="Prefix Text (Optional)" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-        <TextBox x:Name="PrefixText" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="3" Margin="5" Text="{Binding MessagePrefix}" />
+                                        <GroupBox Header="Eviction" Margin="0,5" Padding="5">
+                                            <StackPanel>
+                                                <CheckBox x:Name="ZoneEditor_EvictionEnabled" Content="Eviction Enabled"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                    <TextBlock Text="Frequency (min):" VerticalAlignment="Center"/>
+                                                    <TextBox x:Name="ZoneEditor_EvictionFreq" Width="50" Margin="5,0"/>
+                                                    <TextBlock Text="Duration (sec):" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                                    <TextBox x:Name="ZoneEditor_EvictionDuration" Width="50" Margin="5,0"/>
+                                                </StackPanel>
+                                                <CheckBox x:Name="ZoneEditor_EvictionResetCapture" Content="Reset Capture on Eviction" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_EvictionDowntime" Content="Evict During Downtime" Margin="0,2"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                    <TextBlock Text="Color: R" VerticalAlignment="Center"/>
+                                                    <TextBox x:Name="ZoneEditor_EvictionColorR" Width="40" Margin="2,0"/>
+                                                    <TextBlock Text="G" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                    <TextBox x:Name="ZoneEditor_EvictionColorG" Width="40" Margin="2,0"/>
+                                                    <TextBlock Text="B" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                    <TextBox x:Name="ZoneEditor_EvictionColorB" Width="40" Margin="2,0"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                    <TextBlock Text="Texture:" VerticalAlignment="Center"/>
+                                                    <ComboBox x:Name="ZoneEditor_EvictionTexture" Width="200" Margin="5,0" IsEditable="True">
+                                                        <ComboBoxItem>SafeZone_Texture_Default</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Aura</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Organic</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Rain</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Dots</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Disco</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Noise</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Hexagon</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Lines</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Digital</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Gloura</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Clang</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Voronoi</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Restricted</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_KeenSWH</ComboBoxItem>
+                                                        <ComboBoxItem>SafeZone_Texture_Disabled</ComboBoxItem>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </GroupBox>
 
-        <TextBlock Grid.Row="7" Grid.Column="1" Text="Reset Weekly Scores" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
-        <RadioButton Grid.Row="7" Grid.Column="2" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding ResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}">Sunday</RadioButton>
-        <RadioButton Grid.Row="7" Grid.Column="3" Foreground="#FF27E915" HorizontalAlignment="Center" Margin="5" IsChecked="{Binding ResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Monday}">Monday</RadioButton>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <Button Content="Save Zone" Click="SaveZone_Click"/>
+                                            <Button Content="Cancel" Click="CancelZone_Click" Margin="5,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-        <TextBlock Grid.Row="8" Grid.Column="1" Text="Scheduled Announcements" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="5" />
-        <CheckBox Grid.Row="8" Grid.Column="2" IsChecked="{Binding Show_WeeklyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Center" VerticalAlignment="Center">Weekly Results</CheckBox>
-        <CheckBox Grid.Row="8" Grid.Column="3" IsChecked="{Binding Show_MonthlyResults}" Margin="5" Foreground="#FF27E915" HorizontalAlignment="Center" VerticalAlignment="Center">Monthly Results</CheckBox>
+            <!-- ============ SCORES TAB ============ -->
+            <TabItem Header="Scores">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <Button Content="Save Config" Margin="5" Click="SaveButton_OnClick" HorizontalAlignment="Left"/>
 
-        <TextBlock Grid.Row="9" Grid.Column="1" Text="Show 'Under Attack' messages" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-        <CheckBox Grid.Row="9" Grid.Column="2" IsChecked="{Binding Show_AttackMessages}" Margin="5"/>
+                        <GroupBox Header="Score Settings" Margin="0,10">
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding NexusEnabled}" Content="Nexus Enabled" Margin="5"/>
 
-        <TextBlock Grid.Row="10" Grid.Column="1" Text="Set custom capture message" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
-        <TextBox x:Name="CustomMessage" Grid.Row="10" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomMessage}" />
-        <CheckBox x:Name="EnableCustomMessage" Grid.Row="10" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomMessageEnable}">Enable</CheckBox>
-        <TextBlock Grid.Row="11" Grid.Column="1" Text="Set custom title" Foreground="#FF27E915" HorizontalAlignment="Right" VerticalAlignment="Center" />
-        <TextBox x:Name="CustomTitle" Grid.Row="11" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" MinHeight="18" Text="{Binding CustomTitle}" />
-        <CheckBox x:Name="EnableCustomTitle" Grid.Row="11" Grid.Column="4" VerticalAlignment="Center" Foreground="#FF27E915" IsChecked="{Binding CustomTitleEnable}">Enable</CheckBox>
-        
-        <Grid Name="NexusUI"
-              Grid.Row="12"
-              Grid.Column="0"
-              Grid.ColumnSpan="5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="10"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
-                <RowDefinition/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-            
-            <Rectangle Fill="Silver" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="0" Height="8"/>
-            <TextBlock Grid.Column="1" Grid.Row="1" Text="Nexus Settings" Foreground="#FF27E915" FontWeight="Bold" FontSize="16" />
-            <CheckBox Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Name="chkbxIsLobby" Content="This Server Is Lobby (All other instances will report points to this instance and get command results from this instance.)" Foreground="#FF27E915"/>
-        </Grid>
+                                <TextBlock Text="Reset Schedule" FontWeight="Bold" Margin="5,10,5,5"/>
+                                <TextBlock Text="Weekly Reset Day:" Margin="5,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Monday}" Content="Mon"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Tuesday}" Content="Tue" Margin="5,0"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Wednesday}" Content="Wed" Margin="5,0"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Thursday}" Content="Thu" Margin="5,0"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Friday}" Content="Fri" Margin="5,0"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Saturday}" Content="Sat" Margin="5,0"/>
+                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}" Content="Sun" Margin="5,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Text="Monthly Reset Day (1-28):" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding MonthlyResetDay}" Width="40" Margin="5,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Text="Yearly Reset:" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Month (1-12):" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    <TextBox Text="{Binding YearlyResetMonth}" Width="40" Margin="5,0"/>
+                                    <TextBlock Text="Day (1-28):" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding YearlyResetDay}" Width="40" Margin="5,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ REWARDS TAB ============ -->
+            <TabItem Header="Rewards">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+
+                        <Expander Header="Per-Zone Live Rewards" IsExpanded="True" Margin="0,10">
+                            <StackPanel>
+                                <TextBlock Text="Live reward commands fire when a faction captures a zone." Margin="5"/>
+                                <ListBox x:Name="ZoneRewardsList" ItemsSource="{Binding ZoneRewards}" MinHeight="50" MaxHeight="150" Margin="5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding ZoneName}" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditZoneReward_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteZoneReward_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add Zone Reward" Click="AddZoneReward_Click" Margin="5" HorizontalAlignment="Left"/>
+
+                                <GroupBox x:Name="ZoneRewardEditorPanel" Header="Zone Reward Editor" Visibility="Collapsed" Padding="10" Margin="5">
+                                    <StackPanel>
+                                        <TextBlock Text="Zone Name:"/>
+                                        <ComboBox x:Name="ZoneRewardEditor_Name" Margin="0,3" IsEditable="True"
+                                                  ItemsSource="{Binding ZoneNames, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="Prize Threshold:" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="ZoneRewardEditor_Threshold" Width="50" Margin="5,0"/>
+                                            <CheckBox x:Name="ZoneRewardEditor_EveryCap" Content="Trigger On Every Cap" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <TextBlock Text="Commands:" FontWeight="Bold" Margin="0,10,0,5"/>
+                                        <ListBox x:Name="ZoneRewardCmdList" MinHeight="30" MaxHeight="150">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Width="400">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="50"/>
+                                                            <ColumnDefinition Width="50"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                            <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
+                                                            <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
+                                                            <Run Text=" "/><Run Text="{Binding CommandText}"/>
+                                                        </TextBlock>
+                                                        <Button Grid.Column="1" Content="Edit" Click="EditZoneRewardCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                        <Button Grid.Column="2" Content="X" Click="DeleteZoneRewardCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                        <Button Content="Add Command" Click="AddZoneRewardCmd_Click" Margin="0,5" HorizontalAlignment="Left"/>
+
+                                        <GroupBox x:Name="ZoneRewardCmdEditor" Header="Command Editor" Visibility="Collapsed" Padding="8" Margin="0,5">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox x:Name="ZoneCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
+                                                    <CheckBox x:Name="ZoneCmd_OnlineOnly" Content="Online Only"/>
+                                                </StackPanel>
+                                                <TextBlock Text="Command:" Margin="0,5,0,0"/>
+                                                <TextBox x:Name="ZoneCmd_Command" Margin="0,3" MinHeight="25"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                                    <Button Content="Confirm" Click="SaveZoneRewardCmd_Click"/>
+                                                    <Button Content="Cancel" Click="CancelZoneRewardCmd_Click" Margin="5,0"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </GroupBox>
+
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <Button Content="Save Zone Reward" Click="SaveZoneReward_Click"/>
+                                            <Button Content="Cancel" Click="CancelZoneReward_Click" Margin="5,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander Header="Rank Rewards" IsExpanded="True" Margin="0,10">
+                            <StackPanel>
+                                <TabControl x:Name="RankPeriodTabs" Margin="5">
+                                    <TabItem Header="Weekly">
+                                        <StackPanel Margin="10">
+                                            <ListBox ItemsSource="{Binding WeeklyRankRewards}" MinHeight="30" MaxHeight="150">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Width="400">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock VerticalAlignment="Center">
+                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
+                                                            </TextBlock>
+                                                            <Button Grid.Column="1" Content="Edit" Click="EditRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                            <Button Grid.Column="2" Content="X" Click="DeleteRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <Button Content="Add Weekly Rank" Click="AddRank_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                        </StackPanel>
+                                    </TabItem>
+                                    <TabItem Header="Monthly">
+                                        <StackPanel Margin="10">
+                                            <ListBox ItemsSource="{Binding MonthlyRankRewards}" MinHeight="30" MaxHeight="150">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Width="400">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock VerticalAlignment="Center">
+                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
+                                                            </TextBlock>
+                                                            <Button Grid.Column="1" Content="Edit" Click="EditMonthlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                            <Button Grid.Column="2" Content="X" Click="DeleteMonthlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <Button Content="Add Monthly Rank" Click="AddMonthlyRank_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                        </StackPanel>
+                                    </TabItem>
+                                    <TabItem Header="Yearly">
+                                        <StackPanel Margin="10">
+                                            <ListBox ItemsSource="{Binding YearlyRankRewards}" MinHeight="30" MaxHeight="150">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Width="400">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock VerticalAlignment="Center">
+                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
+                                                            </TextBlock>
+                                                            <Button Grid.Column="1" Content="Edit" Click="EditYearlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                            <Button Grid.Column="2" Content="X" Click="DeleteYearlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <Button Content="Add Yearly Rank" Click="AddYearlyRank_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                        </StackPanel>
+                                    </TabItem>
+                                </TabControl>
+                            </StackPanel>
+                        </Expander>
+
+                        <GroupBox x:Name="RankEditorPanel" Header="" Visibility="Collapsed" Padding="10" Margin="5">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="RankEditor_Label" Text="Rank Number:" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="RankEditor_Rank" Width="50" Margin="5,0"/>
+                                </StackPanel>
+                                <TextBlock Text="Commands:" FontWeight="Bold" Margin="0,10,0,5"/>
+                                <ListBox x:Name="RankCommandList" MinHeight="30" MaxHeight="150">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
+                                                    <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
+                                                    <Run Text=" "/><Run Text="{Binding CommandText}"/>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditRankCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteRankCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add Command" Click="AddRankCmd_Click" Margin="0,5" HorizontalAlignment="Left"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Button Content="Save" Click="SaveRank_Click"/>
+                                    <Button Content="Cancel" Click="CancelRank_Click" Margin="5,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox x:Name="RankCmdEditor" Header="Command Editor" Visibility="Collapsed" Padding="8" Margin="5">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox x:Name="RankCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
+                                    <CheckBox x:Name="RankCmd_OnlineOnly" Content="Online Only"/>
+                                </StackPanel>
+                                <TextBlock Text="Command:" Margin="0,5,0,0"/>
+                                <TextBox x:Name="RankCmd_Command" Margin="0,3" MinHeight="25"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Button Content="Confirm" Click="SaveRankCmd_Click"/>
+                                    <Button Content="Cancel" Click="CancelRankCmd_Click" Margin="5,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <Expander Header="Threshold Rewards" IsExpanded="True" Margin="0,10">
+                            <TabControl Margin="5">
+                                <TabItem Header="Weekly"><StackPanel Margin="10">
+                                    <ListBox ItemsSource="{Binding WeeklyThresholdRewards}" MinHeight="30" MaxHeight="150">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Width="400">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center">
+                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="1" Content="Edit" Click="EditThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                    <Button Grid.Column="2" Content="X" Click="DeleteThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Button Content="Add Weekly Threshold" Click="AddThreshold_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                </StackPanel></TabItem>
+                                <TabItem Header="Monthly"><StackPanel Margin="10">
+                                    <ListBox ItemsSource="{Binding MonthlyThresholdRewards}" MinHeight="30" MaxHeight="150">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Width="400">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center">
+                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="1" Content="Edit" Click="EditMonthlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                    <Button Grid.Column="2" Content="X" Click="DeleteMonthlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Button Content="Add Monthly Threshold" Click="AddMonthlyThreshold_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                </StackPanel></TabItem>
+                                <TabItem Header="Yearly"><StackPanel Margin="10">
+                                    <ListBox ItemsSource="{Binding YearlyThresholdRewards}" MinHeight="30" MaxHeight="150">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Width="400">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center">
+                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="1" Content="Edit" Click="EditYearlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                    <Button Grid.Column="2" Content="X" Click="DeleteYearlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Button Content="Add Yearly Threshold" Click="AddYearlyThreshold_Click" Margin="0,5" HorizontalAlignment="Left"/>
+                                </StackPanel></TabItem>
+                            </TabControl>
+                        </Expander>
+
+                        <Expander Header="Raffle" IsExpanded="True" Margin="0,10">
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding RaffleEnabled}" Content="Raffle Enabled" Margin="5"/>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Text="Period:" VerticalAlignment="Center"/>
+                                    <ComboBox SelectedIndex="{Binding RafflePeriod}" Width="80" Margin="5,0">
+                                        <ComboBoxItem Content="Weekly"/>
+                                        <ComboBoxItem Content="Monthly"/>
+                                    </ComboBox>
+                                    <TextBlock Text="Day:" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Day of Week:" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    <ComboBox SelectedIndex="{Binding RaffleDayOfWeek}" Width="100" Margin="5,0">
+                                        <ComboBoxItem Content="Monday"/>
+                                        <ComboBoxItem Content="Tuesday"/>
+                                        <ComboBoxItem Content="Wednesday"/>
+                                        <ComboBoxItem Content="Thursday"/>
+                                        <ComboBoxItem Content="Friday"/>
+                                        <ComboBoxItem Content="Saturday"/>
+                                        <ComboBoxItem Content="Sunday"/>
+                                    </ComboBox>
+                                    <TextBlock Text="Day of Month:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding RaffleDayOfMonth}" Width="40" Margin="5,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Text="Draw Time:" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Hour (0-23):" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding RaffleHour}" Width="40" Margin="5,0"/>
+                                    <TextBlock Text="Minute:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding RaffleMinute}" Width="40" Margin="5,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Text="Ticket Cost (points):" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding TicketCost}" Width="50" Margin="5,0"/>
+                                </StackPanel>
+
+                                <TextBlock Text="1st Place Rewards:" FontWeight="Bold" Margin="5,10,5,2"/>
+                                <ListBox ItemsSource="{Binding RaffleFirstRewards}" MinHeight="25" MaxHeight="100" Margin="5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
+                                                    <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
+                                                    <Run Text=" "/><Run Text="{Binding CommandText}"/>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add 1st Place" Click="AddRaffleFirstCmd_Click" Margin="5" HorizontalAlignment="Left"/>
+
+                                <TextBlock Text="2nd Place Rewards:" FontWeight="Bold" Margin="5,10,5,2"/>
+                                <ListBox ItemsSource="{Binding RaffleSecondRewards}" MinHeight="25" MaxHeight="100" Margin="5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
+                                                    <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
+                                                    <Run Text=" "/><Run Text="{Binding CommandText}"/>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add 2nd Place" Click="AddRaffleSecondCmd_Click" Margin="5" HorizontalAlignment="Left"/>
+
+                                <TextBlock Text="3rd Place Rewards:" FontWeight="Bold" Margin="5,10,5,2"/>
+                                <ListBox ItemsSource="{Binding RaffleThirdRewards}" MinHeight="25" MaxHeight="100" Margin="5">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
+                                                    <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
+                                                    <Run Text=" "/><Run Text="{Binding CommandText}"/>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add 3rd Place" Click="AddRaffleThirdCmd_Click" Margin="5" HorizontalAlignment="Left"/>
+
+                                <GroupBox x:Name="RaffleCmdEditor" Header="Raffle Command" Visibility="Collapsed" Padding="8" Margin="5">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox x:Name="RaffleCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
+                                            <CheckBox x:Name="RaffleCmd_OnlineOnly" Content="Online Only"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Command:" Margin="0,5,0,0"/>
+                                        <TextBox x:Name="RaffleCmd_Command" Margin="0,3" MinHeight="25"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <Button Content="Confirm" Click="SaveRaffleCmd_Click"/>
+                                            <Button Content="Cancel" Click="CancelRaffleCmd_Click" Margin="5,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ DISCORD TAB ============ -->
+            <TabItem Header="Discord">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+
+                        <GroupBox Header="Discord Webhook (Alternative)" Margin="0,10">
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding WebHookEnabled}" Content="Webhook Enabled" Margin="5"/>
+                                <TextBlock Text="Webhook URL" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding WebHookUrl}"/>
+                                <CheckBox IsChecked="{Binding EmbedEnabled}" Content="Embeds Enabled" Margin="5"/>
+                                <TextBlock Text="Embed Image URL (optional)" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding EmbedImageUrl}"/>
+                                <TextBlock Text="Message Prefix" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding MessagePrefix}"/>
+                                <TextBlock Text="Custom Title" Margin="5,0,0,0"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Margin="5" Text="{Binding CustomTitle}" Width="200"/>
+                                    <CheckBox IsChecked="{Binding CustomTitleEnable}" Content="Enable" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Button Content="Sync Rewards" Margin="5" Click="SyncRewardsButton_Click"/>
+                                    <Button Content="Sync Points" Margin="5" Click="SyncPointsButton_Click"/>
+                                    <Button Content="Test Rank WebHook" Margin="5" Click="SendSampleRankWebHook_Click"/>
+                                    <Button Content="Test Attack WebHook" Margin="5" Click="SendSampleAttackWebHook_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Discord Bot" Margin="0,10">
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding DiscordBotEnabled}" Content="Discord Bot Enabled" Margin="5"/>
+                                <TextBlock Text="Bot Token" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding DiscordBotToken}"/>
+                                <TextBlock Text="Reward Announcement Channel ID" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding RewardChannelId}"/>
+                                <TextBlock Text="Live Scoreboard Channel ID" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding LiveScoreboardChannelId}"/>
+
+                                <CheckBox IsChecked="{Binding SelfManagedChannelsEnabled}" Content="Self-Managed Channels (bot creates channels under a category)" Margin="5,10,5,5"/>
+                                <TextBlock Text="KoTH Category ID" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding KoTHCategoryId}"/>
+                                <TextBlock Text="Guild (Server) ID" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding DiscordGuildId}"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Announcements" Margin="0,10">
+                            <StackPanel>
+                                <CheckBox IsChecked="{Binding Show_WeeklyResults}" Content="Show Weekly Results" Margin="5"/>
+                                <CheckBox IsChecked="{Binding Show_MonthlyResults}" Content="Show Monthly Results" Margin="5"/>
+                                <CheckBox IsChecked="{Binding Show_YearlyResults}" Content="Show Yearly Results" Margin="5"/>
+                                <CheckBox IsChecked="{Binding Show_AttackMessages}" Content="Show Attack Messages" Margin="5"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Enter Alerts" Margin="0,10">
+                            <StackPanel>
+                                <TextBlock Text="Message Template" Margin="5,0,0,0"/>
+                                <TextBox Margin="5" Text="{Binding EnterAlert_MessageTemplate}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40"/>
+                                <TextBlock Text="Variables: {player}, {steamId}, {factionTag}, {factionName}, {zoneName}, {planet}, {x}, {y}, {z}, {radius}, {time}" Margin="5" FontStyle="Italic" TextWrapping="Wrap"/>
+                                <Button Content="Test Enter Alert" Margin="5" Click="SendSampleEnterAlertWebHook_Click" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ============ DOCUMENTATION TAB ============ -->
+            <TabItem Header="Documentation">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Margin="10" TextWrapping="Wrap">
+                        <Run FontWeight="Bold" FontSize="16">KoTH+ Plugin Documentation</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Player Commands:</Run><LineBreak/>
+                        <Run>  !KoTH Week    - Weekly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                        <Run>  !KoTH Month   - Monthly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                        <Run>  !KoTH Year    - Yearly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                        <Run>  !KoTH Zone name - Per-zone breakdowns across all periods</Run><LineBreak/>
+                        <Run>  !KoTH Bank    - View faction bank balance (founder/leader)</Run><LineBreak/>
+                        <Run>  !KoTH BuyTicket [count] - Buy raffle tickets (founder/leader)</Run><LineBreak/>
+                        <Run>  !KoTH About   - This help text</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Admin Commands:</Run><LineBreak/>
+                        <Run>  !KoTH CreateZone name [radius] - Create a zone at your position</Run><LineBreak/>
+                        <Run>  !KoTH DeleteZone name         - Delete a zone</Run><LineBreak/>
+                        <Run>  !KoTH GivePoint id_or_tag value - Adjust faction bank points</Run><LineBreak/>
+                        <Run>  !KoTH ForceUpdate             - Force score update and Nexus broadcast</Run><LineBreak/>
+                        <Run>  !KoTH ForceTest               - Test Discord webhook</Run><LineBreak/>
+                        <Run>  !KoTH ForceNexusSync          - Force PointVerification broadcast</Run><LineBreak/>
+                        <Run>  !KoTH ForceRewardSync         - Force reward config sync</Run><LineBreak/>
+                        <Run>  (All commands have a 5 second cooldown)</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Zones:</Run><LineBreak/>
+                        <Run>  - Zones use native Space Engineers safe zone entities</Run><LineBreak/>
+                        <Run>  - Created at admin position via command or the UI Zones tab</Run><LineBreak/>
+                        <Run>  - Matched by [KoTH] display name prefix on session start</Run><LineBreak/>
+                        <Run>  - Dynamic zones: random placement within an annulus, GPS announcements</Run><LineBreak/>
+                        <Run>  - Configurable per-zone color, texture, radius, and visibility</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Discord Bot:</Run><LineBreak/>
+                        <Run>  - Enable on the Discord tab with a bot token</Run><LineBreak/>
+                        <Run>  - Posts reward announcements to configured channels</Run><LineBreak/>
+                        <Run>  - Live scoreboard message updates every 30 seconds</Run><LineBreak/>
+                        <Run>  - Optional self-managed channels under a KoTH category</Run><LineBreak/>
+                        <Run>  - Webhook alternative for all announcements</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Raffle:</Run><LineBreak/>
+                        <Run>  - Factions earn bank points from zone captures</Run><LineBreak/>
+                        <Run>  - Founder/leader buys tickets with bank points</Run><LineBreak/>
+                        <Run>  - Scheduled weekly or monthly draws with 1st/2nd/3rd rewards</Run><LineBreak/>
+                        <Run>  - Bank points never expire; tickets reset each draw</Run><LineBreak/><LineBreak/>
+
+                        <Run FontWeight="Bold">Data Files:</Run><LineBreak/>
+                        <Run>  - Stored in Torch Instance\Senx_Koth\ folder</Run><LineBreak/>
+                        <Run>  - Config.json      - All plugin configuration</Run><LineBreak/>
+                        <Run>  - Zones.json       - Zone definitions and positions</Run><LineBreak/>
+                        <Run>  - ScoreData.json   - Accumulated scores and event data</Run><LineBreak/>
+                        <Run>  - BankData.json    - Faction bank balances and raffle tickets</Run><LineBreak/>
+                    </TextBlock>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
     </Grid>
 </UserControl>

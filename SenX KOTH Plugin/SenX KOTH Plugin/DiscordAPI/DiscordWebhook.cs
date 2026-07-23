@@ -6,29 +6,25 @@ using System.Threading.Tasks;
 
 namespace SenX_KOTH_Plugin.DiscordAPI
 {
-    // This is based off N4T4NM work => https://github.com/N4T4NM/CSharpDiscordWebhook
     public sealed class DiscordWebHook
     {
-        /// <summary>
-        /// WebHook url
-        /// </summary>
-        public Uri Uri { get; set; }
+        private static readonly HttpClient _http = new();
 
-        /// <summary>
-        /// Send WebHook message
-        /// </summary>
+        public Uri? Uri { get; set; }
+
         public async Task SendAsync(DiscordMessage message)
         {
-            HttpClient httpClient = new ();
+            if (Uri == null)
+                return;
 
             string bound = "------------------------" + DateTime.Now.Ticks.ToString("x");
-            MultipartFormDataContent httpContent = new (bound);
+            MultipartFormDataContent httpContent = new MultipartFormDataContent(bound);
 
-            StringContent jsonContent = new (JsonConvert.SerializeObject(message));
+            StringContent jsonContent = new StringContent(JsonConvert.SerializeObject(message));
             jsonContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
             httpContent.Add(jsonContent, "payload_json");
 
-            HttpResponseMessage? response = await httpClient.PostAsync(Uri, httpContent);
+            HttpResponseMessage response = await _http.PostAsync(Uri, httpContent);
             if (!response.IsSuccessStatusCode)
             {
                 throw new DiscordException(await response.Content.ReadAsStringAsync());

@@ -1,75 +1,328 @@
-﻿using System.Drawing;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using ProtoBuf;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Timers;
+using NLog;
 using Sandbox.ModAPI;
-using SenX_KOTH_Plugin;
+using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Utils;
+using VRage.Game.ModAPI;
 
-namespace Nexus.API
+namespace SenX_KOTH_Plugin.Nexus
 {
-    public static class NexusManager
+    internal static class NexusManager
     {
-        private static SenX_KOTH_PluginConfig? Config => SenX_KOTH_PluginMain.Instance?.Config;
-        private static NexusAPI.Server? LobbyServer;
-        private static NexusAPI.Server? ThisServer;
-        
-        public static void SetServerData(NexusAPI.Server server)
-        {
-            ThisServer = server;
-        }
-        
-        internal static void HandleNexusMessage(ushort handlerId, byte[] data, ulong steamID, bool fromServer)
-        {
-            NexusAPI.CrossServerMessage nMessage = MyAPIGateway.Utilities.SerializeFromBinary<NexusAPI.CrossServerMessage>(data);
-            NexusMessage? message = MyAPIGateway.Utilities.SerializeFromBinary<NexusMessage>(nMessage.Message);
-            if (message == null)
-                return;
+        private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => NexusManager");
 
-            if (Config!.isLobby)
+        public static readonly ScoreFile AccumulatedScores = new();
+        private static EventData? _eventData;
+        private static Timer? _verificationTimer;
+
+        private static long _nextEventId;
+        public const ushort NexusChannelId = 50672;
+
+        public static void Initialize(SenX_KOTH_PluginMain plugin, EventData eventData)
+        {
+            _eventData = eventData;
+            var config = plugin.Config;
+            if (config?.NexusEnabled == true && SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
             {
-                if (message.isTestAnnouncement)
+                MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
+                Log.Info("Nexus message handler registered on channel " + NexusChannelId);
+            }
+
+            _verificationTimer = new Timer(900000);
+            _verificationTimer.Elapsed += (_, _) => BroadcastVerification();
+            _verificationTimer.Start();
+        }
+
+        public static void Shutdown()
+        {
+            _verificationTimer?.Dispose();
+            _verificationTimer = null;
+
+            if (SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
+                MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
+        }
+
+        public static long GenerateEventId()
+        {
+            byte serverId = SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true } api
+                ? api.CurrentServerID : (byte)0;
+            return ((long)serverId << 56) | (++_nextEventId & 0x00FFFFFFFFFFFFFF);
+        }
+
+        public static void AddPointEvent(EventData data, PointEarned point)
+        {
+            if (!data.WeekEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
+                data.WeekEvents.Add(point);
+            if (!data.MonthEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
+                data.MonthEvents.Add(point);
+            if (!data.YearEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
+                data.YearEvents.Add(point);
+
+            UpdateAccumulatedScores(point);
+            RewardService.CheckLiveRewards(point);
+        }
+
+        private static void UpdateAccumulatedScores(PointEarned point)
+        {
+            if (point.LastWipe.HasValue) return;
+            AddToScoreList(AccumulatedScores.WeekScores, point.FactionName, point.Points);
+            AddToScoreList(AccumulatedScores.MonthScores, point.FactionName, point.Points);
+            AddToScoreList(AccumulatedScores.YearScores, point.FactionName, point.Points);
+        }
+
+        private static void AddToScoreList(List<KeyValuePair<string, int>> list, string factionName, int points)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i].Key == factionName)
                 {
-                    DiscordService.SendDiscordWebHook("First Place: [Vengeful Idiots] with 2565 Points!", Color.Gold, 1);
-                    Thread.Sleep(5000);
-                    DiscordService.SendDiscordWebHook("Second Place: [Space Nuggets] with 1954 Points!", Color.Silver, 1);
-                    Thread.Sleep(5000);
-                    DiscordService.SendDiscordWebHook("Third Place: [Keyboard Warriors] with 584 Points!", Color.SandyBrown, 1);
-                    Thread.Sleep(5000);
-            
-                    StringBuilder sb = new ();
-                    sb.AppendLine("The Other People....");
-                    sb.AppendLine("Hamsters of Europa with 486 Points!");
-                    sb.AppendLine("TRex's with 386 Points!");
-                    sb.AppendLine("Muppet Empire with 212 Points!");
-                    DiscordService.SendDiscordWebHook(sb.ToString(), Color.Brown, 1);
+                    list[i] = new KeyValuePair<string, int>(factionName, list[i].Value + points);
+                    return;
                 }
             }
-        }
-    }
-
-    [ProtoContract]
-    public class NexusMessage
-    {
-        [ProtoMember(100)] public int fromServerID;
-        [ProtoMember(101)] public int toServerID;
-        [ProtoMember(102)] public bool isTestAnnouncement;
-        [ProtoMember(103)] public bool requestLobbyServer;
-        [ProtoMember(105)] public bool isLobbyReply;
-
-        public NexusMessage(int _fromServerId, int _toServerId, bool _isTestAnnouncement, bool _requestLobbyServer, bool _isLobbyReply)
-        {
-            fromServerID = _fromServerId;
-            toServerID = _toServerId;
-            isTestAnnouncement = _isTestAnnouncement;
-            requestLobbyServer = _requestLobbyServer;
-            isLobbyReply = _isLobbyReply;
+            list.Add(new KeyValuePair<string, int>(factionName, points));
         }
 
-        public NexusMessage()
+        public static void BroadcastPointDelta(PointEarned point)
         {
-            
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.NexusEnabled != true) return;
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+
+            try
+            {
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(point);
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to broadcast point delta."); }
+        }
+
+        public static void BroadcastWipe(WipePeriod period)
+        {
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.NexusEnabled != true) return;
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+
+            try
+            {
+                var wipe = new PointEarned
+                {
+                    FactionName = "", FactionTag = "",
+                    LastWipe = DateTime.UtcNow,
+                    FromServerID = api.CurrentServerID,
+                    EarnedAt = DateTime.UtcNow,
+                    EventId = GenerateEventId(),
+                    WipePeriod = period
+                };
+
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(wipe);
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to broadcast wipe."); }
+        }
+
+        public static void BroadcastVerification()
+        {
+            if (_eventData == null) return;
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.NexusEnabled != true) return;
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+
+            try
+            {
+                var ver = new PointVerification
+                {
+                    FromServerID = api.CurrentServerID,
+                    WeekEvents = _eventData.WeekEvents.ToList(),
+                    MonthEvents = _eventData.MonthEvents.ToList(),
+                    YearEvents = _eventData.YearEvents.ToList()
+                };
+
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(ver);
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to broadcast verification."); }
+        }
+
+        public static void BroadcastRewardConfig()
+        {
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.NexusEnabled != true) return;
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+
+            try
+            {
+                var configJson = Newtonsoft.Json.JsonConvert.SerializeObject(config,
+                    new Newtonsoft.Json.JsonSerializerSettings { Formatting = Newtonsoft.Json.Formatting.None });
+
+                var sync = new RewardConfigSync
+                {
+                    FromServerID = api.CurrentServerID,
+                    ConfigData = System.Text.Encoding.UTF8.GetBytes(configJson)
+                };
+
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(sync);
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to broadcast reward config."); }
+        }
+
+        private static void HandleNexusMessage(ushort handlerId, byte[] data, ulong steamId, bool fromServer)
+        {
+            if (_eventData == null) return;
+            try
+            {
+                var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+                if (api is not { Enabled: true }) return;
+
+                var incomingMsg = MyAPIGateway.Utilities.SerializeFromBinary<NexusGlobalAPI.ModAPIMsg>(data);
+                if (incomingMsg?.msgData == null) return;
+                if (incomingMsg.fromServerID == api.CurrentServerID) return;
+
+                TryHandlePointEarned(incomingMsg);
+                TryHandlePointVerification(incomingMsg);
+                TryHandleRewardConfigSync(incomingMsg);
+            }
+            catch (Exception ex) { Log.Error(ex, "Error handling Nexus message."); }
+        }
+
+        private static void TryHandlePointEarned(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var point = MyAPIGateway.Utilities.SerializeFromBinary<PointEarned>(msg.msgData);
+                if (point == null) return;
+
+                if (point.WipePeriod != WipePeriod.None)
+                    ApplyWipe(point);
+                else if (_eventData != null)
+                    AddPointEvent(_eventData, point);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to deserialize point earned from Nexus message."); }
+        }
+
+        private static void TryHandlePointVerification(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            if (_eventData == null) return;
+            try
+            {
+                var ver = MyAPIGateway.Utilities.SerializeFromBinary<PointVerification>(msg.msgData);
+                if (ver == null) return;
+                ApplyVerification(ver);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to deserialize point verification from Nexus message."); }
+        }
+
+        private static void TryHandleRewardConfigSync(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var sync = MyAPIGateway.Utilities.SerializeFromBinary<RewardConfigSync>(msg.msgData);
+                if (sync?.ConfigData == null) return;
+
+                var config = SenX_KOTH_PluginMain.Instance?.Config;
+                if (config == null) return;
+
+                var configJson = System.Text.Encoding.UTF8.GetString(sync.ConfigData);
+                var syncedConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<SenX_KOTH_PluginConfig>(configJson);
+                if (syncedConfig == null) return;
+
+                config.ZoneRewards.Clear();
+                foreach (var z in syncedConfig.ZoneRewards) config.ZoneRewards.Add(z);
+
+                config.WeeklyRankRewards.Clear();
+                foreach (var r in syncedConfig.WeeklyRankRewards) config.WeeklyRankRewards.Add(r);
+
+                config.MonthlyRankRewards.Clear();
+                foreach (var r in syncedConfig.MonthlyRankRewards) config.MonthlyRankRewards.Add(r);
+
+                config.YearlyRankRewards.Clear();
+                foreach (var r in syncedConfig.YearlyRankRewards) config.YearlyRankRewards.Add(r);
+
+                config.WeeklyThresholdRewards.Clear();
+                foreach (var t in syncedConfig.WeeklyThresholdRewards) config.WeeklyThresholdRewards.Add(t);
+
+                config.MonthlyThresholdRewards.Clear();
+                foreach (var t in syncedConfig.MonthlyThresholdRewards) config.MonthlyThresholdRewards.Add(t);
+
+                config.YearlyThresholdRewards.Clear();
+                foreach (var t in syncedConfig.YearlyThresholdRewards) config.YearlyThresholdRewards.Add(t);
+
+                SenX_KOTH_PluginMain.ConfigPersist?.Save();
+                Log.Info("Reward config synced from server " + sync.FromServerID);
+            }
+            catch (Exception ex) { Log.Error(ex, "Failed to sync reward config from Nexus message."); }
+        }
+
+        private static void ApplyWipe(PointEarned wipe)
+        {
+            if (_eventData == null || !wipe.LastWipe.HasValue) return;
+
+            switch (wipe.WipePeriod)
+            {
+                case WipePeriod.Week:
+                    _eventData.WeekEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
+                    _eventData.WeekEvents.Add(wipe);
+                    break;
+                case WipePeriod.Month:
+                    _eventData.MonthEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
+                    _eventData.MonthEvents.Add(wipe);
+                    break;
+                case WipePeriod.Year:
+                    _eventData.YearEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
+                    _eventData.YearEvents.Add(wipe);
+                    break;
+            }
+
+            RebuildAccumulatedScores();
+        }
+
+        private static void ApplyVerification(PointVerification ver)
+        {
+            if (_eventData == null) return;
+
+            _eventData.WeekEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
+            _eventData.WeekEvents.AddRange(ver.WeekEvents);
+
+            _eventData.MonthEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
+            _eventData.MonthEvents.AddRange(ver.MonthEvents);
+
+            _eventData.YearEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
+            _eventData.YearEvents.AddRange(ver.YearEvents);
+
+            RebuildAccumulatedScores();
+        }
+
+        private static void RebuildAccumulatedScores()
+        {
+            if (_eventData == null) return;
+
+            AccumulatedScores.WeekScores.Clear();
+            AccumulatedScores.MonthScores.Clear();
+            AccumulatedScores.YearScores.Clear();
+
+            foreach (var p in _eventData.WeekEvents.ToList())
+                if (!p.LastWipe.HasValue)
+                    AddToScoreList(AccumulatedScores.WeekScores, p.FactionName, p.Points);
+
+            foreach (var p in _eventData.MonthEvents.ToList())
+                if (!p.LastWipe.HasValue)
+                    AddToScoreList(AccumulatedScores.MonthScores, p.FactionName, p.Points);
+
+            foreach (var p in _eventData.YearEvents.ToList())
+                if (!p.LastWipe.HasValue)
+                    AddToScoreList(AccumulatedScores.YearScores, p.FactionName, p.Points);
         }
     }
 }
