@@ -5,7 +5,7 @@ namespace SenX_KOTH_Plugin.Utils
 {
     internal static class KoTHLog
     {
-        private static bool DebugEnabled => SenX_KOTH_PluginMain.Instance?.Config?.DebugLoggingEnabled == false;
+        private static bool DebugEnabled => SenX_KOTH_PluginMain.Instance?.Config?.DebugLoggingEnabled == true;
 
         public static void Info(Logger logger, string message)
         {

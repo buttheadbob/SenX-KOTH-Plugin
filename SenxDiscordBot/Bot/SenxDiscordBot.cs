@@ -79,6 +79,11 @@ namespace SenX_KOTH_Plugin.Bot
             await _rest.DeleteChannelAsync(channelId);
         }
 
+        public async Task<bool> GuildAccessibleAsync(ulong guildId)
+        {
+            return await _rest.GuildAccessibleAsync(guildId);
+        }
+
         public void Dispose()
         {
             _gateway.Dispose();

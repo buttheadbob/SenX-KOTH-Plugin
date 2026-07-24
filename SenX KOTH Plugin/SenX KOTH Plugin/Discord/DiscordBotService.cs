@@ -42,7 +42,25 @@ namespace SenX_KOTH_Plugin.Discord
             KoTHLog.Info(Log,"DiscordBotService started.");
 
             if (config.SelfManagedChannelsEnabled && config.KoTHCategoryId != 0)
-                await EnsureSelfManagedChannelsAsync(config);
+            {
+                try
+                {
+                    if (config.DiscordGuildId != 0 && !await _client.GuildAccessibleAsync(config.DiscordGuildId))
+                    {
+                        Log.Warn("Bot cannot access Discord server (guild " + config.DiscordGuildId + "). " +
+                                 "Ensure the bot is invited with Manage Channels permission, then restart the server.");
+                    }
+                    else
+                    {
+                        await EnsureSelfManagedChannelsAsync(config);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to set up self-managed channels. " +
+                           "Verify the bot is invited to the server with Manage Channels and Manage Messages permissions.");
+                }
+            }
         }
 
         public static Task StopAsync()

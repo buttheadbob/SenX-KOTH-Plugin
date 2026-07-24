@@ -699,7 +699,6 @@
                                 <TextBox Margin="5" Text="{Binding LiveScoreboardChannelId}"/>
 
                                 <CheckBox IsChecked="{Binding SelfManagedChannelsEnabled}" Content="Self-Managed Channels (bot creates channels under a category)" Margin="5,10,5,5"/>
-                                <CheckBox IsChecked="{Binding DebugLoggingEnabled}" Content="Debug Logging" Margin="5,0"/>
                                 <TextBlock Text="KoTH Category ID" Margin="5,5,0,0"/>
                                 <TextBox Margin="5" Text="{Binding KoTHCategoryId}"/>
                                 <TextBlock Text="Guild (Server) ID" Margin="5,0,0,0"/>
@@ -744,6 +743,8 @@
                         <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,10">
                             <Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Text="+"/><Run Text=" Plugin Documentation"/>
                         </TextBlock>
+
+                        <CheckBox IsChecked="{Binding DebugLoggingEnabled}" Content="Debug Logging" Margin="0,0,0,5"/>
 
                         <Expander Header="Player Commands" IsExpanded="True" Margin="0,5">
                             <StackPanel Margin="10,5">

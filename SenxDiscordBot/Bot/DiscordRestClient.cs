@@ -144,6 +144,19 @@ namespace SenX_KOTH_Plugin.Bot
             resp.EnsureSuccessStatusCode();
         }
 
+        public async Task<bool> GuildAccessibleAsync(ulong guildId)
+        {
+            try
+            {
+                var resp = await _http.GetAsync($"{BaseUrl}/guilds/{guildId}");
+                return resp.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public void Dispose()
         {
             _http.Dispose();

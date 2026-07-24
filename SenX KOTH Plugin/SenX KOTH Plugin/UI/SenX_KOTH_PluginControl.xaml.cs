@@ -108,13 +108,13 @@ namespace SenX_KOTH_Plugin
             if (_editingZone == null) return;
             _isNewZone = false;
             ZoneEditor_Name.Text = _editingZone.Name;
-            ZoneEditor_PosX.Text = _editingZone.X.ToString("F2");
-            ZoneEditor_PosY.Text = _editingZone.Y.ToString("F2");
-            ZoneEditor_PosZ.Text = _editingZone.Z.ToString("F2");
+            ZoneEditor_PosX.Text = _editingZone.X.ToString("F2", CultureInfo.InvariantCulture);
+            ZoneEditor_PosY.Text = _editingZone.Y.ToString("F2", CultureInfo.InvariantCulture);
+            ZoneEditor_PosZ.Text = _editingZone.Z.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_PosX.IsEnabled = false;
             ZoneEditor_PosY.IsEnabled = false;
             ZoneEditor_PosZ.IsEnabled = false;
-            ZoneEditor_Radius.Text = _editingZone.Radius.ToString("F0");
+            ZoneEditor_Radius.Text = _editingZone.Radius.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_ColorR.Text = _editingZone.ColorR.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_ColorG.Text = _editingZone.ColorG.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_ColorB.Text = _editingZone.ColorB.ToString("F2", CultureInfo.InvariantCulture);
@@ -127,8 +127,8 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_AwardInterval.Text = _editingZone.PointAwardIntervalSeconds.ToString();
             ZoneEditor_PtsSuit.Text = _editingZone.PointsPerSuit.ToString();
             ZoneEditor_PtsGrid.Text = _editingZone.PointsPerGrid.ToString();
-            ZoneEditor_MinDist.Text = _editingZone.MinDistance.ToString("F0");
-            ZoneEditor_MaxDist.Text = _editingZone.MaxDistance.ToString("F0");
+            ZoneEditor_MinDist.Text = _editingZone.MinDistance.ToString("F0", CultureInfo.InvariantCulture);
+            ZoneEditor_MaxDist.Text = _editingZone.MaxDistance.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_MoveInterval.Text = _editingZone.DynamicMoveIntervalSeconds.ToString();
             ZoneEditor_AnnounceGps.IsChecked = _editingZone.AnnounceGps;
             ZoneEditor_EvictionEnabled.IsChecked = _editingZone.EvictionEnabled;
@@ -140,7 +140,7 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_EvictionColorG.Text = _editingZone.EvictionColorG.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_EvictionColorB.Text = _editingZone.EvictionColorB.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_EvictionTexture.Text = _editingZone.EvictionTexture;
-            ZoneEditor_QuestDist.Text = _editingZone.QuestDistance.ToString("F0");
+            ZoneEditor_QuestDist.Text = _editingZone.QuestDistance.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_QuestMode.SelectedIndex = (int)_editingZone.DisplayMode;
             ZoneEditor_ShowEnemiesOutside.IsChecked = _editingZone.ShowEnemiesOutside;
             ZoneEditor_SchedMon.IsChecked = _editingZone.ScheduleMonday;
@@ -184,7 +184,7 @@ namespace SenX_KOTH_Plugin
                 return;
             }
 
-            if (!float.TryParse(ZoneEditor_Radius.Text, out float radius) || radius < 10f || radius > 500f)
+            if (!float.TryParse(ZoneEditor_Radius.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out float radius) || radius < 10f || radius > 500f)
             {
                 MessageBox.Show("Radius must be a number between 10 and 500.");
                 return;
@@ -196,9 +196,9 @@ namespace SenX_KOTH_Plugin
 
             if (_isNewZone)
             {
-                if (!double.TryParse(ZoneEditor_PosX.Text, out double px) ||
-                    !double.TryParse(ZoneEditor_PosY.Text, out double py) ||
-                    !double.TryParse(ZoneEditor_PosZ.Text, out double pz))
+                if (!double.TryParse(ZoneEditor_PosX.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double px) ||
+                    !double.TryParse(ZoneEditor_PosY.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double py) ||
+                    !double.TryParse(ZoneEditor_PosZ.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double pz))
                 {
                     MessageBox.Show("All position fields must be valid numbers.");
                     return;
@@ -266,8 +266,8 @@ namespace SenX_KOTH_Plugin
         private void SaveDynamicFields()
         {
             if (_editingZone == null) return;
-            double.TryParse(ZoneEditor_MinDist.Text, out double minDist);
-            double.TryParse(ZoneEditor_MaxDist.Text, out double maxDist);
+            double.TryParse(ZoneEditor_MinDist.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double minDist);
+            double.TryParse(ZoneEditor_MaxDist.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double maxDist);
             _editingZone.MinDistance = minDist;
             _editingZone.MaxDistance = maxDist;
             int.TryParse(ZoneEditor_MoveInterval.Text, out int interval);
