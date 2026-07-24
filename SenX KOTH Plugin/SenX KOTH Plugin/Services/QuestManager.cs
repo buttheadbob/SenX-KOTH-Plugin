@@ -5,11 +5,13 @@ using System.Threading;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Character;
+using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
 using SenX_KOTH_Plugin.Events;
 using SenX_KOTH_Plugin.Messages;
 using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Utils;
+using VRage;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -81,14 +83,18 @@ namespace SenX_KOTH_Plugin.Services
                 if (cacheEntry == null) continue;
 
                 var questDistanceSq = (double)evt.Zone.QuestDistance * evt.Zone.QuestDistance;
+                var captureRadiusSq = (double)(cacheEntry.Radius * 0.8f);
+                captureRadiusSq *= captureRadiusSq;
 
-                long outsideCount = 0;
-                if (evt.Zone.ShowEnemiesOutside && evt.CaptureFactionId != 0)
+                var insideFactionCounts = new Dictionary<long, int>();
+                var outsideFactionCounts = new Dictionary<long, int>();
+
+                if (evt.Zone.ShowEnemiesOutside)
                 {
                     try
                     {
-                        var outsideSphere = new BoundingSphereD(cacheEntry.Position, evt.Zone.QuestDistance);
-                        var entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref outsideSphere);
+                        var sphere = new BoundingSphereD(cacheEntry.Position, evt.Zone.QuestDistance);
+                        var entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere);
 
                         foreach (var ent in entities)
                         {
@@ -96,12 +102,9 @@ namespace SenX_KOTH_Plugin.Services
                             if (ent is MySafeZone || ent is MyPlanet || ent is MyVoxelBase) continue;
 
                             var distSq = Vector3D.DistanceSquared(ent.PositionComp.GetPosition(), cacheEntry.Position);
-                            var captureRadiusSq = (double)(cacheEntry.Radius * 0.8f);
-                            captureRadiusSq *= captureRadiusSq;
-                            if (distSq <= captureRadiusSq) continue;
+                            bool inside = distSq <= captureRadiusSq;
 
                             long factionId = 0;
-
                             if (ent is MyCharacter character)
                             {
                                 var identityId = character.GetPlayerIdentityId();
@@ -112,76 +115,108 @@ namespace SenX_KOTH_Plugin.Services
                             }
                             else if (ent is MyCubeGrid grid)
                             {
+                                var distributor = grid.GridSystems.ResourceDistributor;
+                                if (distributor == null
+                                    || distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId) == MyResourceStateEnum.NoPower)
+                                    continue;
+
                                 if (grid.BigOwners == null || grid.BigOwners.Count == 0) continue;
                                 var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(grid.BigOwners[0]);
                                 if (faction == null) continue;
                                 factionId = faction.FactionId;
                             }
 
-                            if (factionId != 0 && factionId != evt.CaptureFactionId)
-                                outsideCount++;
+                            var dict = inside ? insideFactionCounts : outsideFactionCounts;
+                            if (!dict.ContainsKey(factionId))
+                                dict[factionId] = 0;
+                            dict[factionId]++;
                         }
                     }
-                    catch
+                    catch { }
+                }
+
+                var factionPlayers = new Dictionary<long, List<IMyPlayer>>();
+                foreach (var p in players)
+                {
+                    if (Vector3D.DistanceSquared(p.GetPosition(), cacheEntry.Position) > questDistanceSq)
+                        continue;
+
+                    var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(p.IdentityId);
+                    long factionId = faction?.FactionId ?? 0;
+
+                    if (!factionPlayers.ContainsKey(factionId))
+                        factionPlayers[factionId] = new List<IMyPlayer>();
+                    factionPlayers[factionId].Add(p);
+                }
+
+                foreach (var (factionId, factionMembers) in factionPlayers)
+                {
+                    long enemiesInside = 0;
+                    long enemiesOutside = 0;
+
+                    foreach (var (fid, count) in insideFactionCounts)
+                        if (fid != factionId) enemiesInside += count;
+
+                    foreach (var (fid, count) in outsideFactionCounts)
+                        if (fid != factionId) enemiesOutside += count;
+
+                    var lines = BuildQuestLines(evt, enemiesInside, enemiesOutside);
+
+                    if (evt.Zone.DisplayMode == QuestDisplayMode.Notifications)
                     {
-                        outsideCount = 0;
+                        foreach (var p in factionMembers)
+                            foreach (var line in lines)
+                                MyVisualScriptLogicProvider.ShowNotification(line, 1000, "White", p.IdentityId);
+                    }
+                    else if (evt.Zone.DisplayMode == QuestDisplayMode.RichHUD)
+                    {
+                        if (!_richHudTracked.TryGetValue(evt, out var tracked))
+                        {
+                            tracked = new HashSet<ulong>();
+                            _richHudTracked[evt] = tracked;
+                        }
+
+                        var steamIds = factionMembers.Select(p => p.SteamUserId).ToHashSet();
+
+                        var msg = new QuestUpdateMessage
+                        {
+                            ZoneName = evt.Zone.Name,
+                            Lines = lines,
+                            ZoneX = cacheEntry.Position.X,
+                            ZoneY = cacheEntry.Position.Y,
+                            ZoneZ = cacheEntry.Position.Z,
+                            QuestDistance = evt.Zone.QuestDistance,
+                            Timestamp = DateTime.UtcNow.Ticks,
+                            EvictionPhase = (int)evt.EvictionState,
+                            EvictionTimeRemaining = evt.EvictionTimeRemaining,
+                            Clear = false
+                        };
+
+                        foreach (var sid in steamIds)
+                        {
+                            SendRichHudMessage(msg, sid);
+                            tracked.Add(sid);
+                        }
                     }
                 }
 
-                var lines = BuildQuestLines(evt, outsideCount);
-
-                if (evt.Zone.DisplayMode == QuestDisplayMode.Notifications)
+                if (evt.Zone.DisplayMode == QuestDisplayMode.RichHUD)
                 {
-                    foreach (var p in players)
+                    if (_richHudTracked.TryGetValue(evt, out var tracked))
                     {
-                        if (Vector3D.DistanceSquared(p.GetPosition(), cacheEntry.Position) > questDistanceSq)
-                            continue;
-                        foreach (var line in lines)
-                            MyVisualScriptLogicProvider.ShowNotification(line, 1000, "White", p.IdentityId);
+                        var allSteamIds = factionPlayers.Values.SelectMany(x => x).Select(p => p.SteamUserId).ToHashSet();
+                        var left = tracked.Where(s => !allSteamIds.Contains(s)).ToList();
+                        if (left.Count > 0)
+                        {
+                            var clear = new QuestUpdateMessage { ZoneName = evt.Zone.Name, Clear = true };
+                            foreach (var sid in left)
+                                SendRichHudMessage(clear, sid);
+                        }
+
+                        tracked.Clear();
+                        foreach (var s in allSteamIds)
+                            tracked.Add(s);
                     }
-                }
-                else if (evt.Zone.DisplayMode == QuestDisplayMode.RichHUD)
-                {
-                    if (!_richHudTracked.TryGetValue(evt, out var tracked))
-                    {
-                        tracked = new HashSet<ulong>();
-                        _richHudTracked[evt] = tracked;
-                    }
-
-                    var inRangeSteamIds = new HashSet<ulong>();
-                    foreach (var p in players)
-                    {
-                        if (Vector3D.DistanceSquared(p.GetPosition(), cacheEntry.Position) > questDistanceSq)
-                            continue;
-                        inRangeSteamIds.Add(p.SteamUserId);
-                    }
-
-                    var msg = new QuestUpdateMessage
-                    {
-                        ZoneName = evt.Zone.Name,
-                        Lines = lines,
-                        ZoneX = cacheEntry.Position.X,
-                        ZoneY = cacheEntry.Position.Y,
-                        ZoneZ = cacheEntry.Position.Z,
-                        QuestDistance = evt.Zone.QuestDistance,
-                        Timestamp = DateTime.UtcNow.Ticks,
-                        Clear = false
-                    };
-
-                    foreach (var sid in inRangeSteamIds)
-                        SendRichHudMessage(msg, sid);
-
-                    var left = tracked.Where(s => !inRangeSteamIds.Contains(s)).ToList();
-                    if (left.Count > 0)
-                    {
-                        var clear = new QuestUpdateMessage { ZoneName = evt.Zone.Name, Clear = true };
-                        foreach (var sid in left)
-                            SendRichHudMessage(clear, sid);
-                    }
-
-                    tracked.Clear();
-                    foreach (var s in inRangeSteamIds)
-                        tracked.Add(s);
                 }
             }
         }
@@ -192,7 +227,7 @@ namespace SenX_KOTH_Plugin.Services
             MyAPIGateway.Multiplayer.SendMessageTo(RICH_HUD_CHANNEL, bytes, steamId);
         }
 
-        private static List<string> BuildQuestLines(ZonePointEvent evt, long outsideCount)
+        private static List<string> BuildQuestLines(ZonePointEvent evt, long enemiesInside, long enemiesOutside)
         {
             var lines = new List<string>();
             var pct = evt.Zone.CapturePointsNeeded > 0
@@ -206,38 +241,43 @@ namespace SenX_KOTH_Plugin.Services
                     break;
 
                 case CaptureState.Capturing:
-                    lines.Add("Capturing [" + pct + "%]");
+                    lines.Add("Capturing [" + pct + "% by " + evt.CaptureFactionName + "]");
                     lines.Add("Time Remaining [" + ComputeTimeRemaining(evt, true) + "]");
-                    if (evt.Zone.ShowEnemiesOutside && outsideCount > 0)
-                        lines.Add("Enemies Outside [" + outsideCount + "]");
                     break;
 
                 case CaptureState.Contested:
-                    lines.Add("Contested [" + pct + "%]");
-                    lines.Add("Enemies Inside [" + evt.TotalEnemiesInside + "]");
-                    if (evt.Zone.ShowEnemiesOutside && outsideCount > 0)
-                        lines.Add("Enemies Outside [" + outsideCount + "]");
+                    lines.Add("Contested [" + pct + "% by " + evt.CaptureFactionName + "]");
+                    lines.Add("Enemies Inside [" + enemiesInside + "]");
                     break;
 
                 case CaptureState.Decaying:
-                    lines.Add("Decay [" + pct + "%]");
+                    lines.Add("Decay [" + pct + "% by " + evt.CaptureFactionName + "]");
                     lines.Add("Time Remaining [" + ComputeTimeRemaining(evt, false) + "]");
                     break;
 
                 case CaptureState.Captured:
-                    lines.Add("Held by [" + evt.GetCaptureTag() + "]");
+                    lines.Add("Held by [" + evt.CaptureFactionName + "]");
+                    lines.Add("Points Earned [" + evt.CapturePointsEarned + "]");
                     break;
             }
+
+            if (evt.Zone.ShowEnemiesOutside && enemiesOutside > 0)
+                lines.Add("Enemies Outside [" + enemiesOutside + "]");
 
             return lines;
         }
 
         private static string ComputeTimeRemaining(ZonePointEvent evt, bool capturing)
         {
+            if (evt.AutoDecayActive)
+            {
+                return FormatSeconds(evt.AutoDecayTimeRemaining);
+            }
+
             if (capturing)
             {
-                int gainPerTick = ((int)evt.SuitCount * evt.Zone.CaptureRatePerSuit)
-                                + ((int)evt.GridCount * evt.Zone.CaptureRatePerGrid);
+                int gainPerTick = ((int)evt.SuitCount * evt.Zone.PointsPerSuit)
+                                + ((int)evt.GridCount * evt.Zone.PointsPerGrid);
                 if (gainPerTick <= 0) return "--";
                 int remaining = evt.Zone.CapturePointsNeeded - evt.CaptureProgress;
                 if (remaining <= 0) return "0s";
@@ -246,8 +286,8 @@ namespace SenX_KOTH_Plugin.Services
             }
             else
             {
-                int lossPerTick = ((int)evt.EnemySuitCount * evt.Zone.CaptureDecayPerSuit)
-                                + ((int)evt.EnemyGridCount * evt.Zone.CaptureDecayPerGrid);
+                int lossPerTick = ((int)evt.EnemySuitCount * evt.Zone.PointsPerSuit)
+                                + ((int)evt.EnemyGridCount * evt.Zone.PointsPerGrid);
                 if (lossPerTick <= 0) return "--";
                 int remaining = evt.CaptureProgress;
                 if (remaining <= 0) return "0s";

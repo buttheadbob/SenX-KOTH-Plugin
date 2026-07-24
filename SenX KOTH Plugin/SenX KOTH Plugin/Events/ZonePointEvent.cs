@@ -49,6 +49,10 @@ namespace SenX_KOTH_Plugin.Events
         private DateTime _lastEvictionEnded;
         private int _integrityFrameCounter;
         private int _dynamicMoveFrameCounter;
+        private bool _autoDecayActive;
+        private int _autoDecayStartProgress;
+        private DateTime _autoDecayStartTime;
+        private int _capturePointsEarned;
 
         public string Name => _zone.Name;
         public bool ShouldRun => _zone.Enabled && MySession.Static != null && IsWithinSchedule();
@@ -58,6 +62,16 @@ namespace SenX_KOTH_Plugin.Events
 
         internal CaptureState State => _state;
         internal long CaptureFactionId => _captureFactionId;
+        internal string CaptureFactionName
+        {
+            get
+            {
+                if (_captureFactionId == 0) return "??";
+                IMyFaction? f = null;
+                MyAPIGateway.Session.Factions.Factions.TryGetValue(_captureFactionId, out f);
+                return f?.Name ?? "??";
+            }
+        }
         internal long SuitCount => _suitCount;
         internal long GridCount => _gridCount;
         internal long EnemySuitCount => _enemySuitCount;
@@ -65,6 +79,46 @@ namespace SenX_KOTH_Plugin.Events
         internal long TotalEnemiesInside => _enemySuitCount + _enemyGridCount;
         internal int CaptureProgress => _captureProgress;
         internal KothZone Zone => _zone;
+        internal EvictionPhase EvictionState => _evictionPhase;
+        internal int EvictionTimeRemaining
+        {
+            get
+            {
+                var now = DateTime.UtcNow;
+                switch (_evictionPhase)
+                {
+                    case EvictionPhase.Idle:
+                        return 0;
+                    case EvictionPhase.Warning30:
+                        return 30 - Math.Max(0, (int)(now - _evictionPhaseEntered).TotalSeconds);
+                    case EvictionPhase.Warning10:
+                        return 10 - Math.Max(0, (int)(now - _evictionPhaseEntered).TotalSeconds);
+                    case EvictionPhase.Active:
+                    {
+                        var elapsed = (now - _evictionPhaseEntered).TotalSeconds;
+                        var remaining = (int)(_zone.EvictionDurationSeconds - elapsed);
+                        return Math.Max(0, remaining);
+                    }
+                    default:
+                        return 0;
+                }
+            }
+        }
+        internal bool AutoDecayActive => _autoDecayActive;
+        internal int AutoDecayTimeRemaining
+        {
+            get
+            {
+                if (!_autoDecayActive || _captureProgress <= 0) return 0;
+                double decayPerSecond = Math.Max(1, _zone.CapturePointsNeeded * 5 / 100) / 30.0;
+                if (decayPerSecond <= 0) return 0;
+                return (int)Math.Ceiling(_captureProgress / decayPerSecond);
+            }
+        }
+        internal int CapturePointsEarned => _capturePointsEarned;
+        internal bool HasPointEarningEntities =>
+            (_suitCount > 0 && _zone.PointsPerSuit > 0)
+            || (_gridCount > 0 && _zone.PointsPerGrid > 0);
 
         public ZonePointEvent(KothZone zone, SenX_KOTH_PluginConfig config, BanksData bankData, EventData eventData)
         {
@@ -137,6 +191,7 @@ namespace SenX_KOTH_Plugin.Events
 
                     if (ent is MyCharacter character)
                     {
+                        if (character.IsDead) continue;
                         var identityId = character.GetPlayerIdentityId();
                         if (identityId == 0) continue;
                         var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(identityId);
@@ -155,6 +210,7 @@ namespace SenX_KOTH_Plugin.Events
                     }
                     else if (ent is MyCubeGrid grid)
                     {
+                        if (!grid.GetFatBlocks<MyCockpit>().Any(c => c.IsOccupied)) continue;
                         if (grid.BigOwners == null || grid.BigOwners.Count == 0) continue;
                         var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(grid.BigOwners[0]);
                         if (faction == null) continue;
@@ -166,10 +222,46 @@ namespace SenX_KOTH_Plugin.Events
                 }
 
                 var prevState = _state;
+
+                bool hadPointEntities = factionCounts.Values.Any(v =>
+                    (v.suits > 0 && _zone.PointsPerSuit > 0) ||
+                    (v.grids > 0 && _zone.PointsPerGrid > 0));
+
                 DetermineState(factionCounts);
 
                 if (_state != prevState)
                     AnnounceStateChange();
+
+                if (_captureProgress > 0 && !hadPointEntities)
+                {
+                    if (!_autoDecayActive)
+                    {
+                        _autoDecayActive = true;
+                        _autoDecayStartProgress = _state == CaptureState.Captured
+                            ? _zone.CapturePointsNeeded
+                            : _captureProgress;
+                        _autoDecayStartTime = DateTime.UtcNow;
+                        _state = CaptureState.Decaying;
+                    }
+
+                    int ptsPerTick = Math.Max(1, _zone.CapturePointsNeeded * 5 / 100);
+                    double decayPerSecond = ptsPerTick / 30.0;
+                    int decayed = (int)((DateTime.UtcNow - _autoDecayStartTime).TotalSeconds * decayPerSecond);
+                    _captureProgress = _autoDecayStartProgress - decayed;
+
+                    if (_captureProgress <= 0)
+                    {
+                        _captureProgress = 0;
+                        _captureFactionId = 0;
+                        _capturePointsEarned = 0;
+                        _state = CaptureState.Neutral;
+                        _autoDecayActive = false;
+                    }
+                }
+                else if (_autoDecayActive && hadPointEntities)
+                {
+                    _autoDecayActive = false;
+                }
 
                 if (_zone.DynamicZone)
                 {
@@ -276,13 +368,14 @@ namespace SenX_KOTH_Plugin.Events
         {
             if (factionCounts.Count == 0)
             {
-                _captureFactionId = 0;
                 _suitCount = 0;
                 _gridCount = 0;
                 _enemySuitCount = 0;
                 _enemyGridCount = 0;
 
-                if (_state == CaptureState.Captured || _state == CaptureState.Decaying)
+                if (_captureProgress > 0)
+                    _state = CaptureState.Decaying;
+                else if (_state == CaptureState.Captured || _state == CaptureState.Decaying)
                     _state = CaptureState.Decaying;
                 else
                     _state = CaptureState.Neutral;
@@ -333,8 +426,10 @@ namespace SenX_KOTH_Plugin.Events
                 {
                     case CaptureState.Capturing:
                     {
-                        int gain = ((int)_suitCount * _zone.CaptureRatePerSuit)
-                                 + ((int)_gridCount * _zone.CaptureRatePerGrid);
+                        if (_autoDecayActive) break;
+
+                        int gain = ((int)_suitCount * _zone.PointsPerSuit)
+                                 + ((int)_gridCount * _zone.PointsPerGrid);
                         if (gain <= 0) break;
 
                         _captureProgress += gain;
@@ -352,6 +447,7 @@ namespace SenX_KOTH_Plugin.Events
                         if (_captureProgress >= _zone.CapturePointsNeeded)
                         {
                             _state = CaptureState.Captured;
+                            _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
                             Log.Info("Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
@@ -361,8 +457,10 @@ namespace SenX_KOTH_Plugin.Events
 
                     case CaptureState.Decaying:
                     {
-                        int loss = ((int)_enemySuitCount * _zone.CaptureDecayPerSuit)
-                                 + ((int)_enemyGridCount * _zone.CaptureDecayPerGrid);
+                        if (_autoDecayActive) break;
+
+                        int loss = ((int)_enemySuitCount * _zone.PointsPerSuit)
+                                 + ((int)_enemyGridCount * _zone.PointsPerGrid);
                         if (loss <= 0) break;
 
                         _captureProgress -= loss;
@@ -370,6 +468,7 @@ namespace SenX_KOTH_Plugin.Events
                         if (_captureProgress <= 0)
                         {
                             _captureProgress = 0;
+                            _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
                             _state = CaptureState.Neutral;
                             Log.Info("Zone capture lost: " + _zone.Name);
@@ -393,9 +492,12 @@ namespace SenX_KOTH_Plugin.Events
             try
             {
                 if (_state != CaptureState.Captured) return;
+                if (!HasPointEarningEntities) return;
 
                 int points = ((int)_suitCount * _zone.PointsPerSuit) + ((int)_gridCount * _zone.PointsPerGrid);
                 if (points <= 0) return;
+
+                _capturePointsEarned += points;
 
                 IMyFaction? faction = null;
                 MyAPIGateway.Session.Factions.Factions.TryGetValue(_captureFactionId, out faction);
@@ -472,6 +574,7 @@ namespace SenX_KOTH_Plugin.Events
                         {
                             _captureProgress = 0;
                             _captureFactionId = 0;
+                            _capturePointsEarned = 0;
                             _state = CaptureState.Neutral;
                             _lastAnnouncedProgress = 0;
                         }

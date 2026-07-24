@@ -36,10 +36,6 @@ internal sealed class KothZone
     public int ScheduleEndMinute { get; set; } = 59;
 
     public int CapturePointsNeeded { get; set; } = 100;
-    public int CaptureRatePerSuit { get; set; } = 1;
-    public int CaptureRatePerGrid { get; set; }
-    public int CaptureDecayPerSuit { get; set; } = 3;
-    public int CaptureDecayPerGrid { get; set; } = 3;
     public int CapturePointIntervalSeconds { get; set; } = 5;
     public int PointAwardIntervalSeconds { get; set; } = 5;
     public int PointsPerSuit { get; set; } = 1;

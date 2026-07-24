@@ -27,6 +27,10 @@ namespace SenX_KOTH_Plugin.Mod
 
         private void OnRichHudInit()
         {
+            if (!RichHudFramework.Client.RichHudClient.Registered) return;
+
+            RichHudFramework.UI.Client.HudMain.Init();
+
             _hud = new KoTHHudManager();
             _hud.Init();
             MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(CHANNEL, OnQuestMessage);
@@ -53,7 +57,7 @@ namespace SenX_KOTH_Plugin.Mod
 
         public override void UpdateAfterSimulation()
         {
-            if (!_richHudReady || _hud == null) return;
+            if (!_richHudReady || _hud == null || !RichHudFramework.Client.RichHudClient.Registered) return;
 
             var playerPos = MyAPIGateway.Session?.Player?.GetPosition() ?? Vector3D.Zero;
             var now = DateTime.UtcNow.Ticks;

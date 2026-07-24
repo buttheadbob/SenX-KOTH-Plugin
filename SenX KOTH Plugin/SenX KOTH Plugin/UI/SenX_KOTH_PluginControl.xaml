@@ -131,18 +131,6 @@
                                                     <TextBox x:Name="ZoneEditor_CapturePtsNeeded" Width="60"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                    <TextBlock Text="Capture Rate — Suits:" VerticalAlignment="Center" Width="150"/>
-                                                    <TextBox x:Name="ZoneEditor_CapRateSuit" Width="60"/>
-                                                    <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
-                                                    <TextBox x:Name="ZoneEditor_CapRateGrid" Width="60"/>
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                    <TextBlock Text="Decay Rate — Suits:" VerticalAlignment="Center" Width="150"/>
-                                                    <TextBox x:Name="ZoneEditor_DecaySuit" Width="60"/>
-                                                    <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
-                                                    <TextBox x:Name="ZoneEditor_DecayGrid" Width="60"/>
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Margin="0,2">
                                                     <TextBlock Text="Capture Interval (sec):" VerticalAlignment="Center" Width="150"/>
                                                     <TextBox x:Name="ZoneEditor_CapInterval" Width="60"/>
                                                 </StackPanel>
@@ -151,11 +139,12 @@
                                                     <TextBox x:Name="ZoneEditor_AwardInterval" Width="60"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                    <TextBlock Text="Points — Suits:" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBlock Text="Points Per Suit:" VerticalAlignment="Center" Width="150"/>
                                                     <TextBox x:Name="ZoneEditor_PtsSuit" Width="60"/>
                                                     <TextBlock Text="Grids:" VerticalAlignment="Center" Margin="10,0,5,0"/>
                                                     <TextBox x:Name="ZoneEditor_PtsGrid" Width="60"/>
                                                 </StackPanel>
+                                                <TextBlock Text="(capture, decay, and point awards)" FontStyle="Italic" FontSize="10" Margin="5,0,0,0"/>
                                             </StackPanel>
                                         </GroupBox>
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
@@ -815,7 +804,8 @@
                                     <Run>  - Shows zone status to players within the configured visibility distance</Run><LineBreak/>
                                     <Run>  - Three modes per zone: None / Notifications / RichHUD</Run><LineBreak/>
                                     <Run>  - Notification mode: status pops up as built-in SE notifications (1s refresh)</Run><LineBreak/>
-                                    <Run>  - RichHUD mode: persistent HUD overlay showing zone info in bottom-right</Run><LineBreak/>
+                                    <Run>  - RichHUD mode: persistent HUD overlay (requires "Senx Koth" mod — see below)</Run><LineBreak/>
+                                    <Run>  - If you prefer no mod dependency, use None or Notifications mode instead</Run><LineBreak/>
                                     <Run>  - Optional enemies outside counter (players near but outside capture area)</Run><LineBreak/>
                                     <Run FontWeight="Bold">  States displayed:</Run><LineBreak/>
                                     <Run>    Neutral       — "Neutral"</Run><LineBreak/>
@@ -842,12 +832,15 @@
                         <Expander Header="RichHUD Mod" Margin="0,5">
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="Bold">Required for RichHUD display mode. Without it, use None or Notifications.</Run><LineBreak/>
+                                    <Run>  - The "Senx Koth" mod must be deployed as a server-side mod</Run><LineBreak/>
                                     <Run>  - Requires RichHudMaster mod installed on server and all clients</Run><LineBreak/>
-                                    <Run>  - Requires SenX_KOTH_Plugin.Mod deployed as a server-side mod</Run><LineBreak/>
-                                    <Run>  - Displays a non-intrusive HUD overlay for nearby zone info</Run><LineBreak/>
-                                    <Run>  - Positioned top-left of screen; auto-hides when out of range</Run><LineBreak/>
-                                    <Run>  - Updates every second using timer-pool (no game-thread dependency)</Run><LineBreak/>
+                                    <Run>  - Displays a semi-transparent HUD panel at the top-left of the screen</Run><LineBreak/>
+                                    <Run>  - Shows zone status, capture progress, time remaining, and enemy counts</Run><LineBreak/>
+                                    <Run>  - Auto-hides when the player leaves the configured visibility distance</Run><LineBreak/>
+                                    <Run>  - Updates every second — no game-thread dependency</Run><LineBreak/>
                                     <Run>  - Shows the closest in-range zone when multiple zones are active</Run><LineBreak/>
+                                    <Run>  - Eviction warnings shown with countdown when active</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>

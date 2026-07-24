@@ -68,10 +68,6 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_PersistVisual.IsChecked = true;
             ZoneEditor_Dynamic.IsChecked = false;
             ZoneEditor_CapturePtsNeeded.Text = "100";
-            ZoneEditor_CapRateSuit.Text = "1";
-            ZoneEditor_CapRateGrid.Text = "0";
-            ZoneEditor_DecaySuit.Text = "3";
-            ZoneEditor_DecayGrid.Text = "3";
             ZoneEditor_CapInterval.Text = "5";
             ZoneEditor_AwardInterval.Text = "5";
             ZoneEditor_PtsSuit.Text = "1";
@@ -127,10 +123,6 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_PersistVisual.IsChecked = _editingZone.PersistVisual;
             ZoneEditor_Dynamic.IsChecked = _editingZone.DynamicZone;
             ZoneEditor_CapturePtsNeeded.Text = _editingZone.CapturePointsNeeded.ToString();
-            ZoneEditor_CapRateSuit.Text = _editingZone.CaptureRatePerSuit.ToString();
-            ZoneEditor_CapRateGrid.Text = _editingZone.CaptureRatePerGrid.ToString();
-            ZoneEditor_DecaySuit.Text = _editingZone.CaptureDecayPerSuit.ToString();
-            ZoneEditor_DecayGrid.Text = _editingZone.CaptureDecayPerGrid.ToString();
             ZoneEditor_CapInterval.Text = _editingZone.CapturePointIntervalSeconds.ToString();
             ZoneEditor_AwardInterval.Text = _editingZone.PointAwardIntervalSeconds.ToString();
             ZoneEditor_PtsSuit.Text = _editingZone.PointsPerSuit.ToString();
@@ -337,14 +329,6 @@ namespace SenX_KOTH_Plugin
             if (_editingZone == null) return;
             int.TryParse(ZoneEditor_CapturePtsNeeded.Text, out int cp);
             _editingZone.CapturePointsNeeded = Math.Max(1, cp);
-            int.TryParse(ZoneEditor_CapRateSuit.Text, out int crs);
-            _editingZone.CaptureRatePerSuit = crs;
-            int.TryParse(ZoneEditor_CapRateGrid.Text, out int crg);
-            _editingZone.CaptureRatePerGrid = crg;
-            int.TryParse(ZoneEditor_DecaySuit.Text, out int ds);
-            _editingZone.CaptureDecayPerSuit = ds;
-            int.TryParse(ZoneEditor_DecayGrid.Text, out int dg);
-            _editingZone.CaptureDecayPerGrid = dg;
             int.TryParse(ZoneEditor_CapInterval.Text, out int ci);
             _editingZone.CapturePointIntervalSeconds = Math.Max(1, ci);
             int.TryParse(ZoneEditor_AwardInterval.Text, out int ai);

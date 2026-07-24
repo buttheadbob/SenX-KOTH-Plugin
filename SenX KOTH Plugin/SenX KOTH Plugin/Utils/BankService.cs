@@ -5,6 +5,7 @@ using System.Threading;
 using NLog;
 using Sandbox.ModAPI;
 using SenX_KOTH_Plugin.Models;
+using SenX_KOTH_Plugin;
 using VRage.Game.ModAPI;
 using DrawingColor = System.Drawing.Color;
 
@@ -30,6 +31,7 @@ namespace SenX_KOTH_Plugin.Utils
                 entry.FactionName = factionName;
                 entry.FactionTag = factionTag;
                 entry.Points += points;
+                SenX_KOTH_PluginMain.BankPersist?.Save();
             }
         }
 

@@ -14,5 +14,7 @@ namespace SenX_KOTH_Plugin.Messages
         [ProtoMember(6)] public float QuestDistance;
         [ProtoMember(7)] public bool Clear;
         [ProtoMember(8)] public long Timestamp;
+        [ProtoMember(9)] public int EvictionPhase;
+        [ProtoMember(10)] public int EvictionTimeRemaining;
     }
 }
