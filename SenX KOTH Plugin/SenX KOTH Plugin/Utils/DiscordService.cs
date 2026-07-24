@@ -57,7 +57,7 @@ namespace SenX_KOTH_Plugin.Utils;
 
         if (string.IsNullOrEmpty(inst.Config.WebHookUrl))
         {
-            Log.Error("discord Webhook is enabled but the Webhook url is empty.");
+            KoTHLog.Error(Log,"discord Webhook is enabled but the Webhook url is empty.");
             return;
         }
 
@@ -120,7 +120,7 @@ namespace SenX_KOTH_Plugin.Utils;
         }
         catch (Exception e)
         {
-            Log.Error(e, "Discord could be down or there is something wrong with your webhook.");
+            KoTHLog.Error(Log,e, "Discord could be down or there is something wrong with your webhook.");
         }
     }
 }

@@ -29,8 +29,7 @@ namespace SenX_KOTH_Plugin.Bot
                     {
                         Title = title,
                         Description = description,
-                        Color = color,
-                        Timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        Color = color
                     }
                 }
             };
@@ -58,6 +57,26 @@ namespace SenX_KOTH_Plugin.Bot
         public async Task<bool> ChannelExistsAsync(ulong channelId)
         {
             return await _rest.ChannelExistsAsync(channelId);
+        }
+
+        public async Task<DiscordChannel?> GetChannelAsync(ulong channelId)
+        {
+            return await _rest.GetChannelAsync(channelId);
+        }
+
+        public async Task ModifyChannelAsync(ulong channelId, string name)
+        {
+            await _rest.ModifyChannelAsync(channelId, name);
+        }
+
+        public async Task ModifyChannelPermissionsAsync(ulong channelId, ulong guildId)
+        {
+            await _rest.ModifyChannelPermissionsAsync(channelId, guildId);
+        }
+
+        public async Task DeleteChannelAsync(ulong channelId)
+        {
+            await _rest.DeleteChannelAsync(channelId);
         }
 
         public void Dispose()

@@ -130,7 +130,7 @@ namespace SenX_KOTH_Plugin.Events
 
         public void Start()
         {
-            Log.Info("Zone event starting: " + _zone.Name);
+            KoTHLog.Info(Log,"Zone event starting: " + _zone.Name);
             DiscoverZone();
             _captureTimer = new Timer(_zone.CapturePointIntervalSeconds * 1000);
             _captureTimer.Elapsed += CaptureTick;
@@ -149,7 +149,7 @@ namespace SenX_KOTH_Plugin.Events
 
         public void Stop()
         {
-            Log.Info("Zone event stopping: " + _zone.Name);
+            KoTHLog.Info(Log,"Zone event stopping: " + _zone.Name);
             _captureTimer?.Stop();
             _captureTimer?.Dispose();
             _captureTimer = null;
@@ -277,7 +277,7 @@ namespace SenX_KOTH_Plugin.Events
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in ZonePointEvent.Update: " + _zone.Name);
+                KoTHLog.Error(Log,ex, "Error in ZonePointEvent.Update: " + _zone.Name);
             }
         }
 
@@ -298,7 +298,7 @@ namespace SenX_KOTH_Plugin.Events
                     if (existing != null)
                     {
                         GameThread.Invoke(existing.Close);
-                        Log.Info("IntegrityCheck [" + _zone.Name + "]: Removed safe zone (disabled, not persisted)");
+                        KoTHLog.Info(Log,"IntegrityCheck [" + _zone.Name + "]: Removed safe zone (disabled, not persisted)");
                     }
                     return;
                 }
@@ -308,7 +308,7 @@ namespace SenX_KOTH_Plugin.Events
                     var pos = _zone.Position;
                     ZoneManager.CreateSafeZoneEntity(_zone, pos);
                     ZoneManager.CacheZone(_zone.Name, pos, _zone.Radius, 0, _zone);
-                    Log.Info("IntegrityCheck [" + _zone.Name + "]: Created missing safe zone at " + pos);
+                    KoTHLog.Info(Log,"IntegrityCheck [" + _zone.Name + "]: Created missing safe zone at " + pos);
                 }
                 else
                 {
@@ -316,20 +316,20 @@ namespace SenX_KOTH_Plugin.Events
                     
                     if (!existing.InScene)
                     {
-                        Log.Warn($"SafeZone {existing.DisplayName} not added to scene.");
+                        KoTHLog.Warn(Log,$"SafeZone {existing.DisplayName} not added to scene.");
                         GameThread.Invoke(() => MyEntities.Add(existing));
                     }
                     
                     if (cacheEntry != null && cacheEntry.SafeZoneEntityId != existing.EntityId)
                     {
                         cacheEntry.SafeZoneEntityId = existing.EntityId;
-                        Log.Info("IntegrityCheck [" + _zone.Name + "]: Updated cache entity ID to " + existing.EntityId);
+                        KoTHLog.Info(Log,"IntegrityCheck [" + _zone.Name + "]: Updated cache entity ID to " + existing.EntityId);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in IntegrityCheck: " + _zone.Name);
+                KoTHLog.Error(Log,ex, "Error in IntegrityCheck: " + _zone.Name);
             }
         }
 
@@ -449,7 +449,7 @@ namespace SenX_KOTH_Plugin.Events
                             _state = CaptureState.Captured;
                             _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
-                            Log.Info("Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
+                            KoTHLog.Info(Log,"Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
                         }
                         break;
@@ -471,7 +471,7 @@ namespace SenX_KOTH_Plugin.Events
                             _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
                             _state = CaptureState.Neutral;
-                            Log.Info("Zone capture lost: " + _zone.Name);
+                            KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
                         }
                         break;
@@ -483,7 +483,7 @@ namespace SenX_KOTH_Plugin.Events
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in CaptureTick: " + _zone.Name);
+                KoTHLog.Error(Log,ex, "Error in CaptureTick: " + _zone.Name);
             }
         }
 
@@ -519,7 +519,7 @@ namespace SenX_KOTH_Plugin.Events
                 NexusManager.BroadcastPointDelta(pt);
                 BankService.CreditPoints(_bankData, faction.FactionId, faction.Name, faction.Tag, points);
 
-                Log.Info("Points: [" + faction.Tag + "] +" + points + "pts in " + _zone.Name);
+                KoTHLog.Info(Log,"Points: [" + faction.Tag + "] +" + points + "pts in " + _zone.Name);
 
                 _audio.Play2DSound(0, SoundCueType.PointEarned);
 
@@ -529,7 +529,7 @@ namespace SenX_KOTH_Plugin.Events
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in AwardTick: " + _zone.Name);
+                KoTHLog.Error(Log,ex, "Error in AwardTick: " + _zone.Name);
             }
         }
 
@@ -552,7 +552,7 @@ namespace SenX_KOTH_Plugin.Events
 
                         _evictionPhase = EvictionPhase.Warning30;
                         _evictionPhaseEntered = now;
-                        Log.Info("Eviction warning 30s: " + _zone.Name);
+                        KoTHLog.Info(Log,"Eviction warning 30s: " + _zone.Name);
                         NotifyWithinRange(_zone.Name + " — zone eviction in 30 seconds!", "Red");
                         break;
                     }
@@ -583,7 +583,7 @@ namespace SenX_KOTH_Plugin.Events
                             string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
                         if (cacheEntry != null)
                         {
-                            Log.Info("Eviction: found cache entry for " + _zone.Name + " entityId=" + cacheEntry.SafeZoneEntityId);
+                            KoTHLog.Info(Log,"Eviction: found cache entry for " + _zone.Name + " entityId=" + cacheEntry.SafeZoneEntityId);
                             var r = _zone.EvictionColorR;
                             var g = _zone.EvictionColorG;
                             var b = _zone.EvictionColorB;
@@ -592,10 +592,10 @@ namespace SenX_KOTH_Plugin.Events
                         }
                         else
                         {
-                            Log.Warn("Eviction: no cache entry found for " + _zone.Name);
+                            KoTHLog.Warn(Log,"Eviction: no cache entry found for " + _zone.Name);
                         }
 
-                        Log.Info("Eviction active for zone: " + _zone.Name);
+                        KoTHLog.Info(Log,"Eviction active for zone: " + _zone.Name);
                         _evictionPhase = EvictionPhase.Active;
                         _evictionPhaseEntered = now;
                         break;
@@ -609,14 +609,14 @@ namespace SenX_KOTH_Plugin.Events
                         RestoreZoneFromEviction();
                         _evictionPhase = EvictionPhase.Idle;
                         _lastEvictionEnded = now;
-                        Log.Info("Eviction ended for zone: " + _zone.Name);
+                        KoTHLog.Info(Log,"Eviction ended for zone: " + _zone.Name);
                         break;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in EvictionTick: " + _zone.Name);
+                KoTHLog.Error(Log,ex, "Error in EvictionTick: " + _zone.Name);
             }
         }
 
@@ -688,13 +688,13 @@ namespace SenX_KOTH_Plugin.Events
             if (existing != null)
             {
                 ZoneManager.CacheZone(_zone.Name, existing.PositionComp.GetPosition(), _zone.Radius, existing.EntityId, _zone);
-                Log.Info("Zone [" + _zone.Name + "]: Found existing safe zone entity " + existing.EntityId);
+                KoTHLog.Info(Log,"Zone [" + _zone.Name + "]: Found existing safe zone entity " + existing.EntityId);
                 return;
             }
             var pos = _zone.Position;
             ZoneManager.CreateSafeZoneEntity(_zone, pos);
             ZoneManager.CacheZone(_zone.Name, pos, _zone.Radius, 0, _zone);
-            Log.Info("Zone [" + _zone.Name + "]: Created new safe zone entity at " + pos);
+            KoTHLog.Info(Log,"Zone [" + _zone.Name + "]: Created new safe zone entity at " + pos);
         }
     }
 }

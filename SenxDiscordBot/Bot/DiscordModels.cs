@@ -64,6 +64,24 @@ namespace SenX_KOTH_Plugin.Bot
 
         [JsonProperty("type")]
         public int? Type { get; set; }
+
+        [JsonProperty("permission_overwrites")]
+        public List<PermissionOverwrite>? PermissionOverwrites { get; set; }
+    }
+
+    public sealed class PermissionOverwrite
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; } = "";
+
+        [JsonProperty("type")]
+        public int Type { get; set; }
+
+        [JsonProperty("allow")]
+        public string Allow { get; set; } = "";
+
+        [JsonProperty("deny")]
+        public string Deny { get; set; } = "";
     }
 
     public sealed class CreateChannelRequest
@@ -76,6 +94,9 @@ namespace SenX_KOTH_Plugin.Bot
 
         [JsonProperty("parent_id")]
         public string? ParentId { get; set; }
+
+        [JsonProperty("permission_overwrites")]
+        public List<PermissionOverwrite>? PermissionOverwrites { get; set; }
     }
 
     internal sealed class GatewayPayload

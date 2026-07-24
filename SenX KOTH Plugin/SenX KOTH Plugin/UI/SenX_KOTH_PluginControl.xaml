@@ -245,28 +245,11 @@
                             <StackPanel>
                                 <CheckBox IsChecked="{Binding NexusEnabled}" Content="Nexus Enabled" Margin="5"/>
 
-                                <TextBlock Text="Reset Schedule" FontWeight="Bold" Margin="5,10,5,5"/>
-                                <TextBlock Text="Weekly Reset Day:" Margin="5,0"/>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Monday}" Content="Mon"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Tuesday}" Content="Tue" Margin="5,0"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Wednesday}" Content="Wed" Margin="5,0"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Thursday}" Content="Thu" Margin="5,0"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Friday}" Content="Fri" Margin="5,0"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Saturday}" Content="Sat" Margin="5,0"/>
-                                    <RadioButton IsChecked="{Binding WeeklyResetDay, Converter={StaticResource enumBooleanConverter}, ConverterParameter=Sunday}" Content="Sun" Margin="5,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <TextBlock Text="Monthly Reset Day (1-28):" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding MonthlyResetDay}" Width="40" Margin="5,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5">
-                                    <TextBlock Text="Yearly Reset:" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Month (1-12):" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                    <TextBox Text="{Binding YearlyResetMonth}" Width="40" Margin="5,0"/>
-                                    <TextBlock Text="Day (1-28):" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding YearlyResetDay}" Width="40" Margin="5,0"/>
-                                </StackPanel>
+                                <TextBlock Text="Rewards" FontWeight="Bold" Margin="5,10,5,5"/>
+                                <TextBlock Text="Rewards are processed automatically at the end of each period. Disable a reward period to skip issuing rewards (points will still cascade to the next period)." Margin="5,0" TextWrapping="Wrap" FontStyle="Italic"/>
+                                <CheckBox IsChecked="{Binding WeeklyRewardsEnabled}" Content="Weekly Rewards" Margin="5"/>
+                                <CheckBox IsChecked="{Binding MonthlyRewardsEnabled}" Content="Monthly Rewards" Margin="5"/>
+                                <CheckBox IsChecked="{Binding YearlyRewardsEnabled}" Content="Yearly Rewards" Margin="5"/>
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>
@@ -716,10 +699,19 @@
                                 <TextBox Margin="5" Text="{Binding LiveScoreboardChannelId}"/>
 
                                 <CheckBox IsChecked="{Binding SelfManagedChannelsEnabled}" Content="Self-Managed Channels (bot creates channels under a category)" Margin="5,10,5,5"/>
-                                <TextBlock Text="KoTH Category ID" Margin="5,0,0,0"/>
+                                <CheckBox IsChecked="{Binding DebugLoggingEnabled}" Content="Debug Logging" Margin="5,0"/>
+                                <TextBlock Text="KoTH Category ID" Margin="5,5,0,0"/>
                                 <TextBox Margin="5" Text="{Binding KoTHCategoryId}"/>
                                 <TextBlock Text="Guild (Server) ID" Margin="5,0,0,0"/>
                                 <TextBox Margin="5" Text="{Binding DiscordGuildId}"/>
+                                <StackPanel Orientation="Horizontal" Margin="5,5,5,0">
+                                    <TextBlock Text="Update Interval (sec):" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding DiscordUpdateIntervalSeconds}" Width="50" Margin="5,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5,0">
+                                    <TextBlock Text="Channel Name Prefix:" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding DiscordChannelPrefix}" Width="100" Margin="5,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </GroupBox>
 

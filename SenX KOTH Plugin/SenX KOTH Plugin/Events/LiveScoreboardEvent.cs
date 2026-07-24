@@ -1,3 +1,4 @@
+using System;
 using System.Timers;
 using SenX_KOTH_Plugin.Discord;
 
@@ -16,7 +17,8 @@ namespace SenX_KOTH_Plugin.Events
 
         public void Start()
         {
-            _timer = new Timer(30000);
+            var interval = Math.Max(10, _config.DiscordUpdateIntervalSeconds) * 1000;
+            _timer = new Timer(interval);
             _timer.Elapsed += Tick;
             _timer.Start();
             IsRunning = true;
@@ -39,6 +41,7 @@ namespace SenX_KOTH_Plugin.Events
         private async void Tick(object? sender, ElapsedEventArgs e)
         {
             await DiscordBotService.UpdateLiveScoreboardAsync();
+            await DiscordBotService.UpdateZoneChannelsAsync();
         }
     }
 }

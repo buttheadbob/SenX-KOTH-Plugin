@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Timers;
@@ -55,68 +56,159 @@ namespace SenX_KOTH_Plugin.Events
 
         private void Tick(object? sender, ElapsedEventArgs e)
         {
-            try { CheckWeeklyReset(); CheckMonthlyReset(); CheckYearlyReset(); }
-            catch (Exception ex) { Log.Error(ex, "Error in ResetEvent tick."); }
+            try { ProcessWeekly(); ProcessMonthly(); ProcessYearly(); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Error in ResetEvent tick."); }
         }
 
-        private void CheckWeeklyReset()
+        private bool ShouldProcessWeekly(DateTime now)
         {
-            if (!_config.WeeklyResetEnabled) return;
-            if (DateTime.Now.DayOfWeek != _config.WeeklyResetDay) return;
-            if (_config.LastWeeklyReset.Date == DateTime.Today.Date) return;
+            return _config.LastWeeklyProcessYear == 0
+                || _config.LastWeeklyProcessYear != now.Year
+                || GetIsoWeek(now) != _config.LastWeeklyProcessWeek;
+        }
 
-            var weekList = NexusManager.AccumulatedScores.WeekScores.OrderByDescending(x => x.Value).ToList();
-            if (_config.Show_WeeklyResults)
+        private bool ShouldProcessMonthly(DateTime now)
+        {
+            return _config.LastMonthlyProcessYear == 0
+                || _config.LastMonthlyProcessYear != now.Year
+                || now.Month != _config.LastMonthlyProcessMonth;
+        }
+
+        private bool ShouldProcessYearly(DateTime now)
+        {
+            return _config.LastYearlyProcessYear == 0
+                || now.Year != _config.LastYearlyProcessYear;
+        }
+
+        private void ProcessWeekly()
+        {
+            var now = DateTime.Now;
+            if (!ShouldProcessWeekly(now)) return;
+
+            if (_config.WeeklyRewardsEnabled)
             {
-                AnnouncePeriodResults("Weekly", weekList, DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
-                RewardService.ExecutePeriodRewards(_config.WeeklyRankRewards.ToList(), _config.WeeklyThresholdRewards.ToList(), weekList);
+                var weekList = NexusManager.AccumulatedScores.WeekScores
+                    .OrderByDescending(x => x.Value)
+                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                    .ToList();
+
+                if (_config.Show_WeeklyResults)
+                {
+                    AnnouncePeriodResults("Weekly", weekList,
+                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
+                    RewardService.ExecutePeriodRewards(_config.WeeklyRankRewards.ToList(),
+                        _config.WeeklyThresholdRewards.ToList(), weekList);
+                }
             }
+
+            MergePoints(_eventData.WeekEvents, _eventData.MonthEvents);
+            MergeScores(NexusManager.AccumulatedScores.WeekScores, NexusManager.AccumulatedScores.MonthScores);
 
             _eventData.WeekEvents.Clear();
             NexusManager.AccumulatedScores.WeekScores.Clear();
             NexusManager.BroadcastWipe(WipePeriod.Week);
-            _config.LastWeeklyReset = DateTime.Now;
+
+            _config.LastWeeklyProcessWeek = GetIsoWeek(now);
+            _config.LastWeeklyProcessYear = now.Year;
+            ForceSave();
         }
 
-        private void CheckMonthlyReset()
+        private void ProcessMonthly()
         {
-            if (!_config.MonthlyResetEnabled) return;
-            var resetDay = Math.Max(1, Math.Min(28, _config.MonthlyResetDay));
-            if (DateTime.Now.Day != resetDay) return;
-            if (_config.LastMonthlyReset.Date.Month == DateTime.Now.Month && _config.LastMonthlyReset.Date.Year == DateTime.Now.Year) return;
+            var now = DateTime.Now;
+            if (!ShouldProcessMonthly(now)) return;
 
-            var monthList = NexusManager.AccumulatedScores.MonthScores.OrderByDescending(x => x.Value).ToList();
-            if (_config.Show_MonthlyResults)
+            if (_config.MonthlyRewardsEnabled)
             {
-                AnnouncePeriodResults("Monthly", monthList, DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Silver);
-                RewardService.ExecutePeriodRewards(_config.MonthlyRankRewards.ToList(), _config.MonthlyThresholdRewards.ToList(), monthList);
+                var monthList = NexusManager.AccumulatedScores.MonthScores
+                    .OrderByDescending(x => x.Value)
+                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                    .ToList();
+
+                if (_config.Show_MonthlyResults)
+                {
+                    AnnouncePeriodResults("Monthly", monthList,
+                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Silver);
+                    RewardService.ExecutePeriodRewards(_config.MonthlyRankRewards.ToList(),
+                        _config.MonthlyThresholdRewards.ToList(), monthList);
+                }
             }
+
+            MergePoints(_eventData.MonthEvents, _eventData.YearEvents);
+            MergeScores(NexusManager.AccumulatedScores.MonthScores, NexusManager.AccumulatedScores.YearScores);
 
             _eventData.MonthEvents.Clear();
             NexusManager.AccumulatedScores.MonthScores.Clear();
             NexusManager.BroadcastWipe(WipePeriod.Month);
-            _config.LastMonthlyReset = DateTime.Now;
+
+            _config.LastMonthlyProcessMonth = now.Month;
+            _config.LastMonthlyProcessYear = now.Year;
+            ForceSave();
         }
 
-        private void CheckYearlyReset()
+        private void ProcessYearly()
         {
-            if (!_config.YearlyResetEnabled) return;
-            var resetMonth = Math.Max(1, Math.Min(12, _config.YearlyResetMonth));
-            var resetDay = Math.Max(1, Math.Min(28, _config.YearlyResetDay));
-            if (DateTime.Now.Month != resetMonth || DateTime.Now.Day != resetDay) return;
-            if (_config.LastYearlyReset.Date.Year == DateTime.Now.Year) return;
+            var now = DateTime.Now;
+            if (!ShouldProcessYearly(now)) return;
 
-            var yearList = NexusManager.AccumulatedScores.YearScores.OrderByDescending(x => x.Value).ToList();
-            if (_config.Show_YearlyResults)
+            if (_config.YearlyRewardsEnabled)
             {
-                AnnouncePeriodResults("Yearly", yearList, DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
-                RewardService.ExecutePeriodRewards(_config.YearlyRankRewards.ToList(), _config.YearlyThresholdRewards.ToList(), yearList);
+                var yearList = NexusManager.AccumulatedScores.YearScores
+                    .OrderByDescending(x => x.Value)
+                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                    .ToList();
+
+                if (_config.Show_YearlyResults)
+                {
+                    AnnouncePeriodResults("Yearly", yearList,
+                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
+                    RewardService.ExecutePeriodRewards(_config.YearlyRankRewards.ToList(),
+                        _config.YearlyThresholdRewards.ToList(), yearList);
+                }
             }
 
             _eventData.YearEvents.Clear();
             NexusManager.AccumulatedScores.YearScores.Clear();
             NexusManager.BroadcastWipe(WipePeriod.Year);
-            _config.LastYearlyReset = DateTime.Now;
+
+            _config.LastYearlyProcessYear = now.Year;
+            ForceSave();
+        }
+
+        private static void MergePoints(ObservableConcurrentUiSafeCollection<PointEarned> from, ObservableConcurrentUiSafeCollection<PointEarned> to)
+        {
+            foreach (var pt in from)
+            {
+                if (!to.Any(e => e.FromServerID == pt.FromServerID && e.EventId == pt.EventId))
+                    to.Add(pt);
+            }
+        }
+
+        internal static void MergeScores(
+            List<KeyValuePair<string, ulong>> from,
+            List<KeyValuePair<string, ulong>> to)
+        {
+            foreach (var kv in from)
+            {
+                int idx = to.FindIndex(x => x.Key == kv.Key);
+                if (idx >= 0)
+                    to[idx] = new KeyValuePair<string, ulong>(kv.Key, to[idx].Value + kv.Value);
+                else
+                    to.Add(kv);
+            }
+        }
+
+        private static int GetIsoWeek(DateTime d)
+        {
+            return CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+        }
+
+        private void ForceSave()
+        {
+            SenX_KOTH_PluginMain.EventPersist?.Save();
+            SenX_KOTH_PluginMain.ScorePersist?.Save();
+            SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
         private static void AnnouncePeriodResults(string periodName, List<KeyValuePair<string, int>> sortedScores,

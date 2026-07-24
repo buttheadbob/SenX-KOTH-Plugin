@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Timers;
 using NLog;
@@ -28,7 +29,7 @@ namespace SenX_KOTH_Plugin.Nexus
             if (config?.NexusEnabled == true && SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
             {
                 MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
-                Log.Info("Nexus message handler registered on channel " + NexusChannelId);
+                KoTHLog.Info(Log,"Nexus message handler registered on channel " + NexusChannelId);
             }
 
             _verificationTimer = new Timer(900000);
@@ -56,10 +57,6 @@ namespace SenX_KOTH_Plugin.Nexus
         {
             if (!data.WeekEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
                 data.WeekEvents.Add(point);
-            if (!data.MonthEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
-                data.MonthEvents.Add(point);
-            if (!data.YearEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
-                data.YearEvents.Add(point);
 
             UpdateAccumulatedScores(point);
             RewardService.CheckLiveRewards(point);
@@ -68,22 +65,20 @@ namespace SenX_KOTH_Plugin.Nexus
         private static void UpdateAccumulatedScores(PointEarned point)
         {
             if (point.LastWipe.HasValue) return;
-            AddToScoreList(AccumulatedScores.WeekScores, point.FactionName, point.Points);
-            AddToScoreList(AccumulatedScores.MonthScores, point.FactionName, point.Points);
-            AddToScoreList(AccumulatedScores.YearScores, point.FactionName, point.Points);
+            AddToScoreList(AccumulatedScores.WeekScores, point.FactionName, (ulong)point.Points);
         }
 
-        private static void AddToScoreList(List<KeyValuePair<string, int>> list, string factionName, int points)
+        private static void AddToScoreList(List<KeyValuePair<string, ulong>> list, string factionName, ulong points)
         {
             for (int i = 0; i < list.Count; i++)
             {
                 if (list[i].Key == factionName)
                 {
-                    list[i] = new KeyValuePair<string, int>(factionName, list[i].Value + points);
+                    list[i] = new KeyValuePair<string, ulong>(factionName, list[i].Value + points);
                     return;
                 }
             }
-            list.Add(new KeyValuePair<string, int>(factionName, points));
+            list.Add(new KeyValuePair<string, ulong>(factionName, points));
         }
 
         public static void BroadcastPointDelta(PointEarned point)
@@ -99,7 +94,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 byte[] data = MyAPIGateway.Utilities.SerializeToBinary(point);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to broadcast point delta."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast point delta."); }
         }
 
         public static void BroadcastWipe(WipePeriod period)
@@ -125,7 +120,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 byte[] data = MyAPIGateway.Utilities.SerializeToBinary(wipe);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to broadcast wipe."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast wipe."); }
         }
 
         public static void BroadcastVerification()
@@ -150,7 +145,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 byte[] data = MyAPIGateway.Utilities.SerializeToBinary(ver);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to broadcast verification."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast verification."); }
         }
 
         public static void BroadcastRewardConfig()
@@ -175,7 +170,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 byte[] data = MyAPIGateway.Utilities.SerializeToBinary(sync);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to broadcast reward config."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast reward config."); }
         }
 
         private static void HandleNexusMessage(ushort handlerId, byte[] data, ulong steamId, bool fromServer)
@@ -194,7 +189,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 TryHandlePointVerification(incomingMsg);
                 TryHandleRewardConfigSync(incomingMsg);
             }
-            catch (Exception ex) { Log.Error(ex, "Error handling Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Error handling Nexus message."); }
         }
 
         private static void TryHandlePointEarned(NexusGlobalAPI.ModAPIMsg msg)
@@ -205,11 +200,57 @@ namespace SenX_KOTH_Plugin.Nexus
                 if (point == null) return;
 
                 if (point.WipePeriod != WipePeriod.None)
+                {
                     ApplyWipe(point);
+                }
                 else if (_eventData != null)
-                    AddPointEvent(_eventData, point);
+                {
+                    AddNexusPoint(_eventData, point);
+                }
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to deserialize point earned from Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to deserialize point earned from Nexus message."); }
+        }
+
+        private static void AddNexusPoint(EventData data, PointEarned point)
+        {
+            bool exists =
+                data.WeekEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId) ||
+                data.MonthEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId) ||
+                data.YearEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId);
+
+            if (exists) return;
+
+            if (IsCurrentWeek(point.EarnedAt))
+                data.WeekEvents.Add(point);
+            else if (IsCurrentMonth(point.EarnedAt))
+                data.MonthEvents.Add(point);
+            else if (IsCurrentYear(point.EarnedAt))
+                data.YearEvents.Add(point);
+
+            UpdateAccumulatedScores(point);
+        }
+
+        private static bool IsCurrentWeek(DateTime date)
+        {
+            var now = DateTime.Now;
+            return GetIsoWeek(date) == GetIsoWeek(now) && date.Year == now.Year;
+        }
+
+        private static bool IsCurrentMonth(DateTime date)
+        {
+            var now = DateTime.Now;
+            return date.Month == now.Month && date.Year == now.Year;
+        }
+
+        private static bool IsCurrentYear(DateTime date)
+        {
+            return date.Year == DateTime.Now.Year;
+        }
+
+        internal static int GetIsoWeek(DateTime d)
+        {
+            return CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
         }
 
         private static void TryHandlePointVerification(NexusGlobalAPI.ModAPIMsg msg)
@@ -221,7 +262,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 if (ver == null) return;
                 ApplyVerification(ver);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to deserialize point verification from Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to deserialize point verification from Nexus message."); }
         }
 
         private static void TryHandleRewardConfigSync(NexusGlobalAPI.ModAPIMsg msg)
@@ -260,9 +301,9 @@ namespace SenX_KOTH_Plugin.Nexus
                 foreach (var t in syncedConfig.YearlyThresholdRewards) config.YearlyThresholdRewards.Add(t);
 
                 SenX_KOTH_PluginMain.ConfigPersist?.Save();
-                Log.Info("Reward config synced from server " + sync.FromServerID);
+                KoTHLog.Info(Log,"Reward config synced from server " + sync.FromServerID);
             }
-            catch (Exception ex) { Log.Error(ex, "Failed to sync reward config from Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to sync reward config from Nexus message."); }
         }
 
         private static void ApplyWipe(PointEarned wipe)
@@ -314,15 +355,15 @@ namespace SenX_KOTH_Plugin.Nexus
 
             foreach (var p in _eventData.WeekEvents.ToList())
                 if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.WeekScores, p.FactionName, p.Points);
+                    AddToScoreList(AccumulatedScores.WeekScores, p.FactionName, (ulong)p.Points);
 
             foreach (var p in _eventData.MonthEvents.ToList())
                 if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.MonthScores, p.FactionName, p.Points);
+                    AddToScoreList(AccumulatedScores.MonthScores, p.FactionName, (ulong)p.Points);
 
             foreach (var p in _eventData.YearEvents.ToList())
                 if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.YearScores, p.FactionName, p.Points);
+                    AddToScoreList(AccumulatedScores.YearScores, p.FactionName, (ulong)p.Points);
         }
     }
 }

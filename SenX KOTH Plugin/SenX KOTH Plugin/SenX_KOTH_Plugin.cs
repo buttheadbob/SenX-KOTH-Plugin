@@ -60,47 +60,47 @@ namespace SenX_KOTH_Plugin
             SetupConfig();
 
             ScorePersist = JsonPersistent<ScoreFile>.Load(Path.Combine(DataPath, "ScoreData.json"));
-            Log.Info("ScoreData loaded — Week entries: " + ScorePersist.Data.WeekScores.Count + ", Month: " + ScorePersist.Data.MonthScores.Count + ", Year: " + ScorePersist.Data.YearScores.Count);
+            KoTHLog.Info(Log,"ScoreData loaded — Week entries: " + ScorePersist.Data.WeekScores.Count + ", Month: " + ScorePersist.Data.MonthScores.Count + ", Year: " + ScorePersist.Data.YearScores.Count);
 
             EventPersist = JsonPersistent<EventData>.Load(Path.Combine(DataPath, "EventData.json"));
-            Log.Info("EventData loaded — WeekEvents: " + EventPersist.Data.WeekEvents.Count + ", MonthEvents: " + EventPersist.Data.MonthEvents.Count + ", YearEvents: " + EventPersist.Data.YearEvents.Count);
+            KoTHLog.Info(Log,"EventData loaded — WeekEvents: " + EventPersist.Data.WeekEvents.Count + ", MonthEvents: " + EventPersist.Data.MonthEvents.Count + ", YearEvents: " + EventPersist.Data.YearEvents.Count);
             EventPersist.WatchCollection(EventPersist.Data.WeekEvents);
             EventPersist.WatchCollection(EventPersist.Data.MonthEvents);
             EventPersist.WatchCollection(EventPersist.Data.YearEvents);
 
             BankPersist = JsonPersistent<BanksData>.Load(Path.Combine(DataPath, "FactionBanks.json"));
-            Log.Info("FactionBanks loaded — Banks: " + BankPersist.Data.Banks.Count);
+            KoTHLog.Info(Log,"FactionBanks loaded — Banks: " + BankPersist.Data.Banks.Count);
             BankPersist.WatchCollection(BankPersist.Data.Banks);
 
             RafflePersist = JsonPersistent<RaffleTicketsData>.Load(Path.Combine(DataPath, "RaffleTickets.json"));
-            Log.Info("RaffleTickets loaded — Tickets: " + RafflePersist.Data.Tickets.Count + ", LastDraw: " + RafflePersist.Data.LastDrawDate.ToString("yyyy-MM-dd"));
+            KoTHLog.Info(Log,"RaffleTickets loaded — Tickets: " + RafflePersist.Data.Tickets.Count + ", LastDraw: " + RafflePersist.Data.LastDrawDate.ToString("yyyy-MM-dd"));
             RafflePersist.WatchCollection(RafflePersist.Data.Tickets);
 
             ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(DataPath, "Zones.json"));
-            Log.Info("Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
+            KoTHLog.Info(Log,"Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
             ZonePersist.WatchCollection(ZonePersist.Data.Zones);
 
             var config = Config;
             if (config == null)
             {
-                Log.Error("Config failed to load; skipping event initialization.");
+                KoTHLog.Error(Log,"Config failed to load; skipping event initialization.");
                 return;
             }
 
             Events.Add(new ResetEvent(config, EventPersist.Data, BankPersist.Data));
-            Log.Info("Registered event: ResetEvent");
+            KoTHLog.Info(Log,"Registered event: ResetEvent");
 
             Events.Add(new RaffleEvent(config, BankPersist.Data, RafflePersist.Data));
-            Log.Info("Regi60s check intervalstered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
+            KoTHLog.Info(Log,"Regi60s check intervalstered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
 
             Events.Add(new LiveScoreboardEvent(config));
-            Log.Info("Registered event: LiveScoreboardEvent — DiscordBotEnabled=" + config.DiscordBotEnabled);
+            KoTHLog.Info(Log,"Registered event: LiveScoreboardEvent — DiscordBotEnabled=" + config.DiscordBotEnabled);
 
             TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
                 sessionManager.SessionStateChanged += SessionChanged;
             else
-                Log.Warn("No session manager loaded!");
+                KoTHLog.Warn(Log,"No session manager loaded!");
         }
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
@@ -108,7 +108,7 @@ namespace SenX_KOTH_Plugin
             switch (state)
             {
                 case TorchSessionState.Loaded:
-                    Log.Info("Session Loaded! Registered events: " + Events.Count);
+                    KoTHLog.Info(Log,"Session Loaded! Registered events: " + Events.Count);
                     NexusGlobalAPI = new NexusGlobalAPI(OnNexusEnabled);
                     NexusManager.Initialize(this, EventPersist!.Data);
                     Supervisor.Init();
@@ -118,7 +118,7 @@ namespace SenX_KOTH_Plugin
                     break;
 
                 case TorchSessionState.Unloading:
-                    Log.Info("Session Unloading!");
+                    KoTHLog.Info(Log,"Session Unloading!");
                     _ = Discord.DiscordBotService.StopAsync();
                     _questManager?.Shutdown();
                     _questManager = null;
@@ -132,7 +132,7 @@ namespace SenX_KOTH_Plugin
 
         private void OnNexusEnabled()
         {
-            Log.Info("Nexus 3 API connected. Server ID: " + NexusGlobalAPI?.CurrentServerID);
+            KoTHLog.Info(Log,"Nexus 3 API connected. Server ID: " + NexusGlobalAPI?.CurrentServerID);
             if (Config?.NexusEnabled == true)
                 NexusManager.Initialize(this, EventPersist!.Data);
         }

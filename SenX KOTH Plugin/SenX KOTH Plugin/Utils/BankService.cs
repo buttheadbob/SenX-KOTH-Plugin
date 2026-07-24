@@ -192,7 +192,7 @@ namespace SenX_KOTH_Plugin.Utils
                                 .Replace("{factionid}", faction.FactionId.ToString())
                                 .Replace("{factionname}", faction.Name)
                                 .Replace("{factiontag}", faction.Tag);
-                            Log.Info("Raffle Reward Command: " + c);
+                            KoTHLog.Info(Log,"Raffle Reward Command: " + c);
                         }
                     }
                     else
@@ -200,7 +200,7 @@ namespace SenX_KOTH_Plugin.Utils
                         string c = cmd.CommandText.Replace("{factionid}", faction.FactionId.ToString())
                             .Replace("{factionname}", faction.Name)
                             .Replace("{factiontag}", faction.Tag);
-                        Log.Info("Raffle Reward Command: " + c);
+                        KoTHLog.Info(Log,"Raffle Reward Command: " + c);
                     }
                 }
             }

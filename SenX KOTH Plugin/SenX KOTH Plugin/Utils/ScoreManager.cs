@@ -38,9 +38,9 @@ namespace SenX_KOTH_Plugin.Utils
 
     public sealed class ScoreFile : ViewModel
     {
-        public List<KeyValuePair<string, int>> WeekScores { get => field; set => SetValue(ref field, value); } = new();
-        public List<KeyValuePair<string, int>> MonthScores { get => field; set => SetValue(ref field, value); } = new();
-        public List<KeyValuePair<string, int>> YearScores { get => field; set => SetValue(ref field, value); } = new();
+        public List<KeyValuePair<string, ulong>> WeekScores { get => field; set => SetValue(ref field, value); } = new();
+        public List<KeyValuePair<string, ulong>> MonthScores { get => field; set => SetValue(ref field, value); } = new();
+        public List<KeyValuePair<string, ulong>> YearScores { get => field; set => SetValue(ref field, value); } = new();
     }
 }
 

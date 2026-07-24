@@ -68,6 +68,12 @@ namespace SenX_KOTH_Plugin
         public DateTime LastMonthlyReset { get => field; set => SetValue(ref field, value); } = DateTime.MinValue;
         public DateTime LastYearlyReset { get => field; set => SetValue(ref field, value); } = DateTime.MinValue;
 
+        public int LastWeeklyProcessWeek { get => field; set => SetValue(ref field, value); }
+        public int LastWeeklyProcessYear { get => field; set => SetValue(ref field, value); }
+        public int LastMonthlyProcessMonth { get => field; set => SetValue(ref field, value); }
+        public int LastMonthlyProcessYear { get => field; set => SetValue(ref field, value); }
+        public int LastYearlyProcessYear { get => field; set => SetValue(ref field, value); }
+
         public bool Show_AttackMessages { get => field; set => SetValue(ref field, value); } = true;
         public bool Show_WeeklyResults { get => field; set => SetValue(ref field, value); } = true;
         public bool Show_MonthlyResults { get => field; set => SetValue(ref field, value); } = true;
@@ -78,13 +84,9 @@ namespace SenX_KOTH_Plugin
         public string CustomTitle { get => field; set => SetValue(ref field, value); } = "";
         public bool CustomTitleEnable { get => field; set => SetValue(ref field, value); }
 
-        public DayOfWeek WeeklyResetDay { get => field; set => SetValue(ref field, value); } = DayOfWeek.Monday;
-        public bool WeeklyResetEnabled { get => field; set => SetValue(ref field, value); } = true;
-        public int MonthlyResetDay { get => field; set => SetValue(ref field, value); } = 1;
-        public bool MonthlyResetEnabled { get => field; set => SetValue(ref field, value); } = true;
-        public int YearlyResetMonth { get => field; set => SetValue(ref field, value); } = 1;
-        public int YearlyResetDay { get => field; set => SetValue(ref field, value); } = 1;
-        public bool YearlyResetEnabled { get => field; set => SetValue(ref field, value); } = true;
+        public bool WeeklyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
+        public bool MonthlyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
+        public bool YearlyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
 
         public bool NexusEnabled { get => field; set => SetValue(ref field, value); }
 
@@ -96,6 +98,9 @@ namespace SenX_KOTH_Plugin
         public ulong KoTHCategoryId { get => field; set => SetValue(ref field, value); }
         public ulong DiscordGuildId { get => field; set => SetValue(ref field, value); }
         public ulong LiveScoreboardMessageId { get => field; set => SetValue(ref field, value); }
+        public int DiscordUpdateIntervalSeconds { get => field; set => SetValue(ref field, value); } = 30;
+        public string DiscordChannelPrefix { get => field; set => SetValue(ref field, value); } = "zone-";
+        public bool DebugLoggingEnabled { get => field; set => SetValue(ref field, value); }
 
         public string EnterAlert_MessageTemplate { get => field; set => SetValue(ref field, value); }
             = "{player} from [{factionTag}] entered {zoneName}";

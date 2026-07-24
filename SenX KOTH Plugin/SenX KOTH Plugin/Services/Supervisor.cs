@@ -15,7 +15,7 @@ internal static class Supervisor
 
     public static void Init()
     {
-        Log.Info("Supervisor starting — 60s check interval");
+        KoTHLog.Info(Log,"Supervisor starting — 60s check interval");
         _timer = new(60000);
         _timer.Elapsed += RunChecks;
         _timer.Start();
@@ -39,7 +39,7 @@ internal static class Supervisor
                     {
                         var evt = new ZonePointEvent(zone, config, bankData, eventData);
                         SenX_KOTH_PluginMain.Events.Add(evt);
-                        Log.Info("Created zone event: " + zone.Name + " — " + evt.ShouldRunStatus);
+                        KoTHLog.Info(Log,"Created zone event: " + zone.Name + " — " + evt.ShouldRunStatus);
                     }
                 }
 
@@ -50,45 +50,45 @@ internal static class Supervisor
                 {
                     evt.Stop();
                     SenX_KOTH_PluginMain.Events.Remove(evt);
-                    Log.Info("Removed zone event: " + evt.Name);
+                    KoTHLog.Info(Log,"Removed zone event: " + evt.Name);
                 }
             }
 
             var events = SenX_KOTH_PluginMain.Events.ToList();
-            Log.Info("Supervisor check — {0} events", events.Count);
+            KoTHLog.Info(Log,"Supervisor check — {0} events", events.Count);
 
             foreach (IKothEvent evt in events)
             {
                 try
                 {
                     var state = evt.IsRunning ? "RUNNING" : "STOPPED";
-                    Log.Info("  [" + state + "] " + evt.Name + " — ShouldRun=" + evt.ShouldRun);
+                    KoTHLog.Info(Log,"  [" + state + "] " + evt.Name + " — ShouldRun=" + evt.ShouldRun);
 
                     if (evt.ShouldRun && !evt.IsRunning)
                     {
                         evt.Start();
-                        Log.Info("  -> STARTED: " + evt.Name);
+                        KoTHLog.Info(Log,"  -> STARTED: " + evt.Name);
                     }
                     else if (evt is { ShouldRun: false, IsRunning: true })
                     {
                         evt.Stop();
-                        Log.Info("  -> STOPPED: " + evt.Name);
+                        KoTHLog.Info(Log,"  -> STOPPED: " + evt.Name);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Supervisor error for event: " + evt.Name);
+                    KoTHLog.Error(Log,ex, "Supervisor error for event: " + evt.Name);
                 }
             }
         }
 
     public static void ShutDown()
     {
-        Log.Info("Supervisor shutting down");
+        KoTHLog.Info(Log,"Supervisor shutting down");
         foreach (IKothEvent evt in SenX_KOTH_PluginMain.Events)
         {
             try { evt.Stop(); }
-            catch (Exception ex) { Log.Error(ex, "Supervisor shutdown error: " + evt.Name); }
+            catch (Exception ex) { KoTHLog.Error(Log,ex, "Supervisor shutdown error: " + evt.Name); }
         }
         _timer?.Stop();
         _timer?.Dispose();

@@ -6,6 +6,7 @@ using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using Torch.API;
 using Torch.API.Managers;
+using Torch.Commands;
 using VRage.Game.ModAPI;
 
 namespace SenX_KOTH_Plugin.Utils
@@ -46,7 +47,7 @@ namespace SenX_KOTH_Plugin.Utils
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error executing live rewards for zone: " + point.ZoneName);
+                KoTHLog.Error(Log,ex, "Error executing live rewards for zone: " + point.ZoneName);
             }
         }
 
@@ -175,7 +176,17 @@ namespace SenX_KOTH_Plugin.Utils
         {
             try
             {
-                Log.Info("KoTH Reward Command Executed: " + commandText);
+                var commandManager = SenX_KOTH_PluginMain.Instance?.Torch.CurrentSession?.Managers
+                    .GetManager<CommandManager>();
+                if (commandManager != null)
+                {
+                    commandManager.HandleCommandFromServer(commandText);
+                    Log.Info("KoTH Reward Command Executed: " + commandText);
+                }
+                else
+                {
+                    Log.Error("Cannot execute reward command — CommandManager not available: " + commandText);
+                }
             }
             catch (Exception ex)
             {

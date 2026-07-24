@@ -93,7 +93,7 @@ internal static class ZoneManager
                 MyEntity? newEntity = MyEntities.CreateFromObjectBuilderAndAdd(ob, fadeIn: false);
                 if (newEntity == null)
                 {
-                    Log.Error("Failed to create safe zone entity for: " + zone.Name);
+                    KoTHLog.Error(Log,"Failed to create safe zone entity for: " + zone.Name);
                     return;
                 }
                 
@@ -102,7 +102,7 @@ internal static class ZoneManager
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to create safe zone entity for: " + zone.Name);
+            KoTHLog.Error(Log,ex, "Failed to create safe zone entity for: " + zone.Name);
         }
     }
 
@@ -110,7 +110,7 @@ internal static class ZoneManager
     {
         if (data.Zones.Any(z => string.Equals(z.Name, name, StringComparison.OrdinalIgnoreCase)))
         {
-            Log.Warn(adminName + " tried to create duplicate zone: " + name);
+            KoTHLog.Warn(Log,adminName + " tried to create duplicate zone: " + name);
             return null;
         }
 
@@ -145,7 +145,7 @@ internal static class ZoneManager
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to close safe zone entity for: " + name);
+                KoTHLog.Error(Log,ex, "Failed to close safe zone entity for: " + name);
             }
         }
 
@@ -201,13 +201,13 @@ internal static class ZoneManager
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to update safe zone entity for: " + zone.Name);
+            KoTHLog.Error(Log,ex, "Failed to update safe zone entity for: " + zone.Name);
         }
     }
 
     public static void ApplyEvictionState(KothZoneCache cache, float? r, float? g, float? b, string? texture)
     {
-        Log.Info("Applying  eviction state...");
+        KoTHLog.Info(Log,"Applying  eviction state...");
         try
         {
             cache.IsEvictionActive = true;
@@ -216,7 +216,7 @@ internal static class ZoneManager
             
             if (safeZone == null)
             {
-                Log.Error($"Unable to find SafeZone for {cache.ZoneName} with entityid {cache.SafeZoneEntityId}.");
+                KoTHLog.Error(Log,$"Unable to find SafeZone for {cache.ZoneName} with entityid {cache.SafeZoneEntityId}.");
                 return;
             }
             
@@ -248,7 +248,7 @@ internal static class ZoneManager
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to apply eviction state: " + cache.ZoneName);
+            KoTHLog.Error(Log,ex, "Failed to apply eviction state: " + cache.ZoneName);
         }
     }
     
@@ -270,7 +270,7 @@ internal static class ZoneManager
             
             if (safeZone == null)
             {
-                Log.Error($"Unable to find SafeZone for {cache.ZoneName} with entityid {cache.SafeZoneEntityId}.");
+                KoTHLog.Error(Log,$"Unable to find SafeZone for {cache.ZoneName} with entityid {cache.SafeZoneEntityId}.");
                 return;
             }
 
@@ -297,7 +297,7 @@ internal static class ZoneManager
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to restore zone state: " + cache.ZoneName);
+            KoTHLog.Error(Log,ex, "Failed to restore zone state: " + cache.ZoneName);
         }
     }
 
@@ -358,7 +358,7 @@ internal static class ZoneManager
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to move dynamic zone: " + cache.ZoneName);
+            KoTHLog.Error(Log,ex, "Failed to move dynamic zone: " + cache.ZoneName);
         }
     }
 

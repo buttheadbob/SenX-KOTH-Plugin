@@ -140,7 +140,7 @@ namespace SenX_KOTH_Plugin.Services
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "QuestManager: outside entity query failed for zone " + evt.Zone.Name);
+                        KoTHLog.Error(Log,ex, "QuestManager: outside entity query failed for zone " + evt.Zone.Name);
                     }
                 }
 

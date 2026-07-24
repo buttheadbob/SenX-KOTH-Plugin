@@ -157,6 +157,7 @@
     <Compile Include="SenX KOTH Plugin\Utils\EnterAlertService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\GameThread.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\JsonPersistent.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\KoTHLog.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\KothAudioManager.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\MaybeNull.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentDictionary.cs" />
