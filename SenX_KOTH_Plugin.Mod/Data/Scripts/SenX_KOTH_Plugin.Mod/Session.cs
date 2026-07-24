@@ -4,6 +4,7 @@ using Sandbox.ModAPI;
 using SenX_KOTH_Plugin.Messages;
 using VRage.Game;
 using VRage.Game.Components;
+using VRage.Utils;
 using VRageMath;
 
 namespace SenX_KOTH_Plugin.Mod
@@ -52,7 +53,10 @@ namespace SenX_KOTH_Plugin.Mod
                 else
                     _zoneData[msg.ZoneName] = msg;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MyLog.Default.WriteLineAndConsole("KoTH Mod: Failed to deserialize quest message: " + ex.Message);
+            }
         }
 
         public override void UpdateAfterSimulation()

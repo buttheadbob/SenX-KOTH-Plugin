@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using RichHudFramework.UI;
 using RichHudFramework.UI.Client;
-using Sandbox.Game.Entities;
 using SenX_KOTH_Plugin.Messages;
 using VRageMath;
 
@@ -36,9 +34,7 @@ namespace SenX_KOTH_Plugin.Mod
 
         private sealed class KoTHWindow : WindowBase
         {
-            private readonly DoubleLabelBox _line1;
-            private readonly DoubleLabelBox _line2;
-            private readonly DoubleLabelBox _line3;
+            private readonly List<Row> _rows;
 
             public KoTHWindow(HudParentBase parent) : base(parent)
             {
@@ -54,38 +50,28 @@ namespace SenX_KOTH_Plugin.Mod
                 AllowResizing = false;
                 Visible = false;
 
-                _line1 = DblLbl();
-                _line2 = DblLbl();
-                _line3 = DblLbl();
-
-                new HudChain(true, body)
+                _rows = new List<Row>();
+                var chain = new HudChain(true, body)
                 {
                     ParentAlignment = ParentAlignments.Top | ParentAlignments.Left | ParentAlignments.Inner,
                     DimAlignment = DimAlignments.Width,
                     SizingMode = HudChainSizingModes.FitMembersOffAxis,
-                    Spacing = 8f,
-                    CollectionContainer = { { _line1, 0f }, { _line2, 0f }, { _line3, 0f } }
+                    Spacing = 2f,
                 };
-            }
 
-            private static DoubleLabelBox DblLbl()
-            {
-                return new DoubleLabelBox
+                for (int i = 0; i < 4; i++)
                 {
-                    Height = 28f,
-                    Visible = false,
-                    AutoResize = false,
-                    Color = new Color(0, 0, 0, 0),
-                    TextPadding = new Vector2(12, 4),
-                };
-            } 
+                    var row = new Row();
+                    _rows.Add(row);
+                    chain.CollectionContainer.Add(row.Chain, 0f);
+                }
+            }
 
             public void SetLines(QuestUpdateMessage msg)
             {
                 var lines = BuildLines(msg);
-                SetLine(_line1, lines, 0);
-                SetLine(_line2, lines, 1);
-                SetLine(_line3, lines, 2);
+                for (int i = 0; i < _rows.Count; i++)
+                    _rows[i].Set(lines, i);
             }
 
             private static List<LineData> BuildLines(QuestUpdateMessage msg)
@@ -153,30 +139,60 @@ namespace SenX_KOTH_Plugin.Mod
                 return new LineData(text, null, labelColor, valueColor);
             }
 
-            private static void SetLine(DoubleLabelBox box, List<LineData> lines, int index)
+            private sealed class Row
             {
-                if (index < lines.Count && lines[index] != null)
-                {
-                    var data = lines[index];
-                    box.LeftTextBuilder.SetFormatting(new GlyphFormat(data.LabelColor, TextAlignment.Left, 0.95f));
-                    box.LeftText = new RichText(new StringBuilder(data.Label));
+                public readonly HudChain Chain;
+                private readonly Label _left;
+                private readonly Label _right;
 
-                    if (data.Value != null)
+                public Row()
+                {
+                    _left = new Label
                     {
-                        box.RightTextBuilder.SetFormatting(new GlyphFormat(data.ValueColor, TextAlignment.Right, 0.95f));
-                        box.RightText = new RichText(new StringBuilder(data.Value));
-                        box.RightTextBuilder.SetFormatting(new GlyphFormat(data.ValueColor, TextAlignment.Right, 0.95f));
+                        Format = new GlyphFormat(Color.White, TextAlignment.Left, 0.95f),
+                        AutoResize = true,
+                    };
+                    _right = new Label
+                    {
+                        Format = new GlyphFormat(Color.White, TextAlignment.Right, 0.95f),
+                        AutoResize = true,
+                    };
+
+                    Chain = new HudChain(false)
+                    {
+                        SizingMode = HudChainSizingModes.FitMembersOffAxis,
+                        DimAlignment = DimAlignments.Width,
+                        Padding = new Vector2(12, 0),
+                        CollectionContainer = { { _left, 0f }, { new EmptyHudElement(), 1f }, { _right, 0f } },
+                    };
+                }
+
+                public void Set(List<LineData> lines, int index)
+                {
+                    if (index < lines.Count && lines[index] != null)
+                    {
+                        var data = lines[index];
+                        _left.Format = new GlyphFormat(data.LabelColor, TextAlignment.Left, 0.95f);
+                        _left.Text = new RichText(new StringBuilder(data.Label));
+
+                        if (data.Value != null)
+                        {
+                            _right.Format = new GlyphFormat(data.ValueColor, TextAlignment.Right, 0.95f);
+                            _right.Text = new RichText(new StringBuilder(data.Value));
+                            _right.Visible = true;
+                        }
+                        else
+                        {
+                            _right.Visible = false;
+                        }
+
+                        _left.Visible = true;
                     }
                     else
                     {
-                        box.RightText = new RichText(new StringBuilder());
+                        _left.Visible = false;
+                        _right.Visible = false;
                     }
-
-                    box.Visible = true;
-                }
-                else
-                {
-                    box.Visible = false;
                 }
             }
 

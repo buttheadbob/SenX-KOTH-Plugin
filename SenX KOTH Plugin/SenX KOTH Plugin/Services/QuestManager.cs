@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using NLog;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Character;
@@ -20,6 +21,8 @@ namespace SenX_KOTH_Plugin.Services
 {
     internal sealed class QuestManager
     {
+        private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => QuestManager");
+
         private const ushort RICH_HUD_CHANNEL = 43521;
 
         private readonly ObservableConcurrentHashSet<IKothEvent> _events;
@@ -115,6 +118,8 @@ namespace SenX_KOTH_Plugin.Services
                             }
                             else if (ent is MyCubeGrid grid)
                             {
+                                if (grid.Physics == null) continue;
+
                                 var distributor = grid.GridSystems.ResourceDistributor;
                                 if (distributor == null
                                     || distributor.ResourceStateByType(MyResourceDistributorComponent.ElectricityId) == MyResourceStateEnum.NoPower)
@@ -125,6 +130,7 @@ namespace SenX_KOTH_Plugin.Services
                                 if (faction == null) continue;
                                 factionId = faction.FactionId;
                             }
+                            else continue;
 
                             var dict = inside ? insideFactionCounts : outsideFactionCounts;
                             if (!dict.ContainsKey(factionId))
@@ -132,7 +138,10 @@ namespace SenX_KOTH_Plugin.Services
                             dict[factionId]++;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "QuestManager: outside entity query failed for zone " + evt.Zone.Name);
+                    }
                 }
 
                 var factionPlayers = new Dictionary<long, List<IMyPlayer>>();
