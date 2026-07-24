@@ -2,6 +2,8 @@ using VRageMath;
 
 namespace SenX_KOTH_Plugin.Models;
 
+internal enum QuestDisplayMode { None, Notifications, RichHUD }
+
 internal sealed class KothZone
 {
     public string Name { get; set; } = "";
@@ -53,6 +55,10 @@ internal sealed class KothZone
     public bool AnnounceGps { get; set; } = true;
 
     public ulong DiscordChannelId { get; set; }
+
+    public QuestDisplayMode DisplayMode { get; set; } = QuestDisplayMode.Notifications;
+    public float QuestDistance { get; set; } = 25000f;
+    public bool ShowEnemiesOutside { get; set; }
 
     public bool EvictionEnabled { get; set; }
     public int EvictionFrequencyMinutes { get; set; } = 60;

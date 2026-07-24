@@ -129,9 +129,11 @@
     <Compile Include="SenX KOTH Plugin\Models\KothZone.cs" />
     <Compile Include="SenX KOTH Plugin\Models\FactionBank.cs" />
     <Compile Include="SenX KOTH Plugin\Models\PersistentData.cs" />
+    <Compile Include="SenX KOTH Plugin\Messages\QuestUpdateMessage.cs" />
     <Compile Include="SenX KOTH Plugin\Nexus\NexusGlobalAPI.cs" />
     <Compile Include="SenX KOTH Plugin\Nexus\NexusManager.cs" />
     <Compile Include="SenX KOTH Plugin\Services\Supervisor.cs" />
+    <Compile Include="SenX KOTH Plugin\Services\QuestManager.cs" />
     <Compile Include="SenX KOTH Plugin\UI\SenX_KOTH_PluginControl.xaml.cs">
       <DependentUpon>SenX_KOTH_PluginControl.xaml</DependentUpon>
     </Compile>

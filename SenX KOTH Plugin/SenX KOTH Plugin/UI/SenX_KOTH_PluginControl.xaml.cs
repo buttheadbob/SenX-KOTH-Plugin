@@ -89,6 +89,9 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_EvictionColorG.Text = "0";
             ZoneEditor_EvictionColorB.Text = "0";
             ZoneEditor_EvictionTexture.Text = "";
+            ZoneEditor_QuestDist.Text = "25000";
+            ZoneEditor_QuestMode.SelectedIndex = 1;
+            ZoneEditor_ShowEnemiesOutside.IsChecked = false;
             ZoneEditor_SchedMon.IsChecked = true;
             ZoneEditor_SchedTue.IsChecked = true;
             ZoneEditor_SchedWed.IsChecked = true;
@@ -145,6 +148,9 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_EvictionColorG.Text = _editingZone.EvictionColorG.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_EvictionColorB.Text = _editingZone.EvictionColorB.ToString("F2", CultureInfo.InvariantCulture);
             ZoneEditor_EvictionTexture.Text = _editingZone.EvictionTexture;
+            ZoneEditor_QuestDist.Text = _editingZone.QuestDistance.ToString("F0");
+            ZoneEditor_QuestMode.SelectedIndex = (int)_editingZone.DisplayMode;
+            ZoneEditor_ShowEnemiesOutside.IsChecked = _editingZone.ShowEnemiesOutside;
             ZoneEditor_SchedMon.IsChecked = _editingZone.ScheduleMonday;
             ZoneEditor_SchedTue.IsChecked = _editingZone.ScheduleTuesday;
             ZoneEditor_SchedWed.IsChecked = _editingZone.ScheduleWednesday;
@@ -233,6 +239,7 @@ namespace SenX_KOTH_Plugin
                 SaveCaptureFields();
                 SaveDynamicFields();
                 SaveEvictionFields();
+                SaveQuestFields();
                 SaveScheduleFields();
 
                 ZoneManager.CreateSafeZoneEntity(_editingZone, new VRageMath.Vector3D(px, py, pz));
@@ -253,6 +260,7 @@ namespace SenX_KOTH_Plugin
                 SaveCaptureFields();
                 SaveDynamicFields();
                 SaveEvictionFields();
+                SaveQuestFields();
                 SaveScheduleFields();
                 ZoneManager.UpdateZoneEntity(_editingZone);
                 SenX_KOTH_PluginMain.ZonePersist?.Save();
@@ -292,6 +300,16 @@ namespace SenX_KOTH_Plugin
             _editingZone.EvictionColorG = cg;
             _editingZone.EvictionColorB = cb;
             _editingZone.EvictionTexture = ZoneEditor_EvictionTexture.Text.Trim();
+        }
+
+        private void SaveQuestFields()
+        {
+            if (_editingZone == null) return;
+            _editingZone.DisplayMode = (QuestDisplayMode)Math.Max(0, Math.Min(2, ZoneEditor_QuestMode.SelectedIndex));
+            var qdText = ZoneEditor_QuestDist.Text;
+            if (float.TryParse(qdText, NumberStyles.Float, CultureInfo.InvariantCulture, out float qd) && qd >= 0f)
+                _editingZone.QuestDistance = qd;
+            _editingZone.ShowEnemiesOutside = ZoneEditor_ShowEnemiesOutside.IsChecked == true;
         }
 
         private void SaveScheduleFields()

@@ -56,6 +56,16 @@ namespace SenX_KOTH_Plugin.Events
             "Enabled=" + _zone.Enabled + " Session=" + (MySession.Static != null) + " Schedule=" + IsWithinSchedule();
         public bool IsRunning { get; private set; }
 
+        internal CaptureState State => _state;
+        internal long CaptureFactionId => _captureFactionId;
+        internal long SuitCount => _suitCount;
+        internal long GridCount => _gridCount;
+        internal long EnemySuitCount => _enemySuitCount;
+        internal long EnemyGridCount => _enemyGridCount;
+        internal long TotalEnemiesInside => _enemySuitCount + _enemyGridCount;
+        internal int CaptureProgress => _captureProgress;
+        internal KothZone Zone => _zone;
+
         public ZonePointEvent(KothZone zone, SenX_KOTH_PluginConfig config, BanksData bankData, EventData eventData)
         {
             _zone = zone;
@@ -336,7 +346,6 @@ namespace SenX_KOTH_Plugin.Events
                         if (threshold > _lastAnnouncedProgress)
                         {
                             _lastAnnouncedProgress = threshold;
-                            UpdateQuestForAll("Capturing: [" + GetCaptureTag() + "] — " + threshold + "%", true);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLocking);
                         }
 
@@ -344,7 +353,6 @@ namespace SenX_KOTH_Plugin.Events
                         {
                             _state = CaptureState.Captured;
                             _lastAnnouncedProgress = 0;
-                            UpdateQuestForAll("Held by: [" + GetCaptureTag() + "]", true);
                             Log.Info("Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
                         }
@@ -358,26 +366,19 @@ namespace SenX_KOTH_Plugin.Events
                         if (loss <= 0) break;
 
                         _captureProgress -= loss;
-                        int pct = _captureProgress * 100 / _zone.CapturePointsNeeded;
 
                         if (_captureProgress <= 0)
                         {
                             _captureProgress = 0;
                             _lastAnnouncedProgress = 0;
                             _state = CaptureState.Neutral;
-                            HideQuestForAll();
                             Log.Info("Zone capture lost: " + _zone.Name);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
-                        }
-                        else
-                        {
-                            UpdateQuestForAll("DECAYING [" + GetCaptureTag() + "] — " + pct + "%", true);
                         }
                         break;
                     }
 
                     case CaptureState.Contested:
-                        UpdateQuestForAll("CONTESTED — enemies inside!", true);
                         break;
                 }
             }
@@ -473,7 +474,6 @@ namespace SenX_KOTH_Plugin.Events
                             _captureFactionId = 0;
                             _state = CaptureState.Neutral;
                             _lastAnnouncedProgress = 0;
-                            MyVisualScriptLogicProvider.SetQuestlog(false, "", 0);
                         }
 
                         var cacheEntry = ZoneManager.ZoneCache.FirstOrDefault(z =>
@@ -547,60 +547,21 @@ namespace SenX_KOTH_Plugin.Events
             switch (_state)
             {
                 case CaptureState.Capturing:
-                    UpdateQuestForAll("Capturing: [" + GetCaptureTag() + "]", true);
                     break;
                 case CaptureState.Captured:
                     break;
                 case CaptureState.Contested:
-                    UpdateQuestForAll("CONTESTED — enemies inside!", true);
                     _audio.Play2DSound(_captureFactionId, SoundCueType.EnemyEnteredZone);
                     break;
                 case CaptureState.Decaying:
-                    UpdateQuestForAll("DECAYING — [" + GetCaptureTag() + "]", true);
                     _audio.Play2DSound(_captureFactionId, SoundCueType.EnemyEnteredZone);
                     break;
                 case CaptureState.Neutral:
-                    HideQuestForAll();
                     break;
             }
         }
 
-        private void UpdateQuestForAll(string detail, bool clearPrevious)
-        {
-            var cacheEntry = ZoneManager.ZoneCache.FirstOrDefault(z =>
-                string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
-            if (cacheEntry == null) return;
-
-            var players = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(players);
-            foreach (var p in players)
-            {
-                if (p.Character == null) continue;
-                var distSq = Vector3D.DistanceSquared(p.Character.WorldMatrix.Translation, cacheEntry.Position);
-                if (distSq > 25000 * 25000) continue;
-                MyVisualScriptLogicProvider.SetQuestlog(true, "[KoTH] " + _zone.Name, p.IdentityId);
-                MyVisualScriptLogicProvider.AddQuestlogDetailLocal(detail, clearPrevious, false, p.IdentityId);
-            }
-        }
-
-        private void HideQuestForAll()
-        {
-            var cacheEntry = ZoneManager.ZoneCache.FirstOrDefault(z =>
-                string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
-            if (cacheEntry == null) return;
-
-            var players = new List<IMyPlayer>();
-            MyAPIGateway.Players.GetPlayers(players);
-            foreach (var p in players)
-            {
-                if (p.Character == null) continue;
-                var distSq = Vector3D.DistanceSquared(p.Character.WorldMatrix.Translation, cacheEntry.Position);
-                if (distSq > 25000 * 25000) continue;
-                MyVisualScriptLogicProvider.SetQuestlog(false, "", p.IdentityId);
-            }
-        }
-
-        private string GetCaptureTag()
+        internal string GetCaptureTag()
         {
             if (_captureFactionId == 0) return "??";
             IMyFaction? f = null;

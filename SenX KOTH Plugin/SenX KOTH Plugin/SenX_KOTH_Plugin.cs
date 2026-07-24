@@ -36,6 +36,7 @@ namespace SenX_KOTH_Plugin
         }
 
         private SenX_KOTH_PluginControl? _control;
+        private QuestManager? _questManager;
         public UserControl GetControl() => _control ??= new SenX_KOTH_PluginControl();
 
         public SenX_KOTH_PluginConfig? Config { get; private set; }
@@ -111,12 +112,16 @@ namespace SenX_KOTH_Plugin
                     NexusGlobalAPI = new NexusGlobalAPI(OnNexusEnabled);
                     NexusManager.Initialize(this, EventPersist!.Data);
                     Supervisor.Init();
+                    _questManager = new QuestManager(Events);
+                    _questManager.Init();
                     _ = Discord.DiscordBotService.StartAsync();
                     break;
 
                 case TorchSessionState.Unloading:
                     Log.Info("Session Unloading!");
                     _ = Discord.DiscordBotService.StopAsync();
+                    _questManager?.Shutdown();
+                    _questManager = null;
                     Supervisor.ShutDown();
                     NexusManager.Shutdown();
                     NexusGlobalAPI?.Unload();

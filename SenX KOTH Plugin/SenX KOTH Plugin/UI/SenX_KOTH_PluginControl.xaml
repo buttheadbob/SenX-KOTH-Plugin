@@ -216,6 +216,24 @@
                                             </StackPanel>
                                         </GroupBox>
 
+                                        <GroupBox Header="Quest Display" Margin="0,5" Padding="5">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Mode:" VerticalAlignment="Center" Width="80"/>
+                                                    <ComboBox x:Name="ZoneEditor_QuestMode" Width="140">
+                                                        <ComboBoxItem Content="None"/>
+                                                        <ComboBoxItem Content="Notifications"/>
+                                                        <ComboBoxItem Content="RichHUD"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Visibility Distance (m):" VerticalAlignment="Center" Width="150"/>
+                                                    <TextBox x:Name="ZoneEditor_QuestDist" Width="60"/>
+                                                </StackPanel>
+                                                <CheckBox x:Name="ZoneEditor_ShowEnemiesOutside" Content="Show Enemies Outside Count" Margin="0,2"/>
+                                            </StackPanel>
+                                        </GroupBox>
+
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
                                             <Button Content="Save Zone" Click="SaveZone_Click"/>
                                             <Button Content="Cancel" Click="CancelZone_Click" Margin="5,0"/>
@@ -741,55 +759,141 @@
             <!-- ============ DOCUMENTATION TAB ============ -->
             <TabItem Header="Documentation">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBlock Margin="10" TextWrapping="Wrap">
-                        <Run FontWeight="Bold" FontSize="16">KoTH+ Plugin Documentation</Run><LineBreak/><LineBreak/>
+                    <StackPanel Margin="10">
+                        <TextBlock FontWeight="Bold" FontSize="16" Margin="0,0,0,10">
+                            <Run Text="SenX K"/><Run Text="o"/><Run Text="TH"/><Run Text="+"/><Run Text=" Plugin Documentation"/>
+                        </TextBlock>
 
-                        <Run FontWeight="Bold">Player Commands:</Run><LineBreak/>
-                        <Run>  !KoTH Week    - Weekly leaderboard with per-zone breakdowns</Run><LineBreak/>
-                        <Run>  !KoTH Month   - Monthly leaderboard with per-zone breakdowns</Run><LineBreak/>
-                        <Run>  !KoTH Year    - Yearly leaderboard with per-zone breakdowns</Run><LineBreak/>
-                        <Run>  !KoTH Zone name - Per-zone breakdowns across all periods</Run><LineBreak/>
-                        <Run>  !KoTH Bank    - View faction bank balance (founder/leader)</Run><LineBreak/>
-                        <Run>  !KoTH BuyTicket [count] - Buy raffle tickets (founder/leader)</Run><LineBreak/>
-                        <Run>  !KoTH About   - This help text</Run><LineBreak/><LineBreak/>
+                        <Expander Header="Player Commands" IsExpanded="True" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  !KoTH Week    - Weekly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                                    <Run>  !KoTH Month   - Monthly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                                    <Run>  !KoTH Year    - Yearly leaderboard with per-zone breakdowns</Run><LineBreak/>
+                                    <Run>  !KoTH Zone name - Per-zone breakdowns across all periods</Run><LineBreak/>
+                                    <Run>  !KoTH Bank    - View faction bank balance (founder/leader)</Run><LineBreak/>
+                                    <Run>  !KoTH BuyTicket [count] - Buy raffle tickets (founder/leader)</Run><LineBreak/>
+                                    <Run>  !KoTH About   - This help text</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
 
-                        <Run FontWeight="Bold">Admin Commands:</Run><LineBreak/>
-                        <Run>  !KoTH CreateZone name [radius] - Create a zone at your position</Run><LineBreak/>
-                        <Run>  !KoTH DeleteZone name         - Delete a zone</Run><LineBreak/>
-                        <Run>  !KoTH GivePoint id_or_tag value - Adjust faction bank points</Run><LineBreak/>
-                        <Run>  !KoTH ForceUpdate             - Force score update and Nexus broadcast</Run><LineBreak/>
-                        <Run>  !KoTH ForceTest               - Test Discord webhook</Run><LineBreak/>
-                        <Run>  !KoTH ForceNexusSync          - Force PointVerification broadcast</Run><LineBreak/>
-                        <Run>  !KoTH ForceRewardSync         - Force reward config sync</Run><LineBreak/>
-                        <Run>  (All commands have a 5 second cooldown)</Run><LineBreak/><LineBreak/>
+                        <Expander Header="Admin Commands" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  !KoTH CreateZone name [radius] - Create a zone at your position</Run><LineBreak/>
+                                    <Run>  !KoTH DeleteZone name         - Delete a zone</Run><LineBreak/>
+                                    <Run>  !KoTH GivePoint id_or_tag value - Adjust faction bank points</Run><LineBreak/>
+                                    <Run>  !KoTH ForceUpdate             - Force score update and Nexus broadcast</Run><LineBreak/>
+                                    <Run>  !KoTH ForceTest               - Test Discord webhook</Run><LineBreak/>
+                                    <Run>  !KoTH ForceNexusSync          - Force PointVerification broadcast</Run><LineBreak/>
+                                    <Run>  !KoTH ForceRewardSync         - Force reward config sync</Run><LineBreak/>
+                                    <Run FontStyle="Italic">  (All commands have a 5 second cooldown)</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
 
-                        <Run FontWeight="Bold">Zones:</Run><LineBreak/>
-                        <Run>  - Zones use native Space Engineers safe zone entities</Run><LineBreak/>
-                        <Run>  - Created at admin position via command or the UI Zones tab</Run><LineBreak/>
-                        <Run>  - Matched by [KoTH] display name prefix on session start</Run><LineBreak/>
-                        <Run>  - Dynamic zones: random placement within an annulus, GPS announcements</Run><LineBreak/>
-                        <Run>  - Configurable per-zone color, texture, radius, and visibility</Run><LineBreak/><LineBreak/>
+                        <Expander Header="Zones &amp; Capture" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  - Zones use native Space Engineers safe zone entities</Run><LineBreak/>
+                                    <Run>  - Created at admin position via !koth createzone or the Zones tab</Run><LineBreak/>
+                                    <Run>  - Configurable per zone: radius (10-500m), color, texture, schedule</Run><LineBreak/>
+                                    <Run>  - Per-zone schedules: set active days of week and time windows</Run><LineBreak/>
+                                    <Run>  - Dynamic zones: random repositioning within an annulus, GPS announcements</Run><LineBreak/>
+                                    <Run>  - Capture progress based on suits and grids inside each zone</Run><LineBreak/>
+                                    <Run>  - Separate capture and decay rates per suit and grid</Run><LineBreak/>
+                                    <Run>  - States: Neutral -> Capturing -> Captured (or Contested -> Decaying -> Neutral)</Run><LineBreak/>
+                                    <Run>  - Points awarded to the holding faction at configurable intervals</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
 
-                        <Run FontWeight="Bold">Discord Bot:</Run><LineBreak/>
-                        <Run>  - Enable on the Discord tab with a bot token</Run><LineBreak/>
-                        <Run>  - Posts reward announcements to configured channels</Run><LineBreak/>
-                        <Run>  - Live scoreboard message updates every 30 seconds</Run><LineBreak/>
-                        <Run>  - Optional self-managed channels under a KoTH category</Run><LineBreak/>
-                        <Run>  - Webhook alternative for all announcements</Run><LineBreak/><LineBreak/>
+                        <Expander Header="Quest Display (HUD)" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  - Shows zone status to players within the configured visibility distance</Run><LineBreak/>
+                                    <Run>  - Three modes per zone: None / Notifications / RichHUD</Run><LineBreak/>
+                                    <Run>  - Notification mode: status pops up as built-in SE notifications (1s refresh)</Run><LineBreak/>
+                                    <Run>  - RichHUD mode: persistent HUD overlay showing zone info in bottom-right</Run><LineBreak/>
+                                    <Run>  - Optional enemies outside counter (players near but outside capture area)</Run><LineBreak/>
+                                    <Run FontWeight="Bold">  States displayed:</Run><LineBreak/>
+                                    <Run>    Neutral       — "Neutral"</Run><LineBreak/>
+                                    <Run>    Capturing     — Capturing [%], Time Remaining, Enemies Outside</Run><LineBreak/>
+                                    <Run>    Contested     — Contested [%], Enemies Inside, Enemies Outside</Run><LineBreak/>
+                                    <Run>    Decaying      — Decay [%], Time Remaining</Run><LineBreak/>
+                                    <Run>    Captured      — Held by [Faction Tag]</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
 
-                        <Run FontWeight="Bold">Raffle:</Run><LineBreak/>
-                        <Run>  - Factions earn bank points from zone captures</Run><LineBreak/>
-                        <Run>  - Founder/leader buys tickets with bank points</Run><LineBreak/>
-                        <Run>  - Scheduled weekly or monthly draws with 1st/2nd/3rd rewards</Run><LineBreak/>
-                        <Run>  - Bank points never expire; tickets reset each draw</Run><LineBreak/><LineBreak/>
+                        <Expander Header="Evictions" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  - Per-zone configurable periodic eviction events</Run><LineBreak/>
+                                    <Run>  - 30-second and 10-second warnings before eviction takes effect</Run><LineBreak/>
+                                    <Run>  - Option to reset capture progress on eviction</Run><LineBreak/>
+                                    <Run>  - Custom eviction zone color, texture, and duration</Run><LineBreak/>
+                                    <Run>  - Evictions can run during zone downtime (schedule off-hours)</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
 
-                        <Run FontWeight="Bold">Data Files:</Run><LineBreak/>
-                        <Run>  - Stored in Torch Instance\Senx_Koth\ folder</Run><LineBreak/>
-                        <Run>  - Config.json      - All plugin configuration</Run><LineBreak/>
-                        <Run>  - Zones.json       - Zone definitions and positions</Run><LineBreak/>
-                        <Run>  - ScoreData.json   - Accumulated scores and event data</Run><LineBreak/>
-                        <Run>  - BankData.json    - Faction bank balances and raffle tickets</Run><LineBreak/>
-                    </TextBlock>
+                        <Expander Header="RichHUD Mod" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  - Requires RichHudMaster mod installed on server and all clients</Run><LineBreak/>
+                                    <Run>  - Requires SenX_KOTH_Plugin.Mod deployed as a server-side mod</Run><LineBreak/>
+                                    <Run>  - Displays a non-intrusive HUD overlay for nearby zone info</Run><LineBreak/>
+                                    <Run>  - Positioned top-left of screen; auto-hides when out of range</Run><LineBreak/>
+                                    <Run>  - Updates every second using timer-pool (no game-thread dependency)</Run><LineBreak/>
+                                    <Run>  - Shows the closest in-range zone when multiple zones are active</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander Header="Discord" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="Bold">Discord Bot:</Run><LineBreak/>
+                                    <Run>  - Enable on the Discord tab with a bot token</Run><LineBreak/>
+                                    <Run>  - Posts reward announcements to a configured channel</Run><LineBreak/>
+                                    <Run>  - Live scoreboard message updates every 30 seconds</Run><LineBreak/>
+                                    <Run>  - Optional self-managed channels under a KoTH category</Run><LineBreak/>
+                                    <Run FontWeight="Bold">Discord Webhook:</Run><LineBreak/>
+                                    <Run>  - Alternative to the bot (webhook URL on Discord tab)</Run><LineBreak/>
+                                    <Run>  - Customizable message prefix, embed settings, and colors</Run><LineBreak/>
+                                    <Run>  - Enter alerts: configurable message templates for zone entry</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander Header="Raffle" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>  - Factions earn bank points from zone captures</Run><LineBreak/>
+                                    <Run>  - Founder/leader buys tickets with bank points</Run><LineBreak/>
+                                    <Run>  - Scheduled weekly or monthly draws with 1st/2nd/3rd place rewards</Run><LineBreak/>
+                                    <Run>  - Bank points never expire; tickets reset each draw</Run><LineBreak/>
+                                    <Run>  - Customizable command rewards for each place</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander Header="Data Files" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap" FontFamily="Consolas">
+                                    <Run>  Config.json         — Plugin settings, rewards, raffle config</Run><LineBreak/>
+                                    <Run>  Zones.json          — Zone definitions, positions, per-zone settings</Run><LineBreak/>
+                                    <Run>  ScoreData.json      — Accumulated faction scores (week/month/year)</Run><LineBreak/>
+                                    <Run>  EventData.json      — Point events for Nexus sync and leaderboards</Run><LineBreak/>
+                                    <Run>  FactionBanks.json   — Faction bank balances</Run><LineBreak/>
+                                    <Run>  RaffleTickets.json  — Ticket purchase records and draw history</Run><LineBreak/>
+                                    <Run FontStyle="Italic">  Location: Torch Instance\Senx_Koth\</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
         </TabControl>
