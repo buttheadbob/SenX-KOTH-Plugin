@@ -140,9 +140,7 @@ namespace SenX_KOTH_Plugin.Nexus
                 var ver = new PointVerification
                 {
                     FromServerID = api.CurrentServerID,
-                    WeekEvents = _eventData.WeekEvents.ToList(),
-                    MonthEvents = _eventData.MonthEvents.ToList(),
-                    YearEvents = _eventData.YearEvents.ToList()
+                    WeekEvents = _eventData.WeekEvents.ToList()
                 };
 
                 byte[] data = MyAPIGateway.Utilities.SerializeToBinary(ver);
@@ -338,12 +336,6 @@ namespace SenX_KOTH_Plugin.Nexus
 
             _eventData.WeekEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
             _eventData.WeekEvents.AddRange(ver.WeekEvents);
-
-            _eventData.MonthEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
-            _eventData.MonthEvents.AddRange(ver.MonthEvents);
-
-            _eventData.YearEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
-            _eventData.YearEvents.AddRange(ver.YearEvents);
 
             RebuildAccumulatedScores();
         }

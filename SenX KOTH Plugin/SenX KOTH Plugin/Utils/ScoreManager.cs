@@ -25,8 +25,6 @@ namespace SenX_KOTH_Plugin.Utils
     {
         [ProtoMember(1)] public byte FromServerID { get; set; }
         [ProtoMember(2)] public List<PointEarned> WeekEvents { get; set; } = new List<PointEarned>();
-        [ProtoMember(3)] public List<PointEarned> MonthEvents { get; set; } = new List<PointEarned>();
-        [ProtoMember(4)] public List<PointEarned> YearEvents { get; set; } = new List<PointEarned>();
     }
 
     [ProtoContract]
