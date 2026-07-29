@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Timers;
 using NLog;
+using SenX_KOTH_Plugin.Discord;
 using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
@@ -215,9 +216,13 @@ namespace SenX_KOTH_Plugin.Events
             DrawingColor firstColor, DrawingColor secondColor, DrawingColor thirdColor, DrawingColor restColor)
         {
             var results = new StringBuilder();
+            var botResults = new StringBuilder();
             var sentRest = false;
             for (int i = 0; i < sortedScores.Count; i++)
             {
+                string medal = i == 0 ? "🥇 " : i == 1 ? "🥈 " : i == 2 ? "🥉 " : "    ";
+                botResults.AppendLine(medal + sortedScores[i].Key + " — " + sortedScores[i].Value + " pts");
+
                 switch (i)
                 {
                     case 0: results.AppendLine("First Place"); results.AppendLine(sortedScores[i].ToString()); DiscordService.SendDiscordWebHook(results.ToString(), firstColor, 1); results.Clear(); break;
@@ -227,6 +232,11 @@ namespace SenX_KOTH_Plugin.Events
                 }
             }
             if (sortedScores.Count > 3 && results.Length > 0) DiscordService.SendDiscordWebHook(results.ToString(), restColor, 1);
+
+            _ = Discord.DiscordBotService.SendRewardAnnouncementAsync(
+                periodName + " Results",
+                "```\n" + botResults + "```"
+            );
         }
     }
 }

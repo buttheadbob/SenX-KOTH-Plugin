@@ -35,6 +35,7 @@ namespace SenX_KOTH_Plugin.Mod
         private sealed class KoTHWindow : WindowBase
         {
             private readonly List<Row> _rows;
+            private readonly HudChain _chain;
 
             public KoTHWindow(HudParentBase parent) : base(parent)
             {
@@ -44,18 +45,18 @@ namespace SenX_KOTH_Plugin.Mod
                 BorderColor = new Color(50, 55, 60);
                 ParentAlignment = ParentAlignments.Left | ParentAlignments.Top | ParentAlignments.Inner;
                 Offset = new Vector2(20, -20);
-                Size = new Vector2(320f, 175f);
+                Width = 320f;
                 MinimumSize = new Vector2(100f, 60f);
                 CanDrag = false;
                 AllowResizing = false;
                 Visible = false;
 
                 _rows = new List<Row>();
-                var chain = new HudChain(true, body)
+                _chain = new HudChain(true, body)
                 {
                     ParentAlignment = ParentAlignments.Top | ParentAlignments.Left | ParentAlignments.Inner,
                     DimAlignment = DimAlignments.Width,
-                    SizingMode = HudChainSizingModes.FitMembersOffAxis,
+                    SizingMode = HudChainSizingModes.FitMembersOffAxis | HudChainSizingModes.ClampChainAlignAxis,
                     Spacing = 2f,
                 };
 
@@ -63,8 +64,20 @@ namespace SenX_KOTH_Plugin.Mod
                 {
                     var row = new Row();
                     _rows.Add(row);
-                    chain.CollectionContainer.Add(row.Chain, 0f);
+                    _chain.CollectionContainer.Add(row.Chain, 0f);
                 }
+            }
+
+            protected override void Layout()
+            {
+                // Size the window to fit the chain content, respecting minimum
+                float neededBodyHeight = _chain.Height;
+                float minBodyHeight = MinimumSize.Y - header.Height;
+                if (neededBodyHeight < minBodyHeight)
+                    neededBodyHeight = minBodyHeight;
+
+                Height = header.Height + neededBodyHeight;
+                base.Layout();
             }
 
             public void SetLines(QuestUpdateMessage msg)

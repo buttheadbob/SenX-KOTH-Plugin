@@ -696,5 +696,50 @@ namespace SenX_KOTH_Plugin.Events
             ZoneManager.CacheZone(_zone.Name, pos, _zone.Radius, 0, _zone);
             KoTHLog.Info(Log,"Zone [" + _zone.Name + "]: Created new safe zone entity at " + pos);
         }
+
+        /// <summary>
+        /// Formats the estimated time remaining for capture or decay, or null if indeterminate.
+        /// </summary>
+        public static string? FormatTimeRemaining(ZonePointEvent evt, bool capturing)
+        {
+            if (evt.AutoDecayActive)
+            {
+                int remaining = evt.AutoDecayTimeRemaining;
+                if (remaining <= 0) return null;
+                return remaining < 60 ? remaining + "s" : (remaining / 60) + "m";
+            }
+
+            if (capturing)
+            {
+                int gainPerTick = ((int)evt.SuitCount * evt.Zone.PointsPerSuit)
+                                + ((int)evt.GridCount * evt.Zone.PointsPerGrid);
+                if (gainPerTick <= 0) return null;
+                int remaining = evt.Zone.CapturePointsNeeded - evt.CaptureProgress;
+                if (remaining <= 0) return "0s";
+                int ticksNeeded = remaining / gainPerTick + (remaining % gainPerTick > 0 ? 1 : 0);
+                int seconds = ticksNeeded * evt.Zone.CapturePointIntervalSeconds;
+                return FormatSeconds(seconds);
+            }
+            else
+            {
+                int lossPerTick = ((int)evt.EnemySuitCount * evt.Zone.PointsPerSuit)
+                                + ((int)evt.EnemyGridCount * evt.Zone.PointsPerGrid);
+                if (lossPerTick <= 0) return null;
+                int remaining = evt.CaptureProgress;
+                if (remaining <= 0) return "0s";
+                int ticksNeeded = remaining / lossPerTick + (remaining % lossPerTick > 0 ? 1 : 0);
+                int seconds = ticksNeeded * evt.Zone.CapturePointIntervalSeconds;
+                return FormatSeconds(seconds);
+            }
+        }
+
+        private static string FormatSeconds(int seconds)
+        {
+            if (seconds < 60) return seconds + "s";
+            int minutes = seconds / 60;
+            int secs = seconds % 60;
+            if (secs == 0) return minutes + "m";
+            return minutes + "m " + secs + "s";
+        }
     }
 }

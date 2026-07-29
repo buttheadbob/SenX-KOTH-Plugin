@@ -20,6 +20,7 @@ namespace SenX_KOTH_Plugin.Discord
         private static ulong _liveChannelId;
         private static ulong _lastLiveMessageId;
         private static readonly Dictionary<ulong, DateTime> _lastZonePost = new();
+        private static readonly Dictionary<ulong, string> _lastZoneState = new();
 
         public static bool IsEnabled { get; private set; }
 
@@ -87,12 +88,28 @@ namespace SenX_KOTH_Plugin.Discord
                 SenX_KOTH_PluginMain.ConfigPersist?.Save();
             }
 
-            await _client.SendEmbedAsync(_rewardChannelId, title, description, 0xF1C40Fu);
+            // Retry up to 3 times for reward posts — these are important
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                try
+                {
+                    await _client.SendEmbedAsync(_rewardChannelId, title, description, 0xF1C40Fu);
+                    return;
+                }
+                catch
+                {
+                    if (attempt < 2)
+                        await Task.Delay(2000);
+                }
+            }
         }
 
         public static async Task UpdateLiveScoreboardAsync()
         {
             if (_client == null) return;
+
+            // Skip non-critical update when rate-limited
+            if (_client.IsRateLimited()) return;
 
             var scoreData = SenX_KOTH_PluginMain.EventPersist?.Data;
             if (scoreData == null) return;
@@ -129,9 +146,9 @@ namespace SenX_KOTH_Plugin.Discord
                 {
                     var editMsg = new DiscordMessage
                     {
-                        Embeds = new List<DiscordEmbed>
+                        Embeds = new List<Bot.DiscordEmbed>
                         {
-                            new DiscordEmbed
+                            new Bot.DiscordEmbed
                             {
                                 Description = sb.ToString(),
                                 Color = 0x3498DBu
@@ -167,6 +184,9 @@ namespace SenX_KOTH_Plugin.Discord
         {
             if (_client == null) return;
 
+            // Skip non-critical update when rate-limited
+            if (_client.IsRateLimited()) return;
+
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config == null) return;
 
@@ -189,6 +209,12 @@ namespace SenX_KOTH_Plugin.Discord
                 var (title, description, color) = BuildZoneEmbed(evt);
                 if (title == null) continue;
 
+                // Skip if state hasn't changed since last post
+                var stateSig = title + "|" + description + "|" + color;
+                if (_lastZoneState.TryGetValue(zone.DiscordChannelId, out var lastSig)
+                    && lastSig == stateSig)
+                    continue;
+
                 if (!await _client.ChannelExistsAsync(zone.DiscordChannelId))
                 {
                     var prefix = string.IsNullOrEmpty(config.DiscordChannelPrefix) ? "zone-" : config.DiscordChannelPrefix;
@@ -198,6 +224,7 @@ namespace SenX_KOTH_Plugin.Discord
 
                 await _client.SendEmbedAsync(zone.DiscordChannelId, title, description, color);
                 _lastZonePost[zone.DiscordChannelId] = DateTime.UtcNow;
+                _lastZoneState[zone.DiscordChannelId] = stateSig;
             }
         }
 
@@ -231,7 +258,7 @@ namespace SenX_KOTH_Plugin.Discord
                 case CaptureState.Capturing:
                 {
                     var desc = "`" + tag + "`: " + pct + "%";
-                    var timeRem = ComputeDiscordTimeRemaining(evt, true);
+                    var timeRem = ZonePointEvent.FormatTimeRemaining(evt, true);
                     if (timeRem != null) desc += " \u2014 Time Remaining: `" + timeRem + "`";
                     return (zoneName + " \u2014 Capturing", desc, 0x00FF00u);
                 }
@@ -246,7 +273,7 @@ namespace SenX_KOTH_Plugin.Discord
                 case CaptureState.Decaying:
                 {
                     var desc = "`" + tag + "`: " + pct + "%";
-                    var timeRem = ComputeDiscordTimeRemaining(evt, false);
+                    var timeRem = ZonePointEvent.FormatTimeRemaining(evt, false);
                     if (timeRem != null) desc += " \u2014 Time Remaining: `" + timeRem + "`";
                     return (zoneName + " \u2014 Decaying", desc, 0xFFA500u);
                 }
@@ -260,39 +287,6 @@ namespace SenX_KOTH_Plugin.Discord
             }
 
             return (null, "", 0);
-        }
-
-        private static string? ComputeDiscordTimeRemaining(ZonePointEvent evt, bool capturing)
-        {
-            if (evt.AutoDecayActive)
-            {
-                int remaining = evt.AutoDecayTimeRemaining;
-                if (remaining <= 0) return null;
-                return remaining < 60 ? remaining + "s" : (remaining / 60) + "m";
-            }
-
-            if (capturing)
-            {
-                int gainPerTick = ((int)evt.SuitCount * evt.Zone.PointsPerSuit)
-                                + ((int)evt.GridCount * evt.Zone.PointsPerGrid);
-                if (gainPerTick <= 0) return null;
-                int remaining = evt.Zone.CapturePointsNeeded - evt.CaptureProgress;
-                if (remaining <= 0) return "0s";
-                int ticksNeeded = remaining / gainPerTick + (remaining % gainPerTick > 0 ? 1 : 0);
-                int seconds = ticksNeeded * evt.Zone.CapturePointIntervalSeconds;
-                return seconds < 60 ? seconds + "s" : (seconds / 60) + "m";
-            }
-            else
-            {
-                int lossPerTick = ((int)evt.EnemySuitCount * evt.Zone.PointsPerSuit)
-                                + ((int)evt.EnemyGridCount * evt.Zone.PointsPerGrid);
-                if (lossPerTick <= 0) return null;
-                int remaining = evt.CaptureProgress;
-                if (remaining <= 0) return "0s";
-                int ticksNeeded = remaining / lossPerTick + (remaining % lossPerTick > 0 ? 1 : 0);
-                int seconds = ticksNeeded * evt.Zone.CapturePointIntervalSeconds;
-                return seconds < 60 ? seconds + "s" : (seconds / 60) + "m";
-            }
         }
 
         private static async Task EnsureSelfManagedChannelsAsync(SenX_KOTH_PluginConfig config)

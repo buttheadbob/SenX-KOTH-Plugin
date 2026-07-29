@@ -251,7 +251,7 @@ namespace SenX_KOTH_Plugin.Services
 
                 case CaptureState.Capturing:
                     lines.Add("Capturing [" + pct + "% by " + evt.CaptureFactionName + "]");
-                    lines.Add("Time Remaining [" + ComputeTimeRemaining(evt, true) + "]");
+                    lines.Add("Time Remaining [" + (ZonePointEvent.FormatTimeRemaining(evt, true) ?? "--") + "]");
                     break;
 
                 case CaptureState.Contested:
@@ -261,7 +261,7 @@ namespace SenX_KOTH_Plugin.Services
 
                 case CaptureState.Decaying:
                     lines.Add("Decay [" + pct + "% by " + evt.CaptureFactionName + "]");
-                    lines.Add("Time Remaining [" + ComputeTimeRemaining(evt, false) + "]");
+                    lines.Add("Time Remaining [" + (ZonePointEvent.FormatTimeRemaining(evt, false) ?? "--") + "]");
                     break;
 
                 case CaptureState.Captured:
@@ -274,44 +274,6 @@ namespace SenX_KOTH_Plugin.Services
                 lines.Add("Enemies Outside [" + enemiesOutside + "]");
 
             return lines;
-        }
-
-        private static string ComputeTimeRemaining(ZonePointEvent evt, bool capturing)
-        {
-            if (evt.AutoDecayActive)
-            {
-                return FormatSeconds(evt.AutoDecayTimeRemaining);
-            }
-
-            if (capturing)
-            {
-                int gainPerTick = ((int)evt.SuitCount * evt.Zone.PointsPerSuit)
-                                + ((int)evt.GridCount * evt.Zone.PointsPerGrid);
-                if (gainPerTick <= 0) return "--";
-                int remaining = evt.Zone.CapturePointsNeeded - evt.CaptureProgress;
-                if (remaining <= 0) return "0s";
-                int ticksNeeded = remaining / gainPerTick + (remaining % gainPerTick > 0 ? 1 : 0);
-                return FormatSeconds(ticksNeeded * evt.Zone.CapturePointIntervalSeconds);
-            }
-            else
-            {
-                int lossPerTick = ((int)evt.EnemySuitCount * evt.Zone.PointsPerSuit)
-                                + ((int)evt.EnemyGridCount * evt.Zone.PointsPerGrid);
-                if (lossPerTick <= 0) return "--";
-                int remaining = evt.CaptureProgress;
-                if (remaining <= 0) return "0s";
-                int ticksNeeded = remaining / lossPerTick + (remaining % lossPerTick > 0 ? 1 : 0);
-                return FormatSeconds(ticksNeeded * evt.Zone.CapturePointIntervalSeconds);
-            }
-        }
-
-        private static string FormatSeconds(int seconds)
-        {
-            if (seconds < 60) return seconds + "s";
-            int minutes = seconds / 60;
-            int secs = seconds % 60;
-            if (secs == 0) return minutes + "m";
-            return minutes + "m " + secs + "s";
         }
     }
 }

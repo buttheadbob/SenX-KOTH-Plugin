@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Timers;
 using NLog;
 using Sandbox.ModAPI;
@@ -25,6 +26,8 @@ namespace SenX_KOTH_Plugin.Nexus
         public static void Initialize(SenX_KOTH_PluginMain plugin, EventData eventData)
         {
             _eventData = eventData;
+            RebuildAccumulatedScores();
+
             var config = plugin.Config;
             if (config?.NexusEnabled == true && SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
             {
@@ -50,7 +53,7 @@ namespace SenX_KOTH_Plugin.Nexus
         {
             byte serverId = SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true } api
                 ? api.CurrentServerID : (byte)0;
-            return ((long)serverId << 56) | (++_nextEventId & 0x00FFFFFFFFFFFFFF);
+            return ((long)serverId << 56) | (Interlocked.Increment(ref _nextEventId) & 0x00FFFFFFFFFFFFFF);
         }
 
         public static void AddPointEvent(EventData data, PointEarned point)

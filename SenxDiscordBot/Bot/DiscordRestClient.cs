@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ namespace SenX_KOTH_Plugin.Bot
     {
         private readonly HttpClient _http;
         private const string BaseUrl = "https://discord.com/api/v10";
+        private int _rateLimitRemaining = int.MaxValue;
+        private long _rateLimitReset;
 
         public DiscordRestClient(string token)
         {
@@ -19,11 +22,35 @@ namespace SenX_KOTH_Plugin.Bot
             _http.DefaultRequestHeaders.Add("User-Agent", "SenxDiscordBot/1.0");
         }
 
+        /// <summary>
+        /// Returns true if we're approaching the rate limit (≤ 3 remaining).
+        /// Callers should skip non-critical posts when this is true.
+        /// </summary>
+        public bool IsRateLimited()
+        {
+            if (_rateLimitRemaining > 3) return false;
+            var resetTime = DateTimeOffset.FromUnixTimeSeconds(_rateLimitReset);
+            return DateTimeOffset.UtcNow < resetTime;
+        }
+
+        private void UpdateRateLimits(HttpResponseMessage resp)
+        {
+            try
+            {
+                if (resp.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining))
+                    int.TryParse(remaining.FirstOrDefault(), out _rateLimitRemaining);
+                if (resp.Headers.TryGetValues("X-RateLimit-Reset", out var reset))
+                    long.TryParse(reset.FirstOrDefault(), out _rateLimitReset);
+            }
+            catch { }
+        }
+
         public async Task<string> SendEmbedAsync(ulong channelId, DiscordMessage message)
         {
             var json = JsonConvert.SerializeObject(message);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var resp = await _http.PostAsync($"{BaseUrl}/channels/{channelId}/messages", content);
+            UpdateRateLimits(resp);
             resp.EnsureSuccessStatusCode();
             var response = await resp.Content.ReadAsStringAsync();
             var msg = JsonConvert.DeserializeObject<DiscordMessage>(response);
@@ -39,6 +66,7 @@ namespace SenX_KOTH_Plugin.Bot
                 Content = content
             };
             var resp = await _http.SendAsync(req);
+            UpdateRateLimits(resp);
             resp.EnsureSuccessStatusCode();
         }
 
@@ -54,6 +82,7 @@ namespace SenX_KOTH_Plugin.Bot
             var json = JsonConvert.SerializeObject(req);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var resp = await _http.PostAsync($"{BaseUrl}/guilds/{guildId}/channels", content);
+            UpdateRateLimits(resp);
             resp.EnsureSuccessStatusCode();
             var response = await resp.Content.ReadAsStringAsync();
             var ch = JsonConvert.DeserializeObject<DiscordChannel>(response);
@@ -122,6 +151,7 @@ namespace SenX_KOTH_Plugin.Bot
                 Content = content
             };
             var resp = await _http.SendAsync(req);
+            UpdateRateLimits(resp);
             resp.EnsureSuccessStatusCode();
         }
 
@@ -135,6 +165,7 @@ namespace SenX_KOTH_Plugin.Bot
                 Content = content
             };
             var resp = await _http.SendAsync(req);
+            UpdateRateLimits(resp);
             resp.EnsureSuccessStatusCode();
         }
 

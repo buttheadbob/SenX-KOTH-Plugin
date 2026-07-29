@@ -19,6 +19,12 @@ namespace SenX_KOTH_Plugin.Bot
 
         public bool IsConnected => _gateway.IsConnected;
 
+        /// <summary>
+        /// Returns true if the REST client is approaching its rate limit.
+        /// Non-critical posts should be skipped when this is true.
+        /// </summary>
+        public bool IsRateLimited() => _rest.IsRateLimited();
+
         public async Task<ulong> SendEmbedAsync(ulong channelId, string title, string description, uint color)
         {
             var msg = new DiscordMessage
