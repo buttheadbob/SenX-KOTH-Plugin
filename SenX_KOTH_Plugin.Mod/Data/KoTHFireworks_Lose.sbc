@@ -8,7 +8,7 @@
       <Preload>0</Preload>
       <LowRes>false</LowRes>
       <Loop>false</Loop>
-      <DurationMin>3</DurationMin>
+      <DurationMin>10</DurationMin>
       <DurationMax>0</DurationMax>
       <Version>0</Version>
       <ParticleGenerations>
@@ -146,7 +146,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>0.1</ValueFloat>
+                  <ValueFloat>0.8</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -155,7 +155,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1</ValueFloat>
+                  <ValueFloat>8.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -251,7 +251,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>0.1</ValueFloat>
+              <ValueFloat>0.2</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -574,7 +574,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1.8</ValueFloat>
+                  <ValueFloat>14.4</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -583,7 +583,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1</ValueFloat>
+                  <ValueFloat>8.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -679,7 +679,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>2.3</ValueFloat>
+              <ValueFloat>4.6</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -1137,7 +1137,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>0.13</ValueFloat>
+              <ValueFloat>0.26</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -1470,7 +1470,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>4.1</ValueFloat>
+                  <ValueFloat>32.8</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -1479,7 +1479,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>0.5</ValueFloat>
+                  <ValueFloat>4.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -1575,7 +1575,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>2</ValueFloat>
+              <ValueFloat>4.0</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -1913,7 +1913,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>2</ValueFloat>
+                  <ValueFloat>16.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -1922,7 +1922,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1</ValueFloat>
+                  <ValueFloat>8.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -2018,7 +2018,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>3</ValueFloat>
+              <ValueFloat>6.0</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -2416,7 +2416,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1</ValueFloat>
+                  <ValueFloat>8.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -2512,7 +2512,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>2.0</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>1</ValueFloat>
@@ -2850,7 +2850,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>1</ValueFloat>
+                  <ValueFloat>8.0</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -2859,7 +2859,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>0.2</ValueFloat>
+                  <ValueFloat>0.8</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -2955,7 +2955,7 @@
               </Keys>
             </Property>
             <Property AnimationType="Const" Name="Life" Type="Float">
-              <ValueFloat>4</ValueFloat>
+              <ValueFloat>8.0</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Soft particle distance scale" Type="Float">
               <ValueFloat>10</ValueFloat>
