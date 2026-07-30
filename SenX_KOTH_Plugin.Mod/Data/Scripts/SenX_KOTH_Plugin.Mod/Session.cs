@@ -9,7 +9,6 @@ using VRageMath;
 
 namespace SenX_KOTH_Plugin.Mod
 {
-    internal struct ZoneState { public int State; public long FactionId; }
 
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
     public class KoTHModSession : MySessionComponentBase
@@ -18,7 +17,6 @@ namespace SenX_KOTH_Plugin.Mod
 
         private KoTHHudManager _hud;
         private readonly Dictionary<string, QuestUpdateMessage> _zoneData = new Dictionary<string, QuestUpdateMessage>();
-        private readonly Dictionary<string, ZoneState> _zonePrevState = new Dictionary<string, ZoneState>();
         private bool _richHudReady;
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
@@ -55,12 +53,11 @@ namespace SenX_KOTH_Plugin.Mod
                 if (msg.Clear)
                 {
                     _zoneData.Remove(msg.ZoneName);
-                    _zonePrevState.Remove(msg.ZoneName);
                 }
                 else
                 {
                     _zoneData[msg.ZoneName] = msg;
-                    DetectCaptureEvent(msg);
+                    if (msg.FireworkCommand != 0) HandleFirework(msg);
                 }
             }
             catch (Exception ex)
@@ -69,29 +66,12 @@ namespace SenX_KOTH_Plugin.Mod
             }
         }
 
-        private void DetectCaptureEvent(QuestUpdateMessage msg)
+        private void HandleFirework(QuestUpdateMessage msg)
         {
-            ZoneState prev;
-            _zonePrevState.TryGetValue(msg.ZoneName, out prev);
-
-            // State 2 = Captured. Don't fire on same-faction recapture (decay->capture).
-            bool justCaptured = prev.State != 2 && msg.StateOrdinal == 2;
-            bool sameFactionRecapture = prev.State == 4 && msg.StateOrdinal == 1
-                && prev.FactionId == msg.CaptureFactionId;
-
-            _zonePrevState[msg.ZoneName] = new ZoneState { State = msg.StateOrdinal, FactionId = msg.CaptureFactionId };
-
-            if (!justCaptured || sameFactionRecapture || msg.CaptureFactionId == 0) return;
-
-            MyLog.Default.WriteLineAndConsole("KoTH Mod: Capture detected - zone=" + msg.ZoneName + ", factionId=" + msg.CaptureFactionId + ", radius=" + msg.ZoneRadius);
-
-            var playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(
-                MyAPIGateway.Session?.Player?.IdentityId ?? 0);
-            bool bright = playerFaction != null
-                && playerFaction.FactionId == msg.CaptureFactionId;
-
             var zonePos = new Vector3D(msg.ZoneX, msg.ZoneY, msg.ZoneZ);
-            ParticleBurst.Spawn(zonePos, msg.ZoneRadius, bright);
+            bool win = msg.FireworkCommand == 1;
+            MyLog.Default.WriteLineAndConsole("KoTH Mod: Firework received - zone=" + msg.ZoneName + " type=" + (win ? "WIN" : "LOSE") + " radius=" + msg.ZoneRadius);
+            ParticleBurst.Spawn(zonePos, msg.ZoneRadius, win);
         }
 
         public override void UpdateAfterSimulation()

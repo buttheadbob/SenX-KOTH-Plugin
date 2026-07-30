@@ -53,8 +53,9 @@ namespace SenX_KOTH_Plugin.Events
         private int _autoDecayStartProgress;
         private DateTime _autoDecayStartTime;
         private int _capturePointsEarned;
-
-        public string Name => _zone.Name;
+        private bool _manualEvict;
+        internal bool SendFirework { get; set; }
+        internal int FireworkMode { get; set; }
         public bool ShouldRun => _zone.Enabled && MySession.Static != null && IsWithinSchedule();
         public string ShouldRunStatus =>
             "Enabled=" + _zone.Enabled + " Session=" + (MySession.Static != null) + " Schedule=" + IsWithinSchedule();
@@ -449,6 +450,8 @@ namespace SenX_KOTH_Plugin.Events
                             _state = CaptureState.Captured;
                             _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
+                            SendFirework = true;
+                            FireworkMode = 1;
                             KoTHLog.Info(Log,"Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
                         }
@@ -537,8 +540,8 @@ namespace SenX_KOTH_Plugin.Events
         {
             try
             {
-                if (!_zone.EvictionEnabled) return;
-                if (_zone is { Enabled: false, EvictionDuringDowntime: false }) return;
+                if (!_manualEvict && !_zone.EvictionEnabled) return;
+                if (!_manualEvict && _zone is { Enabled: false, EvictionDuringDowntime: false }) return;
 
                 var now = DateTime.UtcNow;
 
@@ -603,12 +606,14 @@ namespace SenX_KOTH_Plugin.Events
 
                     case EvictionPhase.Active:
                     {
-                        var duration = TimeSpan.FromSeconds(_zone.EvictionDurationSeconds);
+                        double durationSecs = _manualEvict ? 5.0 : _zone.EvictionDurationSeconds;
+                        var duration = TimeSpan.FromSeconds(durationSecs);
                         if (duration.TotalSeconds <= 0 || (now - _evictionPhaseEntered) < duration) return;
 
                         RestoreZoneFromEviction();
                         _evictionPhase = EvictionPhase.Idle;
                         _lastEvictionEnded = now;
+                        _manualEvict = false;
                         KoTHLog.Info(Log,"Eviction ended for zone: " + _zone.Name);
                         break;
                     }
@@ -695,6 +700,32 @@ namespace SenX_KOTH_Plugin.Events
             ZoneManager.CreateSafeZoneEntity(_zone, pos);
             ZoneManager.CacheZone(_zone.Name, pos, _zone.Radius, 0, _zone);
             KoTHLog.Info(Log,"Zone [" + _zone.Name + "]: Created new safe zone entity at " + pos);
+        }
+
+        internal void ManualFirework(int mode)
+        {
+            SendFirework = true;
+            FireworkMode = mode;
+            KoTHLog.Info(Log,"Manual firework " + (mode == 1 ? "Win" : "Lose") + " for: " + _zone.Name);
+        }
+
+        internal void ManualEvict()
+        {
+            _manualEvict = true;
+            _evictionPhase = EvictionPhase.Active;
+            _evictionPhaseEntered = DateTime.UtcNow;
+            KoTHLog.Info(Log,"Manual 5s eviction for: " + _zone.Name);
+        }
+
+        internal void ManualReset()
+        {
+            _captureProgress = 0;
+            _captureFactionId = 0;
+            _capturePointsEarned = 0;
+            _state = CaptureState.Neutral;
+            _autoDecayActive = false;
+            SendFirework = false;
+            KoTHLog.Info(Log,"Manual reset to neutral: " + _zone.Name);
         }
 
         /// <summary>

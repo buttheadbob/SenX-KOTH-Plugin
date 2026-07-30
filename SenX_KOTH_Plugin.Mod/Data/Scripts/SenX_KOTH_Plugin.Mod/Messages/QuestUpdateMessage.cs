@@ -19,5 +19,5 @@ namespace SenX_KOTH_Plugin.Messages
         [ProtoMember(11)] public float ZoneRadius;
         [ProtoMember(12)] public long CaptureFactionId;
         [ProtoMember(13)] public int StateOrdinal;
-    }
+        [ProtoMember(14)] public int FireworkCommand;
 }

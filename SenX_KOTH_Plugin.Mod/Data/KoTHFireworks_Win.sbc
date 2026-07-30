@@ -369,7 +369,7 @@
               <Keys>
                 <Key>
                   <Time>0.002126528</Time>
-                  <ValueFloat>300</ValueFloat>
+                  <ValueFloat>150</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -797,7 +797,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>150</ValueFloat>
+                  <ValueFloat>75</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -1155,7 +1155,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>100</ValueFloat>
+                  <ValueFloat>50</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -1693,7 +1693,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>100</ValueFloat>
+                  <ValueFloat>50</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -2136,7 +2136,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>800</ValueFloat>
+                  <ValueFloat>400</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -3073,7 +3073,7 @@
               <Keys>
                 <Key>
                   <Time>0.1382243</Time>
-                  <ValueFloat>15</ValueFloat>
+                  <ValueFloat>7.5</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>

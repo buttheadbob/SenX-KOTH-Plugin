@@ -201,8 +201,12 @@ namespace SenX_KOTH_Plugin.Services
                             Timestamp = DateTime.UtcNow.Ticks,
                             EvictionPhase = (int)evt.EvictionState,
                             EvictionTimeRemaining = evt.EvictionTimeRemaining,
+                            FireworkCommand = evt.SendFirework ? evt.FireworkMode : 0,
                             Clear = false
                         };
+
+                        if (evt.SendFirework)
+                            evt.SendFirework = false;
 
                         foreach (var sid in steamIds)
                         {
@@ -237,6 +241,29 @@ namespace SenX_KOTH_Plugin.Services
         {
             var bytes = MyAPIGateway.Utilities.SerializeToBinary(msg);
             MyAPIGateway.Multiplayer.SendMessageTo(RICH_HUD_CHANNEL, bytes, steamId);
+        }
+        internal static void SendFireworkToAll(ZonePointEvent evt, int mode)
+        {
+            var cache = ZoneManager.ZoneCache.FirstOrDefault(z =>
+                string.Equals(z.ZoneName, evt.Zone.Name, StringComparison.OrdinalIgnoreCase));
+            if (cache == null) return;
+
+            var msg = new QuestUpdateMessage
+            {
+                ZoneName = evt.Zone.Name,
+                ZoneX = cache.Position.X,
+                ZoneY = cache.Position.Y,
+                ZoneZ = cache.Position.Z,
+                ZoneRadius = cache.Radius,
+                FireworkCommand = mode,
+                Clear = false
+            };
+
+            var bytes = MyAPIGateway.Utilities.SerializeToBinary(msg);
+            var players = new List<IMyPlayer>();
+            MyAPIGateway.Players.GetPlayers(players);
+            foreach (var p in players)
+                MyAPIGateway.Multiplayer.SendMessageTo(RICH_HUD_CHANNEL, bytes, p.SteamUserId);
         }
 
         private static List<string> BuildQuestLines(ZonePointEvent evt, long enemiesInside, long enemiesOutside)

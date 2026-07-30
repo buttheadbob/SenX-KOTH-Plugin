@@ -4,6 +4,8 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using SenX_KOTH_Plugin.Events;
+using SenX_KOTH_Plugin.Services;
 using SenX_KOTH_Plugin.Utils;
 using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Models;
@@ -166,6 +168,43 @@ namespace SenX_KOTH_Plugin
             ZoneManager.DeleteZone(persist.Data, item.Name);
             persist.Save();
             RefreshZoneNames();
+        }
+        private void FireworkWin_Click(object sender, RoutedEventArgs e)
+        {
+            var zone = (sender as Button)?.Tag as KothZone;
+            if (zone == null) return;
+            var evt = SenX_KOTH_PluginMain.Events.OfType<ZonePointEvent>()
+                .FirstOrDefault(z => string.Equals(z.Name, zone.Name, StringComparison.OrdinalIgnoreCase));
+            if (evt != null)
+                QuestManager.SendFireworkToAll(evt, 1);
+        }
+
+        private void FireworkLose_Click(object sender, RoutedEventArgs e)
+        {
+            var zone = (sender as Button)?.Tag as KothZone;
+            if (zone == null) return;
+            var evt = SenX_KOTH_PluginMain.Events.OfType<ZonePointEvent>()
+                .FirstOrDefault(z => string.Equals(z.Name, zone.Name, StringComparison.OrdinalIgnoreCase));
+            if (evt != null)
+                QuestManager.SendFireworkToAll(evt, 2);
+        }
+
+        private void EvictZone_Click(object sender, RoutedEventArgs e)
+        {
+            var zone = (sender as Button)?.Tag as KothZone;
+            if (zone == null) return;
+            var evt = SenX_KOTH_PluginMain.Events.OfType<ZonePointEvent>()
+                .FirstOrDefault(z => string.Equals(z.Name, zone.Name, StringComparison.OrdinalIgnoreCase));
+            evt?.ManualEvict();
+        }
+
+        private void ResetZone_Click(object sender, RoutedEventArgs e)
+        {
+            var zone = (sender as Button)?.Tag as KothZone;
+            if (zone == null) return;
+            var evt = SenX_KOTH_PluginMain.Events.OfType<ZonePointEvent>()
+                .FirstOrDefault(z => string.Equals(z.Name, zone.Name, StringComparison.OrdinalIgnoreCase));
+            evt?.ManualReset();
         }
 
         private void RefreshZonesList()

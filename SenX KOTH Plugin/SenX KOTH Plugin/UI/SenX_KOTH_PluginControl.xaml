@@ -36,18 +36,25 @@
                                 <ListBox x:Name="ZonesList" MinHeight="60" MaxHeight="250" Margin="5">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Width="500">
+                                            <Grid Width="700">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="50"/>
-                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="40"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center">
                                                     <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding Radius, StringFormat={}{0:F0}m}"/><Run Text=")"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditZone_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteZone_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                            </Grid>
+                                                <Button Grid.Column="1" Content="W" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Win fireworks"/>
+                                                <Button Grid.Column="2" Content="L" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Lose fireworks"/>
+                                                <Button Grid.Column="3" Content="Ev" Click="EvictZone_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="5s eviction"/>
+                                                <Button Grid.Column="4" Content="Re" Click="ResetZone_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Reset to neutral"/>
+                                                <Button Grid.Column="5" Content="Edit" Click="EditZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
+                                                <Button Grid.Column="6" Content="X" Click="DeleteZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
