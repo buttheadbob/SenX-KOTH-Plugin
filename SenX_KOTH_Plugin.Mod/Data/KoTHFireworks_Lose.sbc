@@ -272,7 +272,7 @@
               <ValueString>Atlas_E_01</ValueString>
             </Property>
             <Property AnimationType="Const" Name="OIT weight factor" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Collide" Type="Bool">
               <ValueBool>true</ValueBool>
@@ -369,7 +369,7 @@
               <Keys>
                 <Key>
                   <Time>0.002126528</Time>
-                  <ValueFloat>150</ValueFloat>
+                  <ValueFloat>75</ValueFloat>
                   <Value2D />
                 </Key>
               </Keys>
@@ -700,7 +700,7 @@
               <ValueString>Atlas_E_01</ValueString>
             </Property>
             <Property AnimationType="Const" Name="OIT weight factor" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Collide" Type="Bool">
               <ValueBool>false</ValueBool>
@@ -797,7 +797,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>75</ValueFloat>
+                  <ValueFloat>37.5</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -1155,7 +1155,7 @@
               <Keys>
                 <Key>
                   <Time>0</Time>
-                  <ValueFloat>50</ValueFloat>
+                  <ValueFloat>25</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -1271,7 +1271,7 @@
               <Keys />
             </Property>
             <Property AnimationType="Const" Name="Camera bias" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Animated2D" Name="Emissivity" Type="Float">
               <Keys>
@@ -1596,7 +1596,7 @@
               <ValueString>Atlas_E_01</ValueString>
             </Property>
             <Property AnimationType="Const" Name="OIT weight factor" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Collide" Type="Bool">
               <ValueBool>true</ValueBool>
@@ -1693,7 +1693,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>50</ValueFloat>
+                  <ValueFloat>25</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -2039,7 +2039,7 @@
               <ValueString>Atlas_E_01</ValueString>
             </Property>
             <Property AnimationType="Const" Name="OIT weight factor" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Collide" Type="Bool">
               <ValueBool>true</ValueBool>
@@ -2136,7 +2136,7 @@
               <Keys>
                 <Key>
                   <Time>0.008506114</Time>
-                  <ValueFloat>400</ValueFloat>
+                  <ValueFloat>200</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>
@@ -2976,7 +2976,7 @@
               <ValueString>Atlas_D_01</ValueString>
             </Property>
             <Property AnimationType="Const" Name="OIT weight factor" Type="Float">
-              <ValueFloat>1</ValueFloat>
+              <ValueFloat>0.5</ValueFloat>
             </Property>
             <Property AnimationType="Const" Name="Collide" Type="Bool">
               <ValueBool>false</ValueBool>
@@ -3073,7 +3073,7 @@
               <Keys>
                 <Key>
                   <Time>0.1382243</Time>
-                  <ValueFloat>7.5</ValueFloat>
+                  <ValueFloat>3.75</ValueFloat>
                   <Value2D />
                 </Key>
                 <Key>

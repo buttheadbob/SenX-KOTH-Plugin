@@ -90,6 +90,12 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_QuestDist.Text = "25000";
             ZoneEditor_QuestMode.SelectedIndex = 1;
             ZoneEditor_ShowEnemiesOutside.IsChecked = false;
+            ZoneEditor_EnableWinFireworks.IsChecked = true;
+            ZoneEditor_EnableLoseFireworks.IsChecked = true;
+            ZoneEditor_DiscordCapture.IsChecked = true;
+            ZoneEditor_DiscordDecay.IsChecked = true;
+            ZoneEditor_DiscordPoints.IsChecked = true;
+            ZoneEditor_DiscordEnter.IsChecked = true;
             ZoneEditor_SchedMon.IsChecked = true;
             ZoneEditor_SchedTue.IsChecked = true;
             ZoneEditor_SchedWed.IsChecked = true;
@@ -145,6 +151,12 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_QuestDist.Text = _editingZone.QuestDistance.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_QuestMode.SelectedIndex = (int)_editingZone.DisplayMode;
             ZoneEditor_ShowEnemiesOutside.IsChecked = _editingZone.ShowEnemiesOutside;
+            ZoneEditor_EnableWinFireworks.IsChecked = _editingZone.EnableWinFireworks;
+            ZoneEditor_EnableLoseFireworks.IsChecked = _editingZone.EnableLoseFireworks;
+            ZoneEditor_DiscordCapture.IsChecked = _editingZone.DiscordAnnounceCapture;
+            ZoneEditor_DiscordDecay.IsChecked = _editingZone.DiscordAnnounceDecay;
+            ZoneEditor_DiscordPoints.IsChecked = _editingZone.DiscordAnnouncePoints;
+            ZoneEditor_DiscordEnter.IsChecked = _editingZone.DiscordAnnounceEnter;
             ZoneEditor_SchedMon.IsChecked = _editingZone.ScheduleMonday;
             ZoneEditor_SchedTue.IsChecked = _editingZone.ScheduleTuesday;
             ZoneEditor_SchedWed.IsChecked = _editingZone.ScheduleWednesday;
@@ -341,6 +353,12 @@ namespace SenX_KOTH_Plugin
             if (float.TryParse(qdText, NumberStyles.Float, CultureInfo.InvariantCulture, out float qd) && qd >= 0f)
                 _editingZone.QuestDistance = qd;
             _editingZone.ShowEnemiesOutside = ZoneEditor_ShowEnemiesOutside.IsChecked == true;
+            _editingZone.EnableWinFireworks = ZoneEditor_EnableWinFireworks.IsChecked == true;
+            _editingZone.EnableLoseFireworks = ZoneEditor_EnableLoseFireworks.IsChecked == true;
+            _editingZone.DiscordAnnounceCapture = ZoneEditor_DiscordCapture.IsChecked == true;
+            _editingZone.DiscordAnnounceDecay = ZoneEditor_DiscordDecay.IsChecked == true;
+            _editingZone.DiscordAnnouncePoints = ZoneEditor_DiscordPoints.IsChecked == true;
+            _editingZone.DiscordAnnounceEnter = ZoneEditor_DiscordEnter.IsChecked == true;
         }
 
         private void SaveScheduleFields()

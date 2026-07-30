@@ -21,3 +21,4 @@ namespace SenX_KOTH_Plugin.Messages
         [ProtoMember(13)] public int StateOrdinal;
         [ProtoMember(14)] public int FireworkCommand;
 }
+    }

@@ -54,8 +54,10 @@ namespace SenX_KOTH_Plugin.Events
         private DateTime _autoDecayStartTime;
         private int _capturePointsEarned;
         private bool _manualEvict;
+        private bool _fireworksShown;
         internal bool SendFirework { get; set; }
         internal int FireworkMode { get; set; }
+        public string Name => _zone.Name;
         public bool ShouldRun => _zone.Enabled && MySession.Static != null && IsWithinSchedule();
         public string ShouldRunStatus =>
             "Enabled=" + _zone.Enabled + " Session=" + (MySession.Static != null) + " Schedule=" + IsWithinSchedule();
@@ -97,7 +99,8 @@ namespace SenX_KOTH_Plugin.Events
                     case EvictionPhase.Active:
                     {
                         var elapsed = (now - _evictionPhaseEntered).TotalSeconds;
-                        var remaining = (int)(_zone.EvictionDurationSeconds - elapsed);
+                        var dur = _manualEvict ? 5.0 : _zone.EvictionDurationSeconds;
+                        var remaining = (int)(dur - elapsed);
                         return Math.Max(0, remaining);
                     }
                     default:
@@ -206,7 +209,8 @@ namespace SenX_KOTH_Plugin.Events
                         if (player != null && EnterAlerts.ShouldAlert(player, _zone.Name))
                         {
                             var msg = EnterAlerts.BuildMessage(player, faction, _zone.Name, cacheEntry.Position, _zone.Radius);
-                            DiscordService.SendAlertWebHook(msg);
+                            if (_zone.DiscordAnnounceEnter)
+                                DiscordService.SendAlertWebHook(msg);
                         }
                     }
                     else if (ent is MyCubeGrid grid)
@@ -257,6 +261,7 @@ namespace SenX_KOTH_Plugin.Events
                         _capturePointsEarned = 0;
                         _state = CaptureState.Neutral;
                         _autoDecayActive = false;
+                        _fireworksShown = false;
                     }
                 }
                 else if (_autoDecayActive && hadPointEntities)
@@ -411,7 +416,9 @@ namespace SenX_KOTH_Plugin.Events
             else
             {
                 if (_captureProgress >= _zone.CapturePointsNeeded)
+                {
                     _state = CaptureState.Captured;
+                }
                 else if (_captureProgress > 0 || prevFactionId == _captureFactionId)
                     _state = CaptureState.Capturing;
                 else
@@ -450,9 +457,15 @@ namespace SenX_KOTH_Plugin.Events
                             _state = CaptureState.Captured;
                             _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
-                            SendFirework = true;
-                            FireworkMode = 1;
+                            if (!_fireworksShown)
+                            {
+                                _fireworksShown = true;
+                                if (_zone.EnableWinFireworks) SendFirework = true;
+                                FireworkMode = 1;
+                            }
                             KoTHLog.Info(Log,"Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
+                            if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnounceCapture)
+                                DiscordService.SendDiscordWebHook("[" + GetCaptureTag() + "] " + CaptureFactionName + " captured " + _zone.Name + "!", System.Drawing.Color.Gold, 1);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
                         }
                         break;
@@ -474,7 +487,10 @@ namespace SenX_KOTH_Plugin.Events
                             _capturePointsEarned = 0;
                             _lastAnnouncedProgress = 0;
                             _state = CaptureState.Neutral;
+                                        _fireworksShown = false;
                             KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
+                            if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnounceDecay)
+                                DiscordService.SendDiscordWebHook(_zone.Name + " capture lost - returning to Neutral", System.Drawing.Color.DarkRed, 1);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
                         }
                         break;
@@ -525,9 +541,8 @@ namespace SenX_KOTH_Plugin.Events
                 KoTHLog.Info(Log,"Points: [" + faction.Tag + "] +" + points + "pts in " + _zone.Name);
 
                 _audio.Play2DSound(0, SoundCueType.PointEarned);
-
-                if (_config.Show_AttackMessages && _config.WebHookEnabled)
-                    DiscordService.SendDiscordWebHook(faction.Tag + " earned " + points + "pts in " + _zone.Name + "!",
+                if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnouncePoints)
+                    DiscordService.SendDiscordWebHook("[" + faction.Tag + "] " + faction.Name + " earned " + points + "pts in " + _zone.Name + "!",
                         System.Drawing.Color.Orange, 0);
             }
             catch (Exception ex)
@@ -704,6 +719,7 @@ namespace SenX_KOTH_Plugin.Events
 
         internal void ManualFirework(int mode)
         {
+            if ((mode == 1 && _zone.EnableWinFireworks) || (mode == 2 && _zone.EnableLoseFireworks))
             SendFirework = true;
             FireworkMode = mode;
             KoTHLog.Info(Log,"Manual firework " + (mode == 1 ? "Win" : "Lose") + " for: " + _zone.Name);
@@ -712,6 +728,16 @@ namespace SenX_KOTH_Plugin.Events
         internal void ManualEvict()
         {
             _manualEvict = true;
+            var cache = ZoneManager.ZoneCache.FirstOrDefault(z =>
+                string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
+            if (cache != null)
+            {
+                var r = _zone.EvictionColorR;
+                var g = _zone.EvictionColorG;
+                var b = _zone.EvictionColorB;
+                var tex = string.IsNullOrEmpty(_zone.EvictionTexture) ? null : _zone.EvictionTexture;
+                ZoneManager.ApplyEvictionState(cache, r, g, b, tex);
+            }
             _evictionPhase = EvictionPhase.Active;
             _evictionPhaseEntered = DateTime.UtcNow;
             KoTHLog.Info(Log,"Manual 5s eviction for: " + _zone.Name);
@@ -724,7 +750,9 @@ namespace SenX_KOTH_Plugin.Events
             _capturePointsEarned = 0;
             _state = CaptureState.Neutral;
             _autoDecayActive = false;
+                        _fireworksShown = false;
             SendFirework = false;
+            _fireworksShown = false;
             KoTHLog.Info(Log,"Manual reset to neutral: " + _zone.Name);
         }
 

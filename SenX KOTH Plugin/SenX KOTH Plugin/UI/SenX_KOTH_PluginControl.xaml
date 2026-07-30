@@ -39,20 +39,20 @@
                                             <Grid Width="700">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="40"/>
-                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center">
                                                     <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding Radius, StringFormat={}{0:F0}m}"/><Run Text=")"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="W" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Win fireworks"/>
-                                                <Button Grid.Column="2" Content="L" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Lose fireworks"/>
-                                                <Button Grid.Column="3" Content="Ev" Click="EvictZone_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="5s eviction"/>
-                                                <Button Grid.Column="4" Content="Re" Click="ResetZone_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Reset to neutral"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
+                                                <Button Grid.Column="3" Content="Evict" Click="EvictZone_Click" Tag="{Binding}" Margin="1" Padding="1" Width="40" ToolTip="5-second zone evacuation. Does NOT reset capture progress."/>
+                                                <Button Grid.Column="4" Content="Reset" Click="ResetZone_Click" Tag="{Binding}" Margin="1" Padding="1" Width="42" ToolTip="Reset capture status to Neutral. Clears all progress."/>
                                                 <Button Grid.Column="5" Content="Edit" Click="EditZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
                                                 <Button Grid.Column="6" Content="X" Click="DeleteZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
                                             </Grid>
@@ -228,6 +228,14 @@
                                                     <TextBox x:Name="ZoneEditor_QuestDist" Width="60"/>
                                                 </StackPanel>
                                                 <CheckBox x:Name="ZoneEditor_ShowEnemiesOutside" Content="Show Enemies Outside Count" Margin="0,2"/>
+                                                <TextBlock Text="Fireworks:" FontWeight="Bold" Margin="0,8,0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_EnableWinFireworks" Content="Win Fireworks (on capture)" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_EnableLoseFireworks" Content="Lose Fireworks (on capture)" Margin="0,2"/>
+                                                <TextBlock Text="Discord Announcements:" FontWeight="Bold" Margin="0,8,0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_DiscordCapture" Content="Capture" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_DiscordDecay" Content="Decay" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_DiscordPoints" Content="Points Earned" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_DiscordEnter" Content="Player Enter" Margin="0,2"/>
                                             </StackPanel>
                                         </GroupBox>
 
@@ -282,8 +290,8 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding ZoneName}" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditZoneReward_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteZoneReward_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -316,8 +324,8 @@
                                                             <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                             <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                         </TextBlock>
-                                                        <Button Grid.Column="1" Content="Edit" Click="EditZoneRewardCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                        <Button Grid.Column="2" Content="X" Click="DeleteZoneRewardCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
@@ -365,8 +373,8 @@
                                                             <TextBlock VerticalAlignment="Center">
                                                                 <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
                                                             </TextBlock>
-                                                            <Button Grid.Column="1" Content="Edit" Click="EditRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                            <Button Grid.Column="2" Content="X" Click="DeleteRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -388,8 +396,8 @@
                                                             <TextBlock VerticalAlignment="Center">
                                                                 <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
                                                             </TextBlock>
-                                                            <Button Grid.Column="1" Content="Edit" Click="EditMonthlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                            <Button Grid.Column="2" Content="X" Click="DeleteMonthlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -411,8 +419,8 @@
                                                             <TextBlock VerticalAlignment="Center">
                                                                 <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
                                                             </TextBlock>
-                                                            <Button Grid.Column="1" Content="Edit" Click="EditYearlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                            <Button Grid.Column="2" Content="X" Click="DeleteYearlyRank_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
@@ -445,8 +453,8 @@
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditRankCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteRankCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -490,8 +498,8 @@
                                                     <TextBlock VerticalAlignment="Center">
                                                         <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
                                                     </TextBlock>
-                                                    <Button Grid.Column="1" Content="Edit" Click="EditThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                    <Button Grid.Column="2" Content="X" Click="DeleteThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -511,8 +519,8 @@
                                                     <TextBlock VerticalAlignment="Center">
                                                         <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
                                                     </TextBlock>
-                                                    <Button Grid.Column="1" Content="Edit" Click="EditMonthlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                    <Button Grid.Column="2" Content="X" Click="DeleteMonthlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -532,8 +540,8 @@
                                                     <TextBlock VerticalAlignment="Center">
                                                         <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
                                                     </TextBlock>
-                                                    <Button Grid.Column="1" Content="Edit" Click="EditYearlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                    <Button Grid.Column="2" Content="X" Click="DeleteYearlyThreshold_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
@@ -593,8 +601,8 @@
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -616,8 +624,8 @@
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -639,8 +647,8 @@
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
-                                                <Button Grid.Column="1" Content="Edit" Click="EditRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
-                                                <Button Grid.Column="2" Content="X" Click="DeleteRaffleCmd_Click" Tag="{Binding}" Margin="2" Padding="2"/>
+                                                <Button Grid.Column="1" Content="Win" Click="FireworkWin_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36" ToolTip="Show capture fireworks to all players. Does NOT award points or trigger rewards."/>
+                                                <Button Grid.Column="2" Content="Lose" Click="FireworkLose_Click" Tag="{Binding}" Margin="1" Padding="1" Width="37" ToolTip="Show losing fireworks to all players. Does NOT change capture status."/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -826,6 +834,28 @@
                                     <Run>  - Option to reset capture progress on eviction</Run><LineBreak/>
                                     <Run>  - Custom eviction zone color, texture, and duration</Run><LineBreak/>
                                     <Run>  - Evictions can run during zone downtime (schedule off-hours)</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="Fireworks" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run>Capture fireworks burst from the zone center on capture.</Run><LineBreak/>
+                                    <Run>  - Per-zone toggles: Win Fireworks / Lose Fireworks (zone editor)</Run><LineBreak/>
+                                    <Run>  - Fireworks only trigger once per capture</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="Zone Controls (Buttons)" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="Bold">Managed Zones buttons:</Run><LineBreak/>
+                                    <Run>  Win   - Show capture fireworks (no points)</Run><LineBreak/>
+                                    <Run>  Lose  - Show losing fireworks (no capture change)</Run><LineBreak/>
+                                    <Run>  Evict - 5s evacuation, no capture reset</Run><LineBreak/>
+                                    <Run>  Reset - Reset to Neutral, clear progress</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Zone editor Discord toggles:</Run><LineBreak/>
+                                    <Run>  Capture / Decay / Points Earned / Player Enter announcements</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>

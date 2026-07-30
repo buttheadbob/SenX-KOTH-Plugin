@@ -222,6 +222,11 @@ namespace SenX_KOTH_Plugin.Discord
                     SenX_KOTH_PluginMain.ZonePersist?.Save();
                 }
 
+                // Gate per-zone Discord options
+                var state = evt.State;
+                if ((state == CaptureState.Decaying && !zone.DiscordAnnounceDecay) ||
+                    ((state == CaptureState.Capturing || state == CaptureState.Captured || state == CaptureState.Contested) && !zone.DiscordAnnounceCapture))
+                    continue;
                 await _client.SendEmbedAsync(zone.DiscordChannelId, title, description, color);
                 _lastZonePost[zone.DiscordChannelId] = DateTime.UtcNow;
                 _lastZoneState[zone.DiscordChannelId] = stateSig;

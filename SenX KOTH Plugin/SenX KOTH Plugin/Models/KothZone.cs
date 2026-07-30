@@ -55,6 +55,12 @@ internal sealed class KothZone
     public QuestDisplayMode DisplayMode { get; set; } = QuestDisplayMode.Notifications;
     public float QuestDistance { get; set; } = 25000f;
     public bool ShowEnemiesOutside { get; set; }
+    public bool EnableWinFireworks { get; set; } = true;
+    public bool EnableLoseFireworks { get; set; } = true;
+    public bool DiscordAnnounceCapture { get; set; } = true;
+    public bool DiscordAnnounceDecay { get; set; } = true;
+    public bool DiscordAnnouncePoints { get; set; } = true;
+    public bool DiscordAnnounceEnter { get; set; } = true;
 
     public bool EvictionEnabled { get; set; }
     public int EvictionFrequencyMinutes { get; set; } = 60;
