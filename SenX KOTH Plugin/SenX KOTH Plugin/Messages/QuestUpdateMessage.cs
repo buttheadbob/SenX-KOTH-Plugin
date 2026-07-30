@@ -16,5 +16,8 @@ namespace SenX_KOTH_Plugin.Messages
         [ProtoMember(8)] public long Timestamp;
         [ProtoMember(9)] public int EvictionPhase;
         [ProtoMember(10)] public int EvictionTimeRemaining;
+        [ProtoMember(11)] public float ZoneRadius;
+        [ProtoMember(12)] public long CaptureFactionId;
+        [ProtoMember(13)] public int StateOrdinal;
     }
 }
