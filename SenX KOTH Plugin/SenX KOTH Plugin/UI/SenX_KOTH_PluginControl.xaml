@@ -55,6 +55,7 @@
                                                 <Button Grid.Column="4" Content="Re" Click="ResetZone_Click" Tag="{Binding}" Margin="1" Padding="1" ToolTip="Reset to neutral"/>
                                                 <Button Grid.Column="5" Content="Edit" Click="EditZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
                                                 <Button Grid.Column="6" Content="X" Click="DeleteZone_Click" Tag="{Binding}" Margin="1" Padding="1"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
