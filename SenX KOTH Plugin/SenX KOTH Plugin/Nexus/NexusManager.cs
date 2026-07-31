@@ -29,6 +29,7 @@ namespace SenX_KOTH_Plugin.Nexus
         public static bool IsAuthorityLocal()
         {
             var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.IsDataAuthority != true) return false;
             if (config?.IsDataModeNexus != true) return false;
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             return api is { Enabled: true };
@@ -158,8 +159,6 @@ namespace SenX_KOTH_Plugin.Nexus
 
         public static void BroadcastDiscordZoneRelay(string zoneName, ProtoEmbed embed, ulong knownChannelId)
         {
-            var config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config?.NexusEnabled != true) return;
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
             try
@@ -173,8 +172,6 @@ namespace SenX_KOTH_Plugin.Nexus
 
         public static void BroadcastDiscordRewardRelay(string title, string description, uint color)
         {
-            var config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config?.NexusEnabled != true) return;
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
             try
@@ -188,8 +185,6 @@ namespace SenX_KOTH_Plugin.Nexus
 
         private static void BroadcastDiscordChannelResponse(byte targetServer, string zoneName, ulong channelId)
         {
-            var config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config?.NexusEnabled != true) return;
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
             try

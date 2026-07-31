@@ -108,6 +108,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="System.Windows.Forms" />
     <ProjectReference Include="..\SenxDiscordBot\SenxDiscordBot.csproj">
       <Name>SenxDiscordBot</Name>
       <Project>{4e8a9b5c-d7f2-4e1a-8c3d-6b7e9a0f1d2c}</Project>

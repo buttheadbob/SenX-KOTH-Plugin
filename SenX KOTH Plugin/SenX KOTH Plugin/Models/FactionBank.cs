@@ -23,7 +23,7 @@ namespace SenX_KOTH_Plugin.Models
 
     internal sealed class RaffleTicketsData : ViewModel
     {
-        public ObservableConcurrentUiSafeCollection<RaffleTicketEntry> Tickets { get => field; set => SetValue(ref field, value); } = new();
-        public DateTime LastDrawDate { get => field; set => SetValue(ref field, value); }
+        public ObservableConcurrentUiSafeCollection<RaffleTicketEntry> Tickets { get; set => SetValue(ref field, value); } = new();
+        public DateTime LastDrawDate { get; set => SetValue(ref field, value); }
     }
 }

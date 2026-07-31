@@ -135,8 +135,7 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
         private void OnNexusEnabled()
         {
             KoTHLog.Info(Log,"Nexus 3 API connected. Server ID: " + NexusGlobalAPI?.CurrentServerID);
-            if (Config?.NexusEnabled == true)
-                NexusManager.Initialize();
+            NexusManager.Initialize();
         }
 
         public override void Update()

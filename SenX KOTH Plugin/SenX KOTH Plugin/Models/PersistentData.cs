@@ -13,11 +13,11 @@ namespace SenX_KOTH_Plugin.Models
 
     internal sealed class BanksData : ViewModel
     {
-        public ObservableConcurrentUiSafeCollection<FactionBankEntry> Banks { get => field; set => SetValue(ref field, value); } = new();
+        public ObservableConcurrentUiSafeCollection<FactionBankEntry> Banks { get; set => SetValue(ref field, value); } = new();
     }
 
     internal sealed class ZoneListData : ViewModel
     {
-        public ObservableConcurrentUiSafeCollection<KothZone> Zones { get => field; set => SetValue(ref field, value); } = new();
+        public ObservableConcurrentUiSafeCollection<KothZone> Zones { get; set => SetValue(ref field, value); } = new();
     }
 }

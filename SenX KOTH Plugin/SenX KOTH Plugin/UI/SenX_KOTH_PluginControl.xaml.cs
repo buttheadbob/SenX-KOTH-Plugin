@@ -29,10 +29,14 @@ namespace SenX_KOTH_Plugin
 
         public SenX_KOTH_PluginControl()
         {
-            DataContext = SenX_KOTH_PluginMain.Instance?.Config;
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            DataContext = config;
             InitializeComponent();
             RefreshZoneNames();
             ZonesList.ItemsSource = SenX_KOTH_PluginMain.ZonePersist?.Data.Zones;
+
+            if (config != null && string.IsNullOrEmpty(config.SharedDataPath))
+                config.SharedDataPath = SenX_KOTH_PluginMain.LocalDataPath;
 
             var pendingData = SenX_KOTH_PluginMain.PendingCreditsPersist?.Data;
             if (pendingData != null)
@@ -952,6 +956,17 @@ namespace SenX_KOTH_Plugin
             if (persist == null) return;
             persist.Data.Credits.Clear();
             persist.Save();
+        }
+
+        private void BrowseSharedPath_Click(object sender, RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            dialog.Description = "Select shared data folder";
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                var config = GetConfig();
+                if (config != null) config.SharedDataPath = dialog.SelectedPath;
+            }
         }
 
         private void SendSampleEnterAlertWebHook_Click(object sender, RoutedEventArgs e)

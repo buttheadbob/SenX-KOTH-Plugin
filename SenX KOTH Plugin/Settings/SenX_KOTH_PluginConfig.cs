@@ -56,99 +56,99 @@ namespace SenX_KOTH_Plugin
 
     public sealed class SenX_KOTH_PluginConfig : ViewModel
     {
-        public bool WebHookEnabled { get => field; set => SetValue(ref field, value); }
-        public string WebHookUrl { get => field; set => SetValue(ref field, value); } = "";
-        public string MessagePrefix { get => field; set => SetValue(ref field, value); } = "\u27DC \u27DC \u27DC";
-        public string Color { get => field; set => SetValue(ref field, value); } = "";
-        public bool EmbedEnabled { get => field; set => SetValue(ref field, value); }
-        public string EmbedTitle { get => field; set => SetValue(ref field, value); } = "Notice";
-        public string EmbedImageUrl { get => field; set => SetValue(ref field, value); } = "";
+        public bool WebHookEnabled { get; set => SetValue(ref field, value); }
+        public string WebHookUrl { get; set => SetValue(ref field, value); } = "";
+        public string MessagePrefix { get; set => SetValue(ref field, value); } = "\u27DC \u27DC \u27DC";
+        public string Color { get; set => SetValue(ref field, value); } = "";
+        public bool EmbedEnabled { get; set => SetValue(ref field, value); }
+        public string EmbedTitle { get; set => SetValue(ref field, value); } = "Notice";
+        public string EmbedImageUrl { get; set => SetValue(ref field, value); } = "";
 
-        public DateTime LastWeeklyReset { get => field; set => SetValue(ref field, value); } = DateTime.MinValue;
-        public DateTime LastMonthlyReset { get => field; set => SetValue(ref field, value); } = DateTime.MinValue;
-        public DateTime LastYearlyReset { get => field; set => SetValue(ref field, value); } = DateTime.MinValue;
+        public DateTime LastWeeklyReset { get; set => SetValue(ref field, value); } = DateTime.MinValue;
+        public DateTime LastMonthlyReset { get; set => SetValue(ref field, value); } = DateTime.MinValue;
+        public DateTime LastYearlyReset { get; set => SetValue(ref field, value); } = DateTime.MinValue;
 
-        public int LastWeeklyProcessWeek { get => field; set => SetValue(ref field, value); }
-        public int LastWeeklyProcessYear { get => field; set => SetValue(ref field, value); }
-        public int LastMonthlyProcessMonth { get => field; set => SetValue(ref field, value); }
-        public int LastMonthlyProcessYear { get => field; set => SetValue(ref field, value); }
-        public int LastYearlyProcessYear { get => field; set => SetValue(ref field, value); }
+        public int LastWeeklyProcessWeek { get; set => SetValue(ref field, value); }
+        public int LastWeeklyProcessYear { get; set => SetValue(ref field, value); }
+        public int LastMonthlyProcessMonth { get; set => SetValue(ref field, value); }
+        public int LastMonthlyProcessYear { get; set => SetValue(ref field, value); }
+        public int LastYearlyProcessYear { get; set => SetValue(ref field, value); }
 
-        public bool Show_AttackMessages { get => field; set => SetValue(ref field, value); } = true;
-        public bool Show_WeeklyResults { get => field; set => SetValue(ref field, value); } = true;
-        public bool Show_MonthlyResults { get => field; set => SetValue(ref field, value); } = true;
-        public bool Show_YearlyResults { get => field; set => SetValue(ref field, value); } = true;
+        public bool Show_WeeklyResults { get; set => SetValue(ref field, value); } = true;
+        public bool Show_MonthlyResults { get; set => SetValue(ref field, value); } = true;
+        public bool Show_YearlyResults { get; set => SetValue(ref field, value); } = true;
 
-        public string CustomMessage { get => field; set => SetValue(ref field, value); } = "";
-        public bool CustomMessageEnable { get => field; set => SetValue(ref field, value); }
-        public string CustomTitle { get => field; set => SetValue(ref field, value); } = "";
-        public bool CustomTitleEnable { get => field; set => SetValue(ref field, value); }
+        public string CustomMessage { get; set => SetValue(ref field, value); } = "";
+        public bool CustomMessageEnable { get; set => SetValue(ref field, value); }
+        public string CustomTitle { get; set => SetValue(ref field, value); } = "";
+        public bool CustomTitleEnable { get; set => SetValue(ref field, value); }
 
-        public bool WeeklyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
-        public bool MonthlyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
-        public bool YearlyRewardsEnabled { get => field; set => SetValue(ref field, value); } = true;
+        public bool WeeklyRewardsEnabled { get; set => SetValue(ref field, value); } = true;
+        public bool MonthlyRewardsEnabled { get; set => SetValue(ref field, value); } = true;
+        public bool YearlyRewardsEnabled { get; set => SetValue(ref field, value); } = true;
 
-        public bool NexusEnabled { get => field; set => SetValue(ref field, value); }
+        public bool NexusSendDiscord { get; set => SetValue(ref field, value); }
+        public bool NexusReceiveDiscord { get; set => SetValue(ref field, value); }
 
-        public bool NexusSendDiscord { get => field; set => SetValue(ref field, value); }
-        public bool NexusReceiveDiscord { get => field; set => SetValue(ref field, value); }
+        public bool IsDataAuthority { get; set { SetValue(ref field, value); OnPropertyChanged(nameof(CanRunEvents)); OnPropertyChanged(nameof(IsNexusNonAuthority)); } }
 
-        public bool IsDataAuthority { get => field; set => SetValue(ref field, value); }
+        public bool IsDataModeNexus { get; set { SetValue(ref field, value); OnPropertyChanged(nameof(IsDataModeFile)); OnPropertyChanged(nameof(CanRunEvents)); OnPropertyChanged(nameof(IsNexusNonAuthority)); } }
+        public bool IsDataModeFile => !IsDataModeNexus;
+        public bool CanRunEvents => !IsDataModeNexus || IsDataAuthority;
+        public bool IsNexusNonAuthority => IsDataModeNexus && !IsDataAuthority;
+        public string SharedDataPath { get; set => SetValue(ref field, value); } = "";
 
-        public bool IsDataModeNexus { get => field; set => SetValue(ref field, value); }
-        public string SharedDataPath { get => field; set => SetValue(ref field, value); } = "";
+        public bool DiscordBotEnabled { get; set => SetValue(ref field, value); }
+        public string DiscordBotToken { get; set => SetValue(ref field, value); } = "";
+        public ulong RewardChannelId { get; set => SetValue(ref field, value); }
+        public ulong LiveScoreboardChannelId { get; set => SetValue(ref field, value); }
+        public bool SelfManagedChannelsEnabled { get; set => SetValue(ref field, value); }
+        public ulong KoTHCategoryId { get; set => SetValue(ref field, value); }
+        public ulong DiscordGuildId { get; set => SetValue(ref field, value); }
+        public ulong LiveScoreboardMessageId { get; set => SetValue(ref field, value); }
+        public int DiscordUpdateIntervalSeconds { get; set => SetValue(ref field, value); } = 30;
+        public string DiscordChannelPrefix { get; set => SetValue(ref field, value); } = "zone-";
+        public bool DebugLoggingEnabled { get; set => SetValue(ref field, value); }
 
-        public bool DiscordBotEnabled { get => field; set => SetValue(ref field, value); }
-        public string DiscordBotToken { get => field; set => SetValue(ref field, value); } = "";
-        public ulong RewardChannelId { get => field; set => SetValue(ref field, value); }
-        public ulong LiveScoreboardChannelId { get => field; set => SetValue(ref field, value); }
-        public bool SelfManagedChannelsEnabled { get => field; set => SetValue(ref field, value); }
-        public ulong KoTHCategoryId { get => field; set => SetValue(ref field, value); }
-        public ulong DiscordGuildId { get => field; set => SetValue(ref field, value); }
-        public ulong LiveScoreboardMessageId { get => field; set => SetValue(ref field, value); }
-        public int DiscordUpdateIntervalSeconds { get => field; set => SetValue(ref field, value); } = 30;
-        public string DiscordChannelPrefix { get => field; set => SetValue(ref field, value); } = "zone-";
-        public bool DebugLoggingEnabled { get => field; set => SetValue(ref field, value); }
-
-        public string EnterAlert_MessageTemplate { get => field; set => SetValue(ref field, value); }
+        public string EnterAlert_MessageTemplate { get; set => SetValue(ref field, value); }
             = "{player} from [{factionTag}] entered {zoneName}";
 
         public ObservableConcurrentUiSafeCollection<ZoneRewardConfig> ZoneRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<RankRewardEntry> WeeklyRankRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<RankRewardEntry> MonthlyRankRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<RankRewardEntry> YearlyRankRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> WeeklyThresholdRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> MonthlyThresholdRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> YearlyThresholdRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
-        public bool RaffleEnabled { get => field; set => SetValue(ref field, value); }
-        public RafflePeriod RafflePeriod { get => field; set => SetValue(ref field, value); } = RafflePeriod.Weekly;
-        public DayOfWeek RaffleDayOfWeek { get => field; set => SetValue(ref field, value); } = DayOfWeek.Saturday;
-        public int RaffleDayOfMonth { get => field; set => SetValue(ref field, value); } = 1;
-        public int RaffleHour { get => field; set => SetValue(ref field, value); } = 20;
-        public int RaffleMinute { get => field; set => SetValue(ref field, value); }
-        public int TicketCost { get => field; set => SetValue(ref field, value); } = 10;
+        public bool RaffleEnabled { get; set => SetValue(ref field, value); }
+        public RafflePeriod RafflePeriod { get; set => SetValue(ref field, value); } = RafflePeriod.Weekly;
+        public DayOfWeek RaffleDayOfWeek { get; set => SetValue(ref field, value); } = DayOfWeek.Saturday;
+        public int RaffleDayOfMonth { get; set => SetValue(ref field, value); } = 1;
+        public int RaffleHour { get; set => SetValue(ref field, value); } = 20;
+        public int RaffleMinute { get; set => SetValue(ref field, value); }
+        public int TicketCost { get; set => SetValue(ref field, value); } = 10;
 
         public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleFirstRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleSecondRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleThirdRewards
-            { get => field; set => SetValue(ref field, value); } = new();
+            { get; set => SetValue(ref field, value); } = [];
     }
 }

@@ -74,7 +74,7 @@ namespace SenX_KOTH_Plugin.Utils
     [ProtoContract]
     public sealed class SyncResponse
     {
-        [ProtoMember(1)] public List<PointCreditEntry> Entries { get; set; } = new();
+        [ProtoMember(1)] public List<PointCreditEntry> Entries { get; set; } = [];
     }
 
     [ProtoContract]
@@ -106,8 +106,8 @@ namespace SenX_KOTH_Plugin.Utils
 
     public sealed class ScoreFile : ViewModel
     {
-        public List<KeyValuePair<string, ulong>> WeekScores { get => field; set => SetValue(ref field, value); } = new();
-        public List<KeyValuePair<string, ulong>> MonthScores { get => field; set => SetValue(ref field, value); } = new();
-        public List<KeyValuePair<string, ulong>> YearScores { get => field; set => SetValue(ref field, value); } = new();
+        public List<KeyValuePair<string, ulong>> WeekScores { get; set => SetValue(ref field, value); } = [];
+        public List<KeyValuePair<string, ulong>> MonthScores { get; set => SetValue(ref field, value); } = [];
+        public List<KeyValuePair<string, ulong>> YearScores { get; set => SetValue(ref field, value); } = [];
     }
 }

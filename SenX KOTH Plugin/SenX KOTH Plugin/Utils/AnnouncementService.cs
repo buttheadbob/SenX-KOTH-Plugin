@@ -11,15 +11,14 @@ internal static class AnnouncementService
     public static void ZoneCapture(KothZone zone, string factionTag, string factionName, int pointsEarned)
     {
         var config = SenX_KOTH_PluginMain.Instance?.Config;
-        if (config == null || !config.Show_AttackMessages) return;
-        if (!zone.DiscordAnnounceCapture) return;
+        if (config == null || !zone.DiscordAnnounceCapture) return;
 
         if (config.WebHookEnabled)
             DiscordService.SendDiscordWebHook(
                 "[" + factionTag + "] " + factionName + " captured " + zone.Name + "!",
                 Color.Gold, 1);
 
-        if (config.NexusSendDiscord)
+        if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
             {
                 Title = zone.Name + " \u2014 Held by " + factionTag,
@@ -32,15 +31,14 @@ internal static class AnnouncementService
     public static void ZoneDecay(KothZone zone)
     {
         var config = SenX_KOTH_PluginMain.Instance?.Config;
-        if (config == null || !config.Show_AttackMessages) return;
-        if (!zone.DiscordAnnounceDecay) return;
+        if (config == null || !zone.DiscordAnnounceDecay) return;
 
         if (config.WebHookEnabled)
             DiscordService.SendDiscordWebHook(
                 zone.Name + " capture lost - returning to Neutral",
                 Color.DarkRed, 1);
 
-        if (config.NexusSendDiscord)
+        if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
             {
                 Title = zone.Name + " \u2014 Returned to Neutral",
@@ -52,15 +50,14 @@ internal static class AnnouncementService
     public static void ZonePointsEarned(KothZone zone, string factionTag, string factionName, int points)
     {
         var config = SenX_KOTH_PluginMain.Instance?.Config;
-        if (config == null || !config.Show_AttackMessages) return;
-        if (!zone.DiscordAnnouncePoints) return;
+        if (config == null || !zone.DiscordAnnouncePoints) return;
 
         if (config.WebHookEnabled)
             DiscordService.SendDiscordWebHook(
                 "[" + factionTag + "] " + factionName + " earned " + points + "pts in " + zone.Name + "!",
                 Color.Orange, 0);
 
-        if (config.NexusSendDiscord)
+        if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
             {
                 Title = zone.Name + " \u2014 Points Earned",
@@ -78,6 +75,14 @@ internal static class AnnouncementService
 
         if (config.WebHookEnabled)
             DiscordService.SendAlertWebHook(message);
+
+        if (config.NexusSendDiscord && !ShouldSkipRelay())
+            NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
+            {
+                Title = zone.Name + " \u2014 Player Entered",
+                Description = message,
+                Color = 0xFFA500u
+            }, zone.DiscordChannelId);
     }
 
     public static void ZoneEviction(KothZone zone, bool manualEvict, int evictionDurationSeconds)
@@ -123,5 +128,10 @@ internal static class AnnouncementService
 
         if (config.WebHookEnabled)
             DiscordService.SendDiscordWebHook(message, color, 1);
+    }
+
+    private static bool ShouldSkipRelay()
+    {
+        return NexusManager.IsAuthorityLocal() && DiscordBotService.IsEnabled;
     }
 }
