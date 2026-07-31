@@ -10,6 +10,7 @@
 
     <UserControl.Resources>
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <Grid>
@@ -696,8 +697,6 @@
                                     <CheckBox IsChecked="{Binding CustomTitleEnable}" Content="Enable" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,5">
-                                    <Button Content="Sync Rewards" Margin="5" Click="SyncRewardsButton_Click"/>
-                                    <Button Content="Sync Points" Margin="5" Click="SyncPointsButton_Click"/>
                                     <Button Content="Test Rank WebHook" Margin="5" Click="SendSampleRankWebHook_Click"/>
                                     <Button Content="Test Attack WebHook" Margin="5" Click="SendSampleAttackWebHook_Click"/>
                                 </StackPanel>
@@ -752,6 +751,35 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- ============ PENDING TAB ============ -->
+            <TabItem Header="Pending" Visibility="{Binding IsDataModeNexus, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">
+                            Pending Point Credits
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Foreground="Gray">
+                            Points earned while the authority server was offline.
+                            Cleared automatically when the authority acknowledges them.
+                        </TextBlock>
+                        <DataGrid x:Name="PendingGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                  MinHeight="100" MaxHeight="300">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Faction" Binding="{Binding FactionName}" Width="*"/>
+                                <DataGridTextColumn Header="Tag" Binding="{Binding FactionTag}" Width="80"/>
+                                <DataGridTextColumn Header="Points" Binding="{Binding Points}" Width="80"/>
+                                <DataGridTextColumn Header="Zone" Binding="{Binding ZoneName}" Width="*"/>
+                                <DataGridTextColumn Header="Earned" Binding="{Binding EarnedAt}" Width="150"/>
+                                <DataGridTextColumn Header="ID" Binding="{Binding RequestId}" Width="250"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock x:Name="PendingCount" Margin="0,5" Foreground="Gray"/>
+                        <Button Content="Clear All Pending" Click="ClearPending_Click"
+                                HorizontalAlignment="Left" Margin="0,5" Padding="8,3"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- ============ DOCUMENTATION TAB ============ -->
             <TabItem Header="Documentation">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -782,10 +810,7 @@
                                     <Run>  !KoTH CreateZone name [radius] - Create a zone at your position</Run><LineBreak/>
                                     <Run>  !KoTH DeleteZone name         - Delete a zone</Run><LineBreak/>
                                     <Run>  !KoTH GivePoint id_or_tag value - Adjust faction bank points</Run><LineBreak/>
-                                    <Run>  !KoTH ForceUpdate             - Force score update and Nexus broadcast</Run><LineBreak/>
                                     <Run>  !KoTH ForceTest               - Test Discord webhook</Run><LineBreak/>
-                                    <Run>  !KoTH ForceNexusSync          - Force PointVerification broadcast</Run><LineBreak/>
-                                    <Run>  !KoTH ForceRewardSync         - Force reward config sync</Run><LineBreak/>
                                     <Run FontStyle="Italic">  (All commands have a 5 second cooldown)</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
@@ -888,6 +913,10 @@
                                     <Run>  - Alternative to the bot (webhook URL on Discord tab)</Run><LineBreak/>
                                     <Run>  - Customizable message prefix, embed settings, and colors</Run><LineBreak/>
                                     <Run>  - Enter alerts: configurable message templates for zone entry</Run><LineBreak/>
+                                    <Run FontWeight="Bold">Nexus Discord Relay:</Run><LineBreak/>
+                                    <Run>  - Nexus Send: forwards bot channel messages (zone events) to other servers</Run><LineBreak/>
+                                    <Run>  - Nexus Receive: displays relayed messages using local bot/webhook</Run><LineBreak/>
+                                    <Run>  - Zone channels are prefixed with [ServerName] for multi-server setup</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>
@@ -904,15 +933,37 @@
                             </StackPanel>
                         </Expander>
 
+                        <Expander Header="Authority System" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="Bold">Data mode is set via radio buttons on the Config tab.</Run><LineBreak/>
+                                    <Run FontWeight="Bold">Nexus:</Run><LineBreak/>
+                                    <Run>  - One server is the authority — holds all bank, raffle, score data</Run><LineBreak/>
+                                    <Run>  - Non-authority servers relay all data operations via Nexus</Run><LineBreak/>
+                                    <Run>  - Pending point credits queue locally if authority is offline</Run><LineBreak/>
+                                    <Run>  - Authority announces every 30s; syncs pending data every 15min</Run><LineBreak/>
+                                    <Run>  - View pending credits on the Pending tab</Run><LineBreak/>
+                                    <Run FontWeight="Bold">File Path:</Run><LineBreak/>
+                                    <Run>  - Set a shared network folder for FactionBanks, RaffleTickets, ScoreData</Run><LineBreak/>
+                                    <Run>  - All servers read/write the same files with a file lock</Run><LineBreak/>
+                                    <Run>  - Config, Zones, and EventData remain local per server</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+
                         <Expander Header="Data Files" Margin="0,5">
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap" FontFamily="Consolas">
-                                    <Run>  Config.json         — Plugin settings, rewards, raffle config</Run><LineBreak/>
-                                    <Run>  Zones.json          — Zone definitions, positions, per-zone settings</Run><LineBreak/>
-                                    <Run>  ScoreData.json      — Accumulated faction scores (week/month/year)</Run><LineBreak/>
-                                    <Run>  EventData.json      — Point events for Nexus sync and leaderboards</Run><LineBreak/>
-                                    <Run>  FactionBanks.json   — Faction bank balances</Run><LineBreak/>
-                                    <Run>  RaffleTickets.json  — Ticket purchase records and draw history</Run><LineBreak/>
+                                    <Run FontWeight="Bold">All servers:</Run><LineBreak/>
+                                    <Run>  Config.json              — Plugin settings</Run><LineBreak/>
+                                    <Run>  Zones.json               — Zone definitions</Run><LineBreak/>
+                                    <Run>  EventData.json           — Per-server zone events (local only)</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Authority server only:</Run><LineBreak/>
+                                    <Run>  FactionBanks.json        — Faction bank balances</Run><LineBreak/>
+                                    <Run>  RaffleTickets.json       — Ticket purchase records</Run><LineBreak/>
+                                    <Run>  ScoreData.json           — Accumulated faction scores</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Non-authority (Nexus mode):</Run><LineBreak/>
+                                    <Run>  PendingTransactions.json — Unconfirmed point credits</Run><LineBreak/><LineBreak/>
                                     <Run FontStyle="Italic">  Location: Torch Instance\Senx_Koth\</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>

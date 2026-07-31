@@ -26,15 +26,6 @@ namespace SenX_KOTH_Plugin.Commands
             return true;
         }
 
-        [Command("ForceUpdate", "Forces the score to update and broadcast to Nexus if enabled.")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void AnnounceCurrentWeek()
-        {
-            if (!CheckCooldown()) return;
-            NexusManager.BroadcastVerification();
-            Context.Respond("Score update triggered and broadcast to Nexus (if enabled).");
-        }
-
         [Command("ForceTest", "Forces an announcement to test the discord webhook.")]
         [Permission(MyPromoteLevel.Admin)]
         public void ForceWebHookTest()
@@ -50,24 +41,6 @@ namespace SenX_KOTH_Plugin.Commands
             sb.AppendLine("TRex's with 386 Points!");
             sb.AppendLine("Muppet Empire with 212 Points!");
             DiscordService.SendDiscordWebHook(sb.ToString(), Color.Brown, 1);
-        }
-
-        [Command("ForceNexusSync", "Forces Nexus verification broadcast immediately.")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void ForceNexusSync()
-        {
-            if (!CheckCooldown()) return;
-            NexusManager.BroadcastVerification();
-            Context.Respond("Nexus verification broadcast sent.");
-        }
-
-        [Command("ForceRewardSync", "Forces reward config sync to all Nexus servers.")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void ForceRewardSync()
-        {
-            if (!CheckCooldown()) return;
-            NexusManager.BroadcastRewardConfig();
-            Context.Respond("Reward config sync broadcast sent.");
         }
 
         [Command("CreateZone", "Creates a KoTH zone at your current position.")]
@@ -133,14 +106,9 @@ namespace SenX_KOTH_Plugin.Commands
         public void GivePoint(string input, int value)
         {
             if (!CheckCooldown()) return;
-            var persist = SenX_KOTH_PluginMain.BankPersist;
-            if (persist == null) return;
 
-            if (BankService.AdminAdjustPoints(persist.Data, input, value, out string result))
-            {
-                persist.Save();
+            if (BankService.AdminAdjustPoints(input, value, out string result))
                 Context.Respond(result);
-            }
             else
                 Context.Respond(result);
         }

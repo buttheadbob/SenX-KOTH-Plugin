@@ -33,7 +33,8 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowWeek()
         {
             if (!CheckCooldown()) return;
-            var weekList = NexusManager.AccumulatedScores.WeekScores
+            var scores = SenX_KOTH_PluginMain.LoadScoreFile();
+            var weekList = (scores?.WeekScores ?? new List<KeyValuePair<string, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -46,7 +47,7 @@ namespace SenX_KOTH_Plugin.Commands
                 foreach (var result in weekList)
                     results.AppendLine(result.Key + " => " + result.Value);
 
-                var scoreData = SenX_KOTH_PluginMain.EventPersist?.Data;
+                var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
                     AppendZoneBreakdown(results, scoreData.WeekEvents, "Weekly Zone Breakdown");
             }
@@ -61,7 +62,8 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowMonth()
         {
             if (!CheckCooldown()) return;
-            var monthList = NexusManager.AccumulatedScores.MonthScores
+            var scores = SenX_KOTH_PluginMain.LoadScoreFile();
+            var monthList = (scores?.MonthScores ?? new List<KeyValuePair<string, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -74,7 +76,7 @@ namespace SenX_KOTH_Plugin.Commands
                 foreach (var result in monthList)
                     results.AppendLine(result.Key + " => " + result.Value);
 
-                var scoreData = SenX_KOTH_PluginMain.EventPersist?.Data;
+                var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
                     AppendZoneBreakdown(results, scoreData.MonthEvents, "Monthly Zone Breakdown");
             }
@@ -89,7 +91,8 @@ namespace SenX_KOTH_Plugin.Commands
         public void ShowYear()
         {
             if (!CheckCooldown()) return;
-            var yearList = NexusManager.AccumulatedScores.YearScores
+            var scores = SenX_KOTH_PluginMain.LoadScoreFile();
+            var yearList = (scores?.YearScores ?? new List<KeyValuePair<string, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -102,7 +105,7 @@ namespace SenX_KOTH_Plugin.Commands
                 foreach (var result in yearList)
                     results.AppendLine(result.Key + " => " + result.Value);
 
-                var scoreData = SenX_KOTH_PluginMain.EventPersist?.Data;
+                var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
                     AppendZoneBreakdown(results, scoreData.YearEvents, "Yearly Zone Breakdown");
             }
@@ -127,7 +130,7 @@ namespace SenX_KOTH_Plugin.Commands
             results.AppendLine();
             string prefix = "Zone: " + zoneName;
 
-            var eventData = SenX_KOTH_PluginMain.EventPersist?.Data;
+            var eventData = SenX_KOTH_PluginMain.LoadEventData();
             if (eventData == null) return;
 
             List<PointEarned> weekZoneEvents, monthZoneEvents, yearZoneEvents;
@@ -172,62 +175,60 @@ namespace SenX_KOTH_Plugin.Commands
             results.AppendLine("  !KoTH CreateZone <name> [radius] - Create a zone");
             results.AppendLine("  !KoTH DeleteZone <name> - Delete a zone");
             results.AppendLine("  !KoTH GivePoint <id_or_tag> <value> - Adjust bank points");
-            results.AppendLine("  !KoTH ForceUpdate  - Force score update");
             results.AppendLine("  !KoTH ForceTest    - Test Discord webhook");
-            results.AppendLine("  !KoTH ForceNexusSync - Force Nexus verification");
-            results.AppendLine("  !KoTH ForceRewardSync - Force reward config sync");
 
             SendResult(results.ToString(), prefix);
         }
 
-        [Command("Bank", "Shows your faction's bank balance. Founder/leader only.")]
+        [Command("Bank", "Show faction bank balance and raffle tickets.")]
         [Permission(MyPromoteLevel.None)]
-        public void ShowBank()
+        public async void Bank()
         {
             if (!CheckCooldown()) return;
-            if (Context.Player == null)
-            {
-                Context.Respond("Bank info is only available in-game.");
-                return;
-            }
-
-            var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(Context.Player.IdentityId);
-            if (faction == null)
-            {
-                Context.Respond("You are not in a faction.");
-                return;
-            }
-
-            if (!faction.IsFounder(Context.Player.IdentityId) && !faction.IsLeader(Context.Player.IdentityId))
-            {
-                Context.Respond("Only faction founders and leaders can view bank details.");
-                return;
-            }
-
-            var bankPersist = SenX_KOTH_PluginMain.BankPersist;
-            if (bankPersist == null) return;
+            if (Context.Player == null) return;
 
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             int ticketCost = config?.TicketCost ?? 10;
 
-            var bank = BankService.GetBank(bankPersist.Data, faction.FactionId);
-            int balance = bank?.Points ?? 0;
-            int tickets = SenX_KOTH_PluginMain.RafflePersist?.Data.Tickets
-                .FirstOrDefault(t => t.FactionId == faction.FactionId)?.Count ?? 0;
+            if (NexusManager.IsAuthorityLocal())
+            {
+                var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(Context.Player.IdentityId);
+                if (faction == null) { Context.Respond("You are not in a faction."); return; }
+                if (!faction.IsFounder(Context.Player.IdentityId) && !faction.IsLeader(Context.Player.IdentityId))
+                { Context.Respond("Only faction founders and leaders can view bank details."); return; }
 
-            var sb = new StringBuilder();
-            sb.AppendLine("=== " + faction.Tag + " Bank ===");
-            sb.AppendLine("Balance: " + balance + " pts");
-            sb.AppendLine("Raffle Tickets Purchased: " + tickets);
-            sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
-            sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? balance / ticketCost : 0));
+                var (balance, tickets) = BankService.GetBalance(faction.FactionId);
 
-            SendResult(sb.ToString(), faction.Tag + " Bank");
+                var sb = new StringBuilder();
+                sb.AppendLine("=== " + faction.Tag + " Bank ===");
+                sb.AppendLine("Balance: " + balance + " pts");
+                sb.AppendLine("Raffle Tickets Purchased: " + tickets);
+                sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
+                sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? balance / ticketCost : 0));
+                SendResult(sb.ToString(), faction.Tag + " Bank");
+            }
+            else
+            {
+                var req = new BankBalanceRequest { RequestId = Guid.NewGuid(), PlayerIdentityId = Context.Player.IdentityId };
+                var response = await NexusManager.SendToAuthority(req);
+                if (response.Approved)
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("=== " + response.FactionTag + " Bank ===");
+                    sb.AppendLine("Balance: " + response.Balance + " pts");
+                    sb.AppendLine("Raffle Tickets Purchased: " + response.TicketCount);
+                    sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
+                    sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? response.Balance / ticketCost : 0));
+                    SendResult(sb.ToString(), response.FactionTag + " Bank");
+                }
+                else
+                    Context.Respond(response.Message);
+            }
         }
 
         [Command("BuyTicket", "Buy raffle tickets. Usage: !KoTH BuyTicket [count]. Founder/leader only.")]
         [Permission(MyPromoteLevel.None)]
-        public void BuyTicket(int count = 1)
+        public async void BuyTicket(int count = 1)
         {
             if (!CheckCooldown()) return;
             if (Context.Player == null)
@@ -235,22 +236,24 @@ namespace SenX_KOTH_Plugin.Commands
                 Context.Respond("Tickets can only be purchased in-game.");
                 return;
             }
-
             if (count < 1) count = 1;
 
-            var bankPersist = SenX_KOTH_PluginMain.BankPersist;
             var config = SenX_KOTH_PluginMain.Instance?.Config;
-            var rafflePersist = SenX_KOTH_PluginMain.RafflePersist;
-            if (bankPersist == null || rafflePersist == null || config == null) return;
+            if (config == null) return;
 
-            if (BankService.BuyTickets(bankPersist.Data, rafflePersist.Data, config, Context.Player.IdentityId, count, out string result))
+            if (NexusManager.IsAuthorityLocal())
             {
-                bankPersist.Save();
-                rafflePersist.Save();
-                Context.Respond(result);
+                if (BankService.BuyTickets(config, Context.Player.IdentityId, count, out string result))
+                    Context.Respond(result);
+                else
+                    Context.Respond(result);
             }
             else
-                Context.Respond(result);
+            {
+                var req = new TicketPurchaseRequest { RequestId = Guid.NewGuid(), PlayerIdentityId = Context.Player.IdentityId, Count = count };
+                var response = await NexusManager.SendToAuthority(req);
+                Context.Respond(response.Message);
+            }
         }
 
         private void SendResult(string message, string prefix)

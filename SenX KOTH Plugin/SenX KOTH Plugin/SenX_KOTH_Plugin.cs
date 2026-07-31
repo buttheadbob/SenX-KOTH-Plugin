@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using NLog;
 using System;
 using System.IO;
@@ -24,7 +25,7 @@ namespace SenX_KOTH_Plugin
 
         private const string DataFolderName = "Senx_Koth";
 
-        private static string DataPath
+        internal static string LocalDataPath
         {
             get
             {
@@ -32,6 +33,16 @@ namespace SenX_KOTH_Plugin
                 var p = Path.Combine(bp, DataFolderName);
                 Directory.CreateDirectory(p);
                 return p;
+            }
+        }
+
+        internal static string DataPath
+        {
+            get
+            {
+                var shared = Instance?.Config?.SharedDataPath;
+                if (!string.IsNullOrEmpty(shared)) return shared!;
+                return LocalDataPath;
             }
         }
 
@@ -44,64 +55,55 @@ namespace SenX_KOTH_Plugin
         public static NexusGlobalAPI? NexusGlobalAPI { get; private set; }
 
         internal static JsonPersistent<SenX_KOTH_PluginConfig>? ConfigPersist { get; private set; }
-        internal static JsonPersistent<ScoreFile>? ScorePersist { get; private set; }
-        internal static JsonPersistent<EventData>? EventPersist { get; private set; }
-        internal static JsonPersistent<BanksData>? BankPersist { get; private set; }
-        internal static JsonPersistent<RaffleTicketsData>? RafflePersist { get; private set; }
+        internal static JsonPersistent<PendingTransactionsData>? PendingCreditsPersist { get; private set; }
         internal static JsonPersistent<ZoneListData>? ZonePersist { get; private set; }
 
         public override void Init(ITorchBase torch)
-        {
-            base.Init(torch);
-            Instance = this;
-            ObservableConcurrentUiSafeCollectionStatic.SetSynchronizationContext(
-                System.Threading.SynchronizationContext.Current!);
+    {
+        base.Init(torch);
+        Instance = this;
+        ObservableConcurrentUiSafeCollectionStatic.SetSynchronizationContext(
+            System.Threading.SynchronizationContext.Current!);
 
-            SetupConfig();
+        SetupConfig();
 
-            ScorePersist = JsonPersistent<ScoreFile>.Load(Path.Combine(DataPath, "ScoreData.json"));
-            KoTHLog.Info(Log,"ScoreData loaded — Week entries: " + ScorePersist.Data.WeekScores.Count + ", Month: " + ScorePersist.Data.MonthScores.Count + ", Year: " + ScorePersist.Data.YearScores.Count);
+var config = Config;
+if (config == null)
+{
+    KoTHLog.Error(Log,"Config failed to load; skipping event initialization.");
+    return;
+}
 
-            EventPersist = JsonPersistent<EventData>.Load(Path.Combine(DataPath, "EventData.json"));
-            KoTHLog.Info(Log,"EventData loaded — WeekEvents: " + EventPersist.Data.WeekEvents.Count + ", MonthEvents: " + EventPersist.Data.MonthEvents.Count + ", YearEvents: " + EventPersist.Data.YearEvents.Count);
-            EventPersist.WatchCollection(EventPersist.Data.WeekEvents);
-            EventPersist.WatchCollection(EventPersist.Data.MonthEvents);
-            EventPersist.WatchCollection(EventPersist.Data.YearEvents);
+ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zones.json"));
+    KoTHLog.Info(Log,"Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
+    ZonePersist.WatchCollection(ZonePersist.Data.Zones);
 
-            BankPersist = JsonPersistent<BanksData>.Load(Path.Combine(DataPath, "FactionBanks.json"));
-            KoTHLog.Info(Log,"FactionBanks loaded — Banks: " + BankPersist.Data.Banks.Count);
-            BankPersist.WatchCollection(BankPersist.Data.Banks);
+    if (NexusManager.IsAuthorityLocal())
+    {
+        Directory.CreateDirectory(DataPath);
 
-            RafflePersist = JsonPersistent<RaffleTicketsData>.Load(Path.Combine(DataPath, "RaffleTickets.json"));
-            KoTHLog.Info(Log,"RaffleTickets loaded — Tickets: " + RafflePersist.Data.Tickets.Count + ", LastDraw: " + RafflePersist.Data.LastDrawDate.ToString("yyyy-MM-dd"));
-            RafflePersist.WatchCollection(RafflePersist.Data.Tickets);
+        Events.Add(new ResetEvent(config));
+        KoTHLog.Info(Log,"Registered event: ResetEvent");
 
-            ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(DataPath, "Zones.json"));
-            KoTHLog.Info(Log,"Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
-            ZonePersist.WatchCollection(ZonePersist.Data.Zones);
+        Events.Add(new RaffleEvent(config));
+        KoTHLog.Info(Log,"Registered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
 
-            var config = Config;
-            if (config == null)
-            {
-                KoTHLog.Error(Log,"Config failed to load; skipping event initialization.");
-                return;
-            }
+        Events.Add(new LiveScoreboardEvent(config));
+        KoTHLog.Info(Log,"Registered event: LiveScoreboardEvent — DiscordBotEnabled=" + config.DiscordBotEnabled);
+    }
+    else if (config.IsDataModeNexus)
+    {
+        PendingCreditsPersist = JsonPersistent<PendingTransactionsData>.Load(Path.Combine(LocalDataPath, "PendingTransactions.json"));
+        KoTHLog.Info(Log,"PendingTransactions loaded — Credits: " + PendingCreditsPersist.Data.Credits.Count);
+        PendingCreditsPersist.WatchCollection(PendingCreditsPersist.Data.Credits);
+    }
 
-            Events.Add(new ResetEvent(config, EventPersist.Data, BankPersist.Data));
-            KoTHLog.Info(Log,"Registered event: ResetEvent");
-
-            Events.Add(new RaffleEvent(config, BankPersist.Data, RafflePersist.Data));
-            KoTHLog.Info(Log,"Regi60s check intervalstered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
-
-            Events.Add(new LiveScoreboardEvent(config));
-            KoTHLog.Info(Log,"Registered event: LiveScoreboardEvent — DiscordBotEnabled=" + config.DiscordBotEnabled);
-
-            TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
-            if (sessionManager != null)
-                sessionManager.SessionStateChanged += SessionChanged;
-            else
-                KoTHLog.Warn(Log,"No session manager loaded!");
-        }
+        TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
+        if (sessionManager != null)
+            sessionManager.SessionStateChanged += SessionChanged;
+        else
+            KoTHLog.Warn(Log,"No session manager loaded!");
+    }
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
@@ -110,7 +112,7 @@ namespace SenX_KOTH_Plugin
                 case TorchSessionState.Loaded:
                     KoTHLog.Info(Log,"Session Loaded! Registered events: " + Events.Count);
                     NexusGlobalAPI = new NexusGlobalAPI(OnNexusEnabled);
-                    NexusManager.Initialize(this, EventPersist!.Data);
+                    NexusManager.Initialize();
                     Supervisor.Init();
                     _questManager = new QuestManager(Events);
                     _questManager.Init();
@@ -134,7 +136,7 @@ namespace SenX_KOTH_Plugin
         {
             KoTHLog.Info(Log,"Nexus 3 API connected. Server ID: " + NexusGlobalAPI?.CurrentServerID);
             if (Config?.NexusEnabled == true)
-                NexusManager.Initialize(this, EventPersist!.Data);
+                NexusManager.Initialize();
         }
 
         public override void Update()
@@ -151,11 +153,25 @@ namespace SenX_KOTH_Plugin
         private void SetupConfig()
         {
             ConfigPersist = JsonPersistent<SenX_KOTH_PluginConfig>.Load(
-                Path.Combine(DataPath, "Config.json"));
+                Path.Combine(LocalDataPath, "Config.json"));
             Config = ConfigPersist.Data;
         }
 
         public void SaveConfig() => ConfigPersist?.Save();
+
+        internal static EventData? LoadEventData()
+        {
+            var path = Path.Combine(LocalDataPath, "EventData.json");
+            if (!File.Exists(path)) return null;
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<EventData>(File.ReadAllText(path));
+        }
+
+        internal static ScoreFile? LoadScoreFile()
+        {
+            var path = Path.Combine(DataPath, "ScoreData.json");
+            if (!File.Exists(path)) return null;
+            return JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(path));
+        }
 
         public override void Dispose()
         {
@@ -174,14 +190,8 @@ namespace SenX_KOTH_Plugin
                 Config.RaffleSecondRewards.Dispose();
                 Config.RaffleThirdRewards.Dispose();
             }
-            EventPersist?.Data.WeekEvents.Dispose();
-            EventPersist?.Data.MonthEvents.Dispose();
-            EventPersist?.Data.YearEvents.Dispose();
+            PendingCreditsPersist?.Dispose();
             ConfigPersist?.Dispose();
-            ScorePersist?.Dispose();
-            EventPersist?.Dispose();
-            BankPersist?.Dispose();
-            RafflePersist?.Dispose();
             ZonePersist?.Dispose();
             base.Dispose();
         }

@@ -7,6 +7,7 @@ using NLog;
 using SenX_KOTH_Plugin.Bot;
 using SenX_KOTH_Plugin.Events;
 using SenX_KOTH_Plugin.Models;
+using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin.Discord
@@ -111,7 +112,7 @@ namespace SenX_KOTH_Plugin.Discord
             // Skip non-critical update when rate-limited
             if (_client.IsRateLimited()) return;
 
-            var scoreData = SenX_KOTH_PluginMain.EventPersist?.Data;
+            var scoreData = SenX_KOTH_PluginMain.LoadEventData();
             if (scoreData == null) return;
 
             var sb = new StringBuilder();
@@ -351,6 +352,56 @@ namespace SenX_KOTH_Plugin.Discord
             {
                 KoTHLog.Error(Log,ex, "Failed to set up self-managed channels.");
             }
+        }
+
+        /// <summary>
+        /// Posts a relayed zone embed to the correct channel (creates it if needed).
+        /// Returns the new channel ID if one was created, or 0.
+        /// </summary>
+        public static async Task<ulong> PostRelayedZoneEmbedAsync(DiscordZoneRelay relay)
+        {
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config == null || _client == null || relay.Embed == null) return 0;
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            var serverAbbrev = api?.Servers?.FirstOrDefault(s => s.ServerID == relay.FromServerID)?.ServerAbbreviation
+                               ?? relay.FromServerID.ToString();
+            var channelName = "[" + serverAbbrev + "] " + relay.ZoneName;
+
+            var channelId = relay.KnownChannelId;
+            if (channelId == 0 || !await _client.ChannelExistsAsync(channelId))
+            {
+                var prefix = string.IsNullOrEmpty(config.DiscordChannelPrefix) ? "zone-" : config.DiscordChannelPrefix;
+                channelId = await _client.CreateTextChannelAsync(
+                    config.DiscordGuildId, prefix + channelName.ToLower(), config.KoTHCategoryId);
+            }
+
+            await _client.SendEmbedAsync(channelId, relay.Embed.Title, relay.Embed.Description, relay.Embed.Color);
+
+            if (channelId != relay.KnownChannelId && relay.KnownChannelId == 0)
+                return channelId;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Posts a relayed reward embed to the rewards channel.
+        /// </summary>
+        public static async Task PostRelayedRewardAsync(DiscordRewardRelay relay)
+        {
+            if (_client == null || relay.Embed == null) return;
+
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config == null) return;
+
+            if (_rewardChannelId == 0 || !await _client.ChannelExistsAsync(_rewardChannelId))
+            {
+                _rewardChannelId = await _client.CreateTextChannelAsync(config.DiscordGuildId, "rewards", config.KoTHCategoryId);
+                config.RewardChannelId = _rewardChannelId;
+                SenX_KOTH_PluginMain.ConfigPersist?.Save();
+            }
+
+            await _client.SendEmbedAsync(_rewardChannelId, relay.Embed.Title, relay.Embed.Description, relay.Embed.Color);
         }
     }
 }

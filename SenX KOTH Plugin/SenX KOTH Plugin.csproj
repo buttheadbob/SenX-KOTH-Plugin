@@ -128,6 +128,7 @@
     <Compile Include="SenX KOTH Plugin\Events\LiveScoreboardEvent.cs" />
     <Compile Include="SenX KOTH Plugin\Models\KothZone.cs" />
     <Compile Include="SenX KOTH Plugin\Models\FactionBank.cs" />
+    <Compile Include="SenX KOTH Plugin\Models\PendingTransactions.cs" />
     <Compile Include="SenX KOTH Plugin\Models\PersistentData.cs" />
     <Compile Include="SenX KOTH Plugin\Messages\QuestUpdateMessage.cs" />
     <Compile Include="SenX KOTH Plugin\Nexus\NexusGlobalAPI.cs" />
@@ -152,6 +153,7 @@
     </Compile>
     <Compile Include="SenX KOTH Plugin\SenX_KOTH_Plugin.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\BankService.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\AnnouncementService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\CommandCooldown.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\DiscordService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\EnterAlertService.cs" />

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Timers;
+using Newtonsoft.Json;
 using NLog;
 using SenX_KOTH_Plugin.Discord;
 using SenX_KOTH_Plugin.Models;
@@ -18,20 +20,16 @@ namespace SenX_KOTH_Plugin.Events
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => ResetEvent");
 
         private readonly SenX_KOTH_PluginConfig _config;
-        private readonly EventData _eventData;
-        private readonly BanksData _bankData;
         private Timer? _timer;
 
         public string Name => "ResetEvent";
-        public bool ShouldRun => true;
+        public bool ShouldRun => NexusManager.IsAuthorityLocal();
         public bool IsRunning { get; private set; }
 
-        public ResetEvent(SenX_KOTH_PluginConfig config, EventData eventData, BanksData bankData)
-        {
-            _config = config;
-            _eventData = eventData;
-            _bankData = bankData;
-        }
+        public ResetEvent(SenX_KOTH_PluginConfig config) => _config = config;
+
+        private string EventPath => Path.Combine(SenX_KOTH_PluginMain.LocalDataPath, "EventData.json");
+        private string ScorePath => Path.Combine(SenX_KOTH_PluginMain.DataPath, "ScoreData.json");
 
         public void Start()
         {
@@ -50,15 +48,13 @@ namespace SenX_KOTH_Plugin.Events
         }
 
         public void Update() { }
-
         public void IntegrityCheck() { }
-
         public void Save() { }
 
         private void Tick(object? sender, ElapsedEventArgs e)
         {
             try { ProcessWeekly(); ProcessMonthly(); ProcessYearly(); }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Error in ResetEvent tick."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Error in ResetEvent tick."); }
         }
 
         private bool ShouldProcessWeekly(DateTime now)
@@ -81,14 +77,46 @@ namespace SenX_KOTH_Plugin.Events
                 || now.Year != _config.LastYearlyProcessYear;
         }
 
+        // --- File helpers ---
+
+        private EventData LoadEventData()
+        {
+            if (!File.Exists(EventPath)) return new EventData();
+            return JsonConvert.DeserializeObject<EventData>(File.ReadAllText(EventPath)) ?? new EventData();
+        }
+
+        private ScoreFile LoadScoreData()
+        {
+            if (!File.Exists(ScorePath)) return new ScoreFile();
+            return JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(ScorePath)) ?? new ScoreFile();
+        }
+
+        private void SaveEventData(EventData data)
+        {
+            var dir = Path.GetDirectoryName(EventPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(EventPath, JsonConvert.SerializeObject(data, Formatting.Indented));
+        }
+
+        private void SaveScoreData(ScoreFile data)
+        {
+            var dir = Path.GetDirectoryName(ScorePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(ScorePath, JsonConvert.SerializeObject(data, Formatting.Indented));
+        }
+
+        // --- Period processing ---
+
         private void ProcessWeekly()
         {
             var now = DateTime.Now;
             if (!ShouldProcessWeekly(now)) return;
 
+            var scores = LoadScoreData();
+
             if (_config.WeeklyRewardsEnabled)
             {
-                var weekList = NexusManager.AccumulatedScores.WeekScores
+                var weekList = scores.WeekScores
                     .OrderByDescending(x => x.Value)
                     .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
                     .ToList();
@@ -102,16 +130,18 @@ namespace SenX_KOTH_Plugin.Events
                 }
             }
 
-            MergePoints(_eventData.WeekEvents, _eventData.MonthEvents);
-            MergeScores(NexusManager.AccumulatedScores.WeekScores, NexusManager.AccumulatedScores.MonthScores);
+            var events = LoadEventData();
+            MergePoints(events.WeekEvents, events.MonthEvents);
+            events.WeekEvents.Clear();
+            SaveEventData(events);
 
-            _eventData.WeekEvents.Clear();
-            NexusManager.AccumulatedScores.WeekScores.Clear();
-            NexusManager.BroadcastWipe(WipePeriod.Week);
+            MergeScores(scores.WeekScores, scores.MonthScores);
+            scores.WeekScores.Clear();
+            SaveScoreData(scores);
 
             _config.LastWeeklyProcessWeek = GetIsoWeek(now);
             _config.LastWeeklyProcessYear = now.Year;
-            ForceSave();
+            SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
         private void ProcessMonthly()
@@ -119,9 +149,11 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessMonthly(now)) return;
 
+            var scores = LoadScoreData();
+
             if (_config.MonthlyRewardsEnabled)
             {
-                var monthList = NexusManager.AccumulatedScores.MonthScores
+                var monthList = scores.MonthScores
                     .OrderByDescending(x => x.Value)
                     .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
                     .ToList();
@@ -135,16 +167,18 @@ namespace SenX_KOTH_Plugin.Events
                 }
             }
 
-            MergePoints(_eventData.MonthEvents, _eventData.YearEvents);
-            MergeScores(NexusManager.AccumulatedScores.MonthScores, NexusManager.AccumulatedScores.YearScores);
+            var events = LoadEventData();
+            MergePoints(events.MonthEvents, events.YearEvents);
+            events.MonthEvents.Clear();
+            SaveEventData(events);
 
-            _eventData.MonthEvents.Clear();
-            NexusManager.AccumulatedScores.MonthScores.Clear();
-            NexusManager.BroadcastWipe(WipePeriod.Month);
+            MergeScores(scores.MonthScores, scores.YearScores);
+            scores.MonthScores.Clear();
+            SaveScoreData(scores);
 
             _config.LastMonthlyProcessMonth = now.Month;
             _config.LastMonthlyProcessYear = now.Year;
-            ForceSave();
+            SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
         private void ProcessYearly()
@@ -152,9 +186,11 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessYearly(now)) return;
 
+            var scores = LoadScoreData();
+
             if (_config.YearlyRewardsEnabled)
             {
-                var yearList = NexusManager.AccumulatedScores.YearScores
+                var yearList = scores.YearScores
                     .OrderByDescending(x => x.Value)
                     .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
                     .ToList();
@@ -168,15 +204,18 @@ namespace SenX_KOTH_Plugin.Events
                 }
             }
 
-            _eventData.YearEvents.Clear();
-            NexusManager.AccumulatedScores.YearScores.Clear();
-            NexusManager.BroadcastWipe(WipePeriod.Year);
+            var events = LoadEventData();
+            events.YearEvents.Clear();
+            SaveEventData(events);
+
+            scores.YearScores.Clear();
+            SaveScoreData(scores);
 
             _config.LastYearlyProcessYear = now.Year;
-            ForceSave();
+            SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
-        private static void MergePoints(ObservableConcurrentUiSafeCollection<PointEarned> from, ObservableConcurrentUiSafeCollection<PointEarned> to)
+        private static void MergePoints(List<PointEarned> from, List<PointEarned> to)
         {
             foreach (var pt in from)
             {
@@ -205,13 +244,6 @@ namespace SenX_KOTH_Plugin.Events
                 d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
         }
 
-        private void ForceSave()
-        {
-            SenX_KOTH_PluginMain.EventPersist?.Save();
-            SenX_KOTH_PluginMain.ScorePersist?.Save();
-            SenX_KOTH_PluginMain.ConfigPersist?.Save();
-        }
-
         private static void AnnouncePeriodResults(string periodName, List<KeyValuePair<string, int>> sortedScores,
             DrawingColor firstColor, DrawingColor secondColor, DrawingColor thirdColor, DrawingColor restColor)
         {
@@ -220,23 +252,20 @@ namespace SenX_KOTH_Plugin.Events
             var sentRest = false;
             for (int i = 0; i < sortedScores.Count; i++)
             {
-                string medal = i == 0 ? "🥇 " : i == 1 ? "🥈 " : i == 2 ? "🥉 " : "    ";
-                botResults.AppendLine(medal + sortedScores[i].Key + " — " + sortedScores[i].Value + " pts");
+                string medal = i == 0 ? "\U0001f947 " : i == 1 ? "\U0001f948 " : i == 2 ? "\U0001f949 " : "    ";
+                botResults.AppendLine(medal + sortedScores[i].Key + " \u2014 " + sortedScores[i].Value + " pts");
 
                 switch (i)
                 {
-                    case 0: results.AppendLine("First Place"); results.AppendLine(sortedScores[i].ToString()); DiscordService.SendDiscordWebHook(results.ToString(), firstColor, 1); results.Clear(); break;
-                    case 1: results.AppendLine("Second Place"); results.AppendLine(sortedScores[i].ToString()); DiscordService.SendDiscordWebHook(results.ToString(), secondColor, 1); results.Clear(); break;
-                    case 2: results.AppendLine("Third Place"); results.AppendLine(sortedScores[i].ToString()); DiscordService.SendDiscordWebHook(results.ToString(), thirdColor, 1); results.Clear(); break;
+                    case 0: results.AppendLine("First Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), firstColor); results.Clear(); break;
+                    case 1: results.AppendLine("Second Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), secondColor); results.Clear(); break;
+                    case 2: results.AppendLine("Third Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), thirdColor); results.Clear(); break;
                     default: if (!sentRest) { results.AppendLine("The Other People...."); sentRest = true; } results.AppendLine(sortedScores[i].ToString()); break;
                 }
             }
-            if (sortedScores.Count > 3 && results.Length > 0) DiscordService.SendDiscordWebHook(results.ToString(), restColor, 1);
+            if (sortedScores.Count > 3 && results.Length > 0) AnnouncementService.RankResult(results.ToString(), restColor);
 
-            _ = Discord.DiscordBotService.SendRewardAnnouncementAsync(
-                periodName + " Results",
-                "```\n" + botResults + "```"
-            );
+            AnnouncementService.PeriodResults(periodName, botResults.ToString());
         }
     }
 }

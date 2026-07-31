@@ -33,6 +33,15 @@ namespace SenX_KOTH_Plugin
             InitializeComponent();
             RefreshZoneNames();
             ZonesList.ItemsSource = SenX_KOTH_PluginMain.ZonePersist?.Data.Zones;
+
+            var pendingData = SenX_KOTH_PluginMain.PendingCreditsPersist?.Data;
+            if (pendingData != null)
+            {
+                PendingGrid.ItemsSource = pendingData.Credits;
+                pendingData.Credits.CollectionChanged += (_, _) =>
+                    PendingCount.Text = pendingData.Credits.Count + " pending";
+                PendingCount.Text = pendingData.Credits.Count + " pending";
+            }
         }
 
         public ObservableConcurrentUiSafeCollection<string> ZoneNames { get; } = new();
@@ -937,17 +946,12 @@ namespace SenX_KOTH_Plugin
             DiscordService.SendDiscordWebHook(sb.ToString(), DrawingColor.Brown, 1);
         }
 
-        private void SyncRewardsButton_Click(object sender, RoutedEventArgs e)
+        private void ClearPending_Click(object sender, RoutedEventArgs e)
         {
-            SenX_KOTH_PluginMain.ConfigPersist?.Save();
-            NexusManager.BroadcastRewardConfig();
-            MessageBox.Show("Reward config sync broadcast sent to all Nexus servers.");
-        }
-
-        private void SyncPointsButton_Click(object sender, RoutedEventArgs e)
-        {
-            NexusManager.BroadcastVerification();
-            MessageBox.Show("Point verification broadcast sent to all Nexus servers.");
+            var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
+            if (persist == null) return;
+            persist.Data.Credits.Clear();
+            persist.Save();
         }
 
         private void SendSampleEnterAlertWebHook_Click(object sender, RoutedEventArgs e)

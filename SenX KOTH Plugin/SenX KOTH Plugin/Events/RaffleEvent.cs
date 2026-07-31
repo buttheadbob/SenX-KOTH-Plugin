@@ -1,5 +1,6 @@
 using System.Timers;
 using SenX_KOTH_Plugin.Models;
+using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin.Events
@@ -7,20 +8,13 @@ namespace SenX_KOTH_Plugin.Events
     internal sealed class RaffleEvent : IKothEvent
     {
         private readonly SenX_KOTH_PluginConfig _config;
-        private readonly BanksData _bankData;
-        private readonly RaffleTicketsData _raffleData;
         private Timer? _timer;
 
         public string Name => "RaffleEvent";
-        public bool ShouldRun => _config.RaffleEnabled;
+        public bool ShouldRun => _config.RaffleEnabled && NexusManager.IsAuthorityLocal();
         public bool IsRunning { get; private set; }
 
-        public RaffleEvent(SenX_KOTH_PluginConfig config, BanksData bankData, RaffleTicketsData raffleData)
-        {
-            _config = config;
-            _bankData = bankData;
-            _raffleData = raffleData;
-        }
+        public RaffleEvent(SenX_KOTH_PluginConfig config) => _config = config;
 
         public void Start()
         {
@@ -39,14 +33,12 @@ namespace SenX_KOTH_Plugin.Events
         }
 
         public void Update() { }
-
         public void IntegrityCheck() { }
-
         public void Save() { }
 
         private void Tick(object? sender, ElapsedEventArgs e)
         {
-            BankService.CheckRaffleDraw(_config, _bankData, _raffleData);
+            BankService.CheckRaffleDraw(_config);
         }
     }
 }

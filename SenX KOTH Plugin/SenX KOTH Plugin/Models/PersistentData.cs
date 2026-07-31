@@ -4,11 +4,11 @@ using Torch;
 
 namespace SenX_KOTH_Plugin.Models
 {
-    internal sealed class EventData : ViewModel
+    internal sealed class EventData
     {
-        public ObservableConcurrentUiSafeCollection<PointEarned> WeekEvents { get => field; set => SetValue(ref field, value); } = new();
-        public ObservableConcurrentUiSafeCollection<PointEarned> MonthEvents { get => field; set => SetValue(ref field, value); } = new();
-        public ObservableConcurrentUiSafeCollection<PointEarned> YearEvents { get => field; set => SetValue(ref field, value); } = new();
+        public List<PointEarned> WeekEvents { get; set; } = new();
+        public List<PointEarned> MonthEvents { get; set; } = new();
+        public List<PointEarned> YearEvents { get; set; } = new();
     }
 
     internal sealed class BanksData : ViewModel

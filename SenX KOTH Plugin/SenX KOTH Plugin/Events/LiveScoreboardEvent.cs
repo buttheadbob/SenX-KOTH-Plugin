@@ -1,6 +1,7 @@
 using System;
 using System.Timers;
 using SenX_KOTH_Plugin.Discord;
+using SenX_KOTH_Plugin.Nexus;
 
 namespace SenX_KOTH_Plugin.Events
 {
@@ -10,7 +11,7 @@ namespace SenX_KOTH_Plugin.Events
         private Timer? _timer;
 
         public string Name => "LiveScoreboardEvent";
-        public bool ShouldRun => _config.DiscordBotEnabled;
+        public bool ShouldRun => _config.DiscordBotEnabled && NexusManager.IsAuthorityLocal();
         public bool IsRunning { get; private set; }
 
         public LiveScoreboardEvent(SenX_KOTH_PluginConfig config) => _config = config;

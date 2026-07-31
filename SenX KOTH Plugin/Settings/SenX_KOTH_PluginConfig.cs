@@ -90,6 +90,14 @@ namespace SenX_KOTH_Plugin
 
         public bool NexusEnabled { get => field; set => SetValue(ref field, value); }
 
+        public bool NexusSendDiscord { get => field; set => SetValue(ref field, value); }
+        public bool NexusReceiveDiscord { get => field; set => SetValue(ref field, value); }
+
+        public bool IsDataAuthority { get => field; set => SetValue(ref field, value); }
+
+        public bool IsDataModeNexus { get => field; set => SetValue(ref field, value); }
+        public string SharedDataPath { get => field; set => SetValue(ref field, value); } = "";
+
         public bool DiscordBotEnabled { get => field; set => SetValue(ref field, value); }
         public string DiscordBotToken { get => field; set => SetValue(ref field, value); } = "";
         public ulong RewardChannelId { get => field; set => SetValue(ref field, value); }

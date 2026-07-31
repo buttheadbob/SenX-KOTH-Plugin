@@ -25,10 +25,8 @@ internal static class Supervisor
     {
         var config = SenX_KOTH_PluginMain.Instance?.Config;
             var zonePersist = SenX_KOTH_PluginMain.ZonePersist;
-            var bankData = SenX_KOTH_PluginMain.BankPersist?.Data;
-            var eventData = SenX_KOTH_PluginMain.EventPersist?.Data;
 
-            if (config != null && zonePersist != null && bankData != null && eventData != null)
+            if (config != null && zonePersist != null)
             {
                 var zones = zonePersist.Data.Zones;
 
@@ -37,7 +35,7 @@ internal static class Supervisor
                     var existing = SenX_KOTH_PluginMain.Events.FirstOrDefault(ev => ev.Name == zone.Name);
                     if (existing == null)
                     {
-                        var evt = new ZonePointEvent(zone, config, bankData, eventData);
+                        var evt = new ZonePointEvent(zone, config);
                         SenX_KOTH_PluginMain.Events.Add(evt);
                         KoTHLog.Info(Log,"Created zone event: " + zone.Name + " — " + evt.ShouldRunStatus);
                     }

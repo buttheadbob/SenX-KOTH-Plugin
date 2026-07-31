@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Timers;
 using NLog;
@@ -28,8 +29,6 @@ namespace SenX_KOTH_Plugin.Events
 
         private readonly KothZone _zone;
         private readonly SenX_KOTH_PluginConfig _config;
-        private readonly BanksData _bankData;
-        private readonly EventData _eventData;
 
         private Timer? _captureTimer;
         private Timer? _awardTimer;
@@ -124,12 +123,10 @@ namespace SenX_KOTH_Plugin.Events
             (_suitCount > 0 && _zone.PointsPerSuit > 0)
             || (_gridCount > 0 && _zone.PointsPerGrid > 0);
 
-        public ZonePointEvent(KothZone zone, SenX_KOTH_PluginConfig config, BanksData bankData, EventData eventData)
+        public ZonePointEvent(KothZone zone, SenX_KOTH_PluginConfig config)
         {
             _zone = zone;
             _config = config;
-            _bankData = bankData;
-            _eventData = eventData;
         }
 
         public void Start()
@@ -209,8 +206,7 @@ namespace SenX_KOTH_Plugin.Events
                         if (player != null && EnterAlerts.ShouldAlert(player, _zone.Name))
                         {
                             var msg = EnterAlerts.BuildMessage(player, faction, _zone.Name, cacheEntry.Position, _zone.Radius);
-                            if (_zone.DiscordAnnounceEnter)
-                                DiscordService.SendAlertWebHook(msg);
+                            AnnouncementService.ZoneEnterAlert(_zone, msg);
                         }
                     }
                     else if (ent is MyCubeGrid grid)
@@ -464,8 +460,7 @@ namespace SenX_KOTH_Plugin.Events
                                 FireworkMode = 1;
                             }
                             KoTHLog.Info(Log,"Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
-                            if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnounceCapture)
-                                DiscordService.SendDiscordWebHook("[" + GetCaptureTag() + "] " + CaptureFactionName + " captured " + _zone.Name + "!", System.Drawing.Color.Gold, 1);
+                            AnnouncementService.ZoneCapture(_zone, GetCaptureTag(), CaptureFactionName, _capturePointsEarned);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
                         }
                         break;
@@ -489,8 +484,7 @@ namespace SenX_KOTH_Plugin.Events
                             _state = CaptureState.Neutral;
                                         _fireworksShown = false;
                             KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
-                            if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnounceDecay)
-                                DiscordService.SendDiscordWebHook(_zone.Name + " capture lost - returning to Neutral", System.Drawing.Color.DarkRed, 1);
+                            AnnouncementService.ZoneDecay(_zone);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
                         }
                         break;
@@ -522,28 +516,51 @@ namespace SenX_KOTH_Plugin.Events
                 MyAPIGateway.Session.Factions.Factions.TryGetValue(_captureFactionId, out faction);
                 if (faction == null) return;
 
-                var pt = new PointEarned
-                {
-                    Points = points,
-                    FactionId = faction.FactionId,
-                    FactionName = faction.Name,
-                    FactionTag = faction.Tag,
-                    FromServerID = SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true } api ? api.CurrentServerID : (byte)0,
-                    EarnedAt = DateTime.UtcNow,
-                    ZoneName = _zone.Name,
-                    EventId = NexusManager.GenerateEventId()
-                };
-
-                NexusManager.AddPointEvent(_eventData, pt);
-                NexusManager.BroadcastPointDelta(pt);
-                BankService.CreditPoints(_bankData, faction.FactionId, faction.Name, faction.Tag, points);
-
                 KoTHLog.Info(Log,"Points: [" + faction.Tag + "] +" + points + "pts in " + _zone.Name);
 
+                if (NexusManager.IsAuthorityLocal())
+                {
+                    BankService.CreditPoints(faction.FactionId, faction.Name, faction.Tag, points);
+
+                    var eventPath = Path.Combine(SenX_KOTH_PluginMain.LocalDataPath, "EventData.json");
+                    EventData eventData;
+                    if (File.Exists(eventPath))
+                        eventData = Newtonsoft.Json.JsonConvert.DeserializeObject<EventData>(File.ReadAllText(eventPath)) ?? new EventData();
+                    else
+                        eventData = new EventData();
+                    eventData.WeekEvents.Add(new PointEarned { Points = points, FactionId = faction.FactionId, FactionName = faction.Name, FactionTag = faction.Tag, EarnedAt = DateTime.UtcNow, ZoneName = _zone.Name });
+                    var dir = Path.GetDirectoryName(eventPath);
+                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllText(eventPath, Newtonsoft.Json.JsonConvert.SerializeObject(eventData, Newtonsoft.Json.Formatting.Indented));
+
+                    var scorePath = Path.Combine(SenX_KOTH_PluginMain.DataPath, "ScoreData.json");
+                    ScoreFile scores;
+                    if (File.Exists(scorePath))
+                        scores = Newtonsoft.Json.JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(scorePath)) ?? new ScoreFile();
+                    else
+                        scores = new ScoreFile();
+                    var existing = scores.WeekScores.FirstOrDefault(s => s.Key == faction.Name);
+                    if (existing.Key != null)
+                    {
+                        var idx = scores.WeekScores.IndexOf(existing);
+                        scores.WeekScores[idx] = new KeyValuePair<string, ulong>(faction.Name, existing.Value + (ulong)points);
+                    }
+                    else
+                        scores.WeekScores.Add(new KeyValuePair<string, ulong>(faction.Name, (ulong)points));
+                    File.WriteAllText(scorePath, Newtonsoft.Json.JsonConvert.SerializeObject(scores, Newtonsoft.Json.Formatting.Indented));
+                }
+                else
+                {
+                    NexusManager.SaveAndSendPointCredit(new PointCreditEntry
+                    {
+                        RequestId = Guid.NewGuid(),
+                        FactionId = faction.FactionId, FactionName = faction.Name, FactionTag = faction.Tag,
+                        Points = points, ZoneName = _zone.Name, EarnedAt = DateTime.UtcNow
+                    });
+                }
+
                 _audio.Play2DSound(0, SoundCueType.PointEarned);
-                if (_config.Show_AttackMessages && _config.WebHookEnabled && _zone.DiscordAnnouncePoints)
-                    DiscordService.SendDiscordWebHook("[" + faction.Tag + "] " + faction.Name + " earned " + points + "pts in " + _zone.Name + "!",
-                        System.Drawing.Color.Orange, 0);
+                AnnouncementService.ZonePointsEarned(_zone, faction.Tag, faction.Name, points);
             }
             catch (Exception ex)
             {
@@ -572,6 +589,7 @@ namespace SenX_KOTH_Plugin.Events
                         _evictionPhaseEntered = now;
                         KoTHLog.Info(Log,"Eviction warning 30s: " + _zone.Name);
                         NotifyWithinRange(_zone.Name + " — zone eviction in 30 seconds!", "Red");
+                        AnnouncementService.ZoneEviction(_zone, _manualEvict, _zone.EvictionDurationSeconds);
                         break;
                     }
 
@@ -616,6 +634,7 @@ namespace SenX_KOTH_Plugin.Events
                         KoTHLog.Info(Log,"Eviction active for zone: " + _zone.Name);
                         _evictionPhase = EvictionPhase.Active;
                         _evictionPhaseEntered = now;
+                        AnnouncementService.ZoneEviction(_zone, _manualEvict, _zone.EvictionDurationSeconds);
                         break;
                     }
 
@@ -741,6 +760,7 @@ namespace SenX_KOTH_Plugin.Events
             _evictionPhase = EvictionPhase.Active;
             _evictionPhaseEntered = DateTime.UtcNow;
             KoTHLog.Info(Log,"Manual 5s eviction for: " + _zone.Name);
+            AnnouncementService.ZoneEviction(_zone, _manualEvict, _zone.EvictionDurationSeconds);
         }
 
         internal void ManualReset()

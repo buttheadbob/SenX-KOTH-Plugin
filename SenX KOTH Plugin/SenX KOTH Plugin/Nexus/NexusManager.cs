@@ -1,363 +1,478 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
+using System.IO;
 using System.Linq;
-using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 using NLog;
 using Sandbox.ModAPI;
+using SenX_KOTH_Plugin.Discord;
 using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Utils;
-using VRage.Game.ModAPI;
+using Timer = System.Timers.Timer;
 
 namespace SenX_KOTH_Plugin.Nexus
 {
     internal static class NexusManager
     {
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => NexusManager");
-
-        public static readonly ScoreFile AccumulatedScores = new();
-        private static EventData? _eventData;
-        private static Timer? _verificationTimer;
-
-        private static long _nextEventId;
         public const ushort NexusChannelId = 50672;
 
-        public static void Initialize(SenX_KOTH_PluginMain plugin, EventData eventData)
+        private static byte _authorityId;
+        private static Timer? _authorityAnnounceTimer;
+        private static Timer? _syncRequestTimer;
+        private static readonly ConcurrentDictionary<Guid, TaskCompletionSource<AuthorityResponse>> _pending = new();
+
+        public static bool HasAuthority => _authorityId != 0;
+
+        public static bool IsAuthorityLocal()
         {
-            _eventData = eventData;
-            RebuildAccumulatedScores();
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.IsDataModeNexus != true) return false;
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            return api is { Enabled: true };
+        }
 
-            var config = plugin.Config;
-            if (config?.NexusEnabled == true && SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
+        public static void Initialize()
+        {
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true } || config == null) return;
+
+            MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
+            KoTHLog.Info(Log, "Nexus message handler registered. Authority=" + IsAuthorityLocal());
+
+            if (IsAuthorityLocal())
             {
-                MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
-                KoTHLog.Info(Log,"Nexus message handler registered on channel " + NexusChannelId);
-            }
+                _authorityAnnounceTimer = new Timer(30000);
+                _authorityAnnounceTimer.Elapsed += (_, _) => BroadcastAuthorityAnnouncement();
+                _authorityAnnounceTimer.Start();
 
-            _verificationTimer = new Timer(900000);
-            _verificationTimer.Elapsed += (_, _) => BroadcastVerification();
-            _verificationTimer.Start();
+                _syncRequestTimer = new Timer(900000);
+                _syncRequestTimer.Elapsed += (_, _) => BroadcastSyncRequest();
+                _syncRequestTimer.Start();
+
+                BroadcastAuthorityAnnouncement();
+            }
         }
 
         public static void Shutdown()
         {
-            _verificationTimer?.Dispose();
-            _verificationTimer = null;
+            _authorityAnnounceTimer?.Dispose();
+            _authorityAnnounceTimer = null;
+            _syncRequestTimer?.Dispose();
+            _syncRequestTimer = null;
 
             if (SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true })
                 MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(NexusChannelId, HandleNexusMessage);
         }
 
-        public static long GenerateEventId()
+        // --- Authority broadcasts ---
+
+        private static void BroadcastAuthorityAnnouncement()
         {
-            byte serverId = SenX_KOTH_PluginMain.NexusGlobalAPI is { Enabled: true } api
-                ? api.CurrentServerID : (byte)0;
-            return ((long)serverId << 56) | (System.Threading.Interlocked.Increment(ref _nextEventId) & 0x00FFFFFFFFFFFFFF);
-        }
-
-        public static void AddPointEvent(EventData data, PointEarned point)
-        {
-            if (!data.WeekEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId))
-                data.WeekEvents.Add(point);
-
-            UpdateAccumulatedScores(point);
-            RewardService.CheckLiveRewards(point);
-        }
-
-        private static void UpdateAccumulatedScores(PointEarned point)
-        {
-            if (point.LastWipe.HasValue) return;
-            AddToScoreList(AccumulatedScores.WeekScores, point.FactionName, (ulong)point.Points);
-        }
-
-        private static void AddToScoreList(List<KeyValuePair<string, ulong>> list, string factionName, ulong points)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                if (list[i].Key == factionName)
-                {
-                    list[i] = new KeyValuePair<string, ulong>(factionName, list[i].Value + points);
-                    return;
-                }
-            }
-            list.Add(new KeyValuePair<string, ulong>(factionName, points));
-        }
-
-        public static void BroadcastPointDelta(PointEarned point)
-        {
-            var config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config?.NexusEnabled != true) return;
-
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
+            try
+            {
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(new AuthorityAnnouncement());
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to broadcast authority announcement."); }
+        }
+
+        private static void BroadcastSyncRequest()
+        {
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+            try
+            {
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(new SyncRequest());
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to broadcast sync request."); }
+        }
+
+        // --- Non-authority sends ---
+
+        public static void SaveAndSendPointCredit(PointCreditEntry entry)
+        {
+            var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
+            if (persist != null)
+            {
+                persist.Data.Credits.Add(entry);
+                persist.Save();
+            }
+            if (_authorityId != 0)
+                SendPointCredit(entry);
+        }
+
+        private static void SendPointCredit(PointCreditEntry entry)
+        {
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true } || _authorityId == 0) return;
+            try
+            {
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(entry);
+                api.SendModMsgToServer(data, NexusChannelId, _authorityId);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to send point credit."); }
+        }
+
+        public static async Task<AuthorityResponse> SendToAuthority<T>(T request) where T : class
+        {
+            if (_authorityId == 0)
+                return new AuthorityResponse { Approved = false, Message = "No authority server available." };
+
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true })
+                return new AuthorityResponse { Approved = false, Message = "Nexus not available." };
+
+            var requestId = (Guid)typeof(T).GetProperty("RequestId")!.GetValue(request)!;
+            var tcs = new TaskCompletionSource<AuthorityResponse>();
+            _pending[requestId] = tcs;
 
             try
             {
-                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(point);
-                api.SendModMsgToAllServers(data, NexusChannelId);
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(request);
+                api.SendModMsgToServer(data, NexusChannelId, _authorityId);
+
+                var timeout = Task.Delay(10_000);
+                if (await Task.WhenAny(tcs.Task, timeout) == timeout)
+                    return new AuthorityResponse { Approved = false, Message = "Bank unavailable - try again later." };
+
+                return await tcs.Task;
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast point delta."); }
+            catch
+            {
+                return new AuthorityResponse { Approved = false, Message = "Bank unavailable - try again later." };
+            }
+            finally
+            {
+                _pending.TryRemove(requestId, out _);
+            }
         }
 
-        public static void BroadcastWipe(WipePeriod period)
+        // --- Discord relay broadcasts (unchanged) ---
+
+        public static void BroadcastDiscordZoneRelay(string zoneName, ProtoEmbed embed, ulong knownChannelId)
         {
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config?.NexusEnabled != true) return;
-
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
-
             try
             {
-                var wipe = new PointEarned
-                {
-                    FactionName = "", FactionTag = "",
-                    LastWipe = DateTime.UtcNow,
-                    FromServerID = api.CurrentServerID,
-                    EarnedAt = DateTime.UtcNow,
-                    EventId = GenerateEventId(),
-                    WipePeriod = period
-                };
-
-                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(wipe);
+                var relay = new DiscordZoneRelay { FromServerID = api.CurrentServerID, ZoneName = zoneName, Embed = embed, KnownChannelId = knownChannelId };
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(relay);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast wipe."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to broadcast zone relay."); }
         }
 
-        public static void BroadcastVerification()
-        {
-            if (_eventData == null) return;
-            var config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config?.NexusEnabled != true) return;
-
-            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
-            if (api is not { Enabled: true }) return;
-
-            try
-            {
-                var ver = new PointVerification
-                {
-                    FromServerID = api.CurrentServerID,
-                    WeekEvents = _eventData.WeekEvents.ToList()
-                };
-
-                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(ver);
-                api.SendModMsgToAllServers(data, NexusChannelId);
-            }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast verification."); }
-        }
-
-        public static void BroadcastRewardConfig()
+        public static void BroadcastDiscordRewardRelay(string title, string description, uint color)
         {
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config?.NexusEnabled != true) return;
-
             var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
             if (api is not { Enabled: true }) return;
-
             try
             {
-                var configJson = Newtonsoft.Json.JsonConvert.SerializeObject(config,
-                    new Newtonsoft.Json.JsonSerializerSettings { Formatting = Newtonsoft.Json.Formatting.None });
-
-                var sync = new RewardConfigSync
-                {
-                    FromServerID = api.CurrentServerID,
-                    ConfigData = System.Text.Encoding.UTF8.GetBytes(configJson)
-                };
-
-                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(sync);
+                var relay = new DiscordRewardRelay { FromServerID = api.CurrentServerID, Embed = new ProtoEmbed { Title = title, Description = description, Color = color } };
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(relay);
                 api.SendModMsgToAllServers(data, NexusChannelId);
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to broadcast reward config."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to broadcast reward relay."); }
         }
+
+        private static void BroadcastDiscordChannelResponse(byte targetServer, string zoneName, ulong channelId)
+        {
+            var config = SenX_KOTH_PluginMain.Instance?.Config;
+            if (config?.NexusEnabled != true) return;
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+            try
+            {
+                var resp = new DiscordChannelResponse { FromServerID = api.CurrentServerID, TargetServerID = targetServer, ZoneName = zoneName, ChannelId = channelId };
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(resp);
+                api.SendModMsgToServer(data, NexusChannelId, targetServer);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to send channel response."); }
+        }
+
+        // --- Message handler ---
 
         private static void HandleNexusMessage(ushort handlerId, byte[] data, ulong steamId, bool fromServer)
         {
-            if (_eventData == null) return;
             try
             {
                 var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
                 if (api is not { Enabled: true }) return;
 
-                var incomingMsg = MyAPIGateway.Utilities.SerializeFromBinary<NexusGlobalAPI.ModAPIMsg>(data);
-                if (incomingMsg?.msgData == null) return;
-                if (incomingMsg.fromServerID == api.CurrentServerID) return;
+                var msg = MyAPIGateway.Utilities.SerializeFromBinary<NexusGlobalAPI.ModAPIMsg>(data);
+                if (msg?.msgData == null) return;
+                if (msg.fromServerID == api.CurrentServerID) return;
 
-                TryHandlePointEarned(incomingMsg);
-                TryHandlePointVerification(incomingMsg);
-                TryHandleRewardConfigSync(incomingMsg);
+                if (IsAuthorityLocal())
+                    HandleAsAuthority(msg);
+                else
+                    HandleAsNonAuthority(msg);
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Error handling Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Error handling Nexus message."); }
         }
 
-        private static void TryHandlePointEarned(NexusGlobalAPI.ModAPIMsg msg)
+        // --- Authority handlers ---
+
+        private static void HandleAsAuthority(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            TryHandlePointCredit(msg);
+            TryHandleTicketPurchase(msg);
+            TryHandleBankBalance(msg);
+            TryHandleDiscordZoneRelay(msg);
+            TryHandleDiscordRewardRelay(msg);
+            TryHandleDiscordChannelResponse(msg);
+        }
+
+        private static void TryHandlePointCredit(NexusGlobalAPI.ModAPIMsg msg)
         {
             try
             {
-                var point = MyAPIGateway.Utilities.SerializeFromBinary<PointEarned>(msg.msgData);
-                if (point == null) return;
+                var entry = MyAPIGateway.Utilities.SerializeFromBinary<PointCreditEntry>(msg.msgData);
+                if (entry == null) return;
 
-                if (point.WipePeriod != WipePeriod.None)
+                KoTHLog.Info(Log, "Point credit: " + entry.FactionTag + " +" + entry.Points + " in " + entry.ZoneName);
+                BankService.CreditPoints(entry.FactionId, entry.FactionName, entry.FactionTag, entry.Points);
+
+                // Update event data (local file)
+                var eventPath = Path.Combine(SenX_KOTH_PluginMain.LocalDataPath, "EventData.json");
+                EventData eventData;
+                if (File.Exists(eventPath))
+                    eventData = Newtonsoft.Json.JsonConvert.DeserializeObject<EventData>(File.ReadAllText(eventPath)) ?? new EventData();
+                else
+                    eventData = new EventData();
+
+                eventData.WeekEvents.Add(new PointEarned
                 {
-                    ApplyWipe(point);
-                }
-                else if (_eventData != null)
+                    Points = entry.Points, FactionId = entry.FactionId, FactionName = entry.FactionName, FactionTag = entry.FactionTag,
+                    FromServerID = msg.fromServerID, EarnedAt = entry.EarnedAt, ZoneName = entry.ZoneName
+                });
+
+                var dir = Path.GetDirectoryName(eventPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(eventPath, Newtonsoft.Json.JsonConvert.SerializeObject(eventData, Newtonsoft.Json.Formatting.Indented));
+
+                // Update scores
+                var scorePath = Path.Combine(SenX_KOTH_PluginMain.DataPath, "ScoreData.json");
+                ScoreFile scores;
+                if (File.Exists(scorePath))
+                    scores = Newtonsoft.Json.JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(scorePath)) ?? new ScoreFile();
+                else
+                    scores = new ScoreFile();
+
+                var existing = scores.WeekScores.FirstOrDefault(s => s.Key == entry.FactionName);
+                if (existing.Key != null)
                 {
-                    AddNexusPoint(_eventData, point);
+                    var idx = scores.WeekScores.IndexOf(existing);
+                    scores.WeekScores[idx] = new KeyValuePair<string, ulong>(entry.FactionName, existing.Value + (ulong)entry.Points);
                 }
+                else
+                    scores.WeekScores.Add(new KeyValuePair<string, ulong>(entry.FactionName, (ulong)entry.Points));
+
+                File.WriteAllText(scorePath, Newtonsoft.Json.JsonConvert.SerializeObject(scores, Newtonsoft.Json.Formatting.Indented));
+
+                SendAuthorityResponse(entry.RequestId, true, "Credit applied.", entry.FactionTag, entry.FactionName, 0, 0);
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to deserialize point earned from Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle point credit."); }
         }
 
-        private static void AddNexusPoint(EventData data, PointEarned point)
-        {
-            bool exists =
-                data.WeekEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId) ||
-                data.MonthEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId) ||
-                data.YearEvents.Any(e => e.FromServerID == point.FromServerID && e.EventId == point.EventId);
-
-            if (exists) return;
-
-            if (IsCurrentWeek(point.EarnedAt))
-                data.WeekEvents.Add(point);
-            else if (IsCurrentMonth(point.EarnedAt))
-                data.MonthEvents.Add(point);
-            else if (IsCurrentYear(point.EarnedAt))
-                data.YearEvents.Add(point);
-
-            UpdateAccumulatedScores(point);
-        }
-
-        private static bool IsCurrentWeek(DateTime date)
-        {
-            var now = DateTime.Now;
-            return GetIsoWeek(date) == GetIsoWeek(now) && date.Year == now.Year;
-        }
-
-        private static bool IsCurrentMonth(DateTime date)
-        {
-            var now = DateTime.Now;
-            return date.Month == now.Month && date.Year == now.Year;
-        }
-
-        private static bool IsCurrentYear(DateTime date)
-        {
-            return date.Year == DateTime.Now.Year;
-        }
-
-        internal static int GetIsoWeek(DateTime d)
-        {
-            return CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
-                d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-        }
-
-        private static void TryHandlePointVerification(NexusGlobalAPI.ModAPIMsg msg)
-        {
-            if (_eventData == null) return;
-            try
-            {
-                var ver = MyAPIGateway.Utilities.SerializeFromBinary<PointVerification>(msg.msgData);
-                if (ver == null) return;
-                ApplyVerification(ver);
-            }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to deserialize point verification from Nexus message."); }
-        }
-
-        private static void TryHandleRewardConfigSync(NexusGlobalAPI.ModAPIMsg msg)
+        private static void TryHandleTicketPurchase(NexusGlobalAPI.ModAPIMsg msg)
         {
             try
             {
-                var sync = MyAPIGateway.Utilities.SerializeFromBinary<RewardConfigSync>(msg.msgData);
-                if (sync?.ConfigData == null) return;
+                var req = MyAPIGateway.Utilities.SerializeFromBinary<TicketPurchaseRequest>(msg.msgData);
+                if (req == null) return;
 
                 var config = SenX_KOTH_PluginMain.Instance?.Config;
                 if (config == null) return;
 
-                var configJson = System.Text.Encoding.UTF8.GetString(sync.ConfigData);
-                var syncedConfig = Newtonsoft.Json.JsonConvert.DeserializeObject<SenX_KOTH_PluginConfig>(configJson);
-                if (syncedConfig == null) return;
-
-                config.ZoneRewards.Clear();
-                foreach (var z in syncedConfig.ZoneRewards) config.ZoneRewards.Add(z);
-
-                config.WeeklyRankRewards.Clear();
-                foreach (var r in syncedConfig.WeeklyRankRewards) config.WeeklyRankRewards.Add(r);
-
-                config.MonthlyRankRewards.Clear();
-                foreach (var r in syncedConfig.MonthlyRankRewards) config.MonthlyRankRewards.Add(r);
-
-                config.YearlyRankRewards.Clear();
-                foreach (var r in syncedConfig.YearlyRankRewards) config.YearlyRankRewards.Add(r);
-
-                config.WeeklyThresholdRewards.Clear();
-                foreach (var t in syncedConfig.WeeklyThresholdRewards) config.WeeklyThresholdRewards.Add(t);
-
-                config.MonthlyThresholdRewards.Clear();
-                foreach (var t in syncedConfig.MonthlyThresholdRewards) config.MonthlyThresholdRewards.Add(t);
-
-                config.YearlyThresholdRewards.Clear();
-                foreach (var t in syncedConfig.YearlyThresholdRewards) config.YearlyThresholdRewards.Add(t);
-
-                SenX_KOTH_PluginMain.ConfigPersist?.Save();
-                KoTHLog.Info(Log,"Reward config synced from server " + sync.FromServerID);
+                if (BankService.BuyTickets(config, req.PlayerIdentityId, req.Count, out string resultMsg))
+                {
+                    var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(req.PlayerIdentityId);
+                    var (balance, ticketCount) = faction != null ? BankService.GetBalance(faction.FactionId) : (0, 0);
+                    SendAuthorityResponse(req.RequestId, true, resultMsg, faction?.Tag ?? "", faction?.Name ?? "", balance, ticketCount);
+                }
+                else
+                {
+                    SendAuthorityResponse(req.RequestId, false, resultMsg, "", "", 0, 0);
+                }
             }
-            catch (Exception ex) { KoTHLog.Error(Log,ex, "Failed to sync reward config from Nexus message."); }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle ticket purchase."); }
         }
 
-        private static void ApplyWipe(PointEarned wipe)
+        private static void TryHandleBankBalance(NexusGlobalAPI.ModAPIMsg msg)
         {
-            if (_eventData == null || !wipe.LastWipe.HasValue) return;
-
-            switch (wipe.WipePeriod)
+            try
             {
-                case WipePeriod.Week:
-                    _eventData.WeekEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
-                    _eventData.WeekEvents.Add(wipe);
-                    break;
-                case WipePeriod.Month:
-                    _eventData.MonthEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
-                    _eventData.MonthEvents.Add(wipe);
-                    break;
-                case WipePeriod.Year:
-                    _eventData.YearEvents.RemoveAll(e => e.FromServerID == wipe.FromServerID && e.EarnedAt < wipe.LastWipe!.Value);
-                    _eventData.YearEvents.Add(wipe);
-                    break;
+                var req = MyAPIGateway.Utilities.SerializeFromBinary<BankBalanceRequest>(msg.msgData);
+                if (req == null) return;
+
+                var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(req.PlayerIdentityId);
+                if (faction == null)
+                {
+                    SendAuthorityResponse(req.RequestId, false, "Not in a faction.", "", "", 0, 0);
+                    return;
+                }
+
+                var (balance, ticketCount) = BankService.GetBalance(faction.FactionId);
+                SendAuthorityResponse(req.RequestId, true, "", faction.Tag, faction.Name, balance, ticketCount);
             }
-
-            RebuildAccumulatedScores();
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle balance query."); }
         }
 
-        private static void ApplyVerification(PointVerification ver)
+        // --- Non-authority handlers ---
+
+        private static void HandleAsNonAuthority(NexusGlobalAPI.ModAPIMsg msg)
         {
-            if (_eventData == null) return;
-
-            _eventData.WeekEvents.RemoveAll(e => e.FromServerID == ver.FromServerID);
-            _eventData.WeekEvents.AddRange(ver.WeekEvents);
-
-            RebuildAccumulatedScores();
+            TryHandleAuthorityAnnouncement(msg);
+            TryHandleSyncRequest(msg);
+            TryHandleAuthorityResponse(msg);
+            TryHandleDiscordZoneRelay(msg);
+            TryHandleDiscordRewardRelay(msg);
+            TryHandleDiscordChannelResponse(msg);
         }
 
-        private static void RebuildAccumulatedScores()
+        private static void TryHandleAuthorityAnnouncement(NexusGlobalAPI.ModAPIMsg msg)
         {
-            if (_eventData == null) return;
+            try
+            {
+                var announcement = MyAPIGateway.Utilities.SerializeFromBinary<AuthorityAnnouncement>(msg.msgData);
+                if (announcement == null) return;
 
-            AccumulatedScores.WeekScores.Clear();
-            AccumulatedScores.MonthScores.Clear();
-            AccumulatedScores.YearScores.Clear();
+                _authorityId = msg.fromServerID;
+                KoTHLog.Info(Log, "Authority discovered: server " + _authorityId);
+                FlushPendingCredits();
+            }
+            catch { }
+        }
 
-            foreach (var p in _eventData.WeekEvents.ToList())
-                if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.WeekScores, p.FactionName, (ulong)p.Points);
+        private static void TryHandleSyncRequest(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var req = MyAPIGateway.Utilities.SerializeFromBinary<SyncRequest>(msg.msgData);
+                if (req == null) return;
+                KoTHLog.Info(Log, "Sync request received, flushing pending credits.");
+                FlushPendingCredits();
+            }
+            catch { }
+        }
 
-            foreach (var p in _eventData.MonthEvents.ToList())
-                if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.MonthScores, p.FactionName, (ulong)p.Points);
+        private static void TryHandleAuthorityResponse(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var resp = MyAPIGateway.Utilities.SerializeFromBinary<AuthorityResponse>(msg.msgData);
+                if (resp == null) return;
 
-            foreach (var p in _eventData.YearEvents.ToList())
-                if (!p.LastWipe.HasValue)
-                    AddToScoreList(AccumulatedScores.YearScores, p.FactionName, (ulong)p.Points);
+                if (_pending.TryRemove(resp.RequestId, out var tcs))
+                    tcs.TrySetResult(resp);
+
+                var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
+                if (persist != null)
+                {
+                    int before = persist.Data.Credits.Count;
+                    persist.Data.Credits.RemoveAll(c => c.RequestId == resp.RequestId);
+                    if (persist.Data.Credits.Count < before) persist.Save();
+                }
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle authority response."); }
+        }
+
+        private static void FlushPendingCredits()
+        {
+            var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
+            if (persist == null) return;
+            foreach (var entry in persist.Data.Credits.ToList())
+                SendPointCredit(entry);
+        }
+
+        // --- Discord relay handlers (unchanged) ---
+
+        private static void TryHandleDiscordZoneRelay(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var relay = MyAPIGateway.Utilities.SerializeFromBinary<DiscordZoneRelay>(msg.msgData);
+                if (relay == null) return;
+
+                var config = SenX_KOTH_PluginMain.Instance?.Config;
+                if (config?.NexusReceiveDiscord != true) return;
+
+                KoTHLog.Info(Log, "Received zone relay from server " + relay.FromServerID + " for " + relay.ZoneName);
+                _ = DiscordBotService.PostRelayedZoneEmbedAsync(relay).ContinueWith(async t =>
+                {
+                    var newChannelId = await t;
+                    if (newChannelId != 0)
+                        BroadcastDiscordChannelResponse(relay.FromServerID, relay.ZoneName, newChannelId);
+                });
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle zone relay."); }
+        }
+
+        private static void TryHandleDiscordRewardRelay(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var relay = MyAPIGateway.Utilities.SerializeFromBinary<DiscordRewardRelay>(msg.msgData);
+                if (relay == null) return;
+
+                var config = SenX_KOTH_PluginMain.Instance?.Config;
+                if (config?.NexusReceiveDiscord != true) return;
+
+                KoTHLog.Info(Log, "Received reward relay from server " + relay.FromServerID);
+                _ = DiscordBotService.PostRelayedRewardAsync(relay);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle reward relay."); }
+        }
+
+        private static void TryHandleDiscordChannelResponse(NexusGlobalAPI.ModAPIMsg msg)
+        {
+            try
+            {
+                var resp = MyAPIGateway.Utilities.SerializeFromBinary<DiscordChannelResponse>(msg.msgData);
+                if (resp == null) return;
+
+                var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+                if (api is not { Enabled: true } || resp.TargetServerID != api.CurrentServerID) return;
+
+                KoTHLog.Info(Log, "Received channel response for " + resp.ZoneName + " channelId=" + resp.ChannelId);
+                var zonePersist = SenX_KOTH_PluginMain.ZonePersist;
+                var zone = zonePersist?.Data.Zones.FirstOrDefault(z => string.Equals(z.Name, resp.ZoneName, StringComparison.OrdinalIgnoreCase));
+                if (zone != null) { zone.DiscordChannelId = resp.ChannelId; zonePersist!.Save(); }
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle channel response."); }
+        }
+
+        // --- Helpers ---
+
+        private static void SendAuthorityResponse(Guid requestId, bool approved, string message,
+            string factionTag, string factionName, int balance, int ticketCount)
+        {
+            var api = SenX_KOTH_PluginMain.NexusGlobalAPI;
+            if (api is not { Enabled: true }) return;
+            try
+            {
+                var resp = new AuthorityResponse
+                {
+                    RequestId = requestId, Approved = approved, Message = message,
+                    FactionTag = factionTag, FactionName = factionName,
+                    Balance = balance, TicketCount = ticketCount
+                };
+                byte[] data = MyAPIGateway.Utilities.SerializeToBinary(resp);
+                api.SendModMsgToAllServers(data, NexusChannelId);
+            }
+            catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to send authority response."); }
         }
     }
 }

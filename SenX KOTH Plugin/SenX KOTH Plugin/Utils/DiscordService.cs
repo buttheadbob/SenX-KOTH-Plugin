@@ -6,84 +6,42 @@ using Extensions = SenX_KOTH_Plugin.DiscordAPI.Extensions;
 
 namespace SenX_KOTH_Plugin.Utils;
 
-    internal sealed class DiscordService
+internal static class DiscordService
 {
     private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");
 
     public static void SendDiscordWebHook(string msg, Color? embedColor = null, int alertType = 0)
     {
-        string tempTitle = "";
+        var inst = SenX_KOTH_PluginMain.Instance;
+        if (inst?.Config == null || !inst.Config.WebHookEnabled) return;
+        if (string.IsNullOrEmpty(inst.Config.WebHookUrl)) return;
 
-        if (msg.Contains("First Place"))
-        {
-            tempTitle = "FIRST PLACE";
-            msg = msg.Replace("First Place", "");
-        }
-        else if (msg.Contains("Second Place"))
-        {
-            tempTitle = "SECOND PLACE";
-            msg = msg.Replace("Second Place", "");
-        }
-        else if (msg.Contains("Third Place"))
-        {
-            tempTitle = "THIRD PLACE";
-            msg = msg.Replace("Third Place", "");
-        }
-        else if (msg.Contains("The Other People...."))
-        {
-            tempTitle = "The Other People....";
-            msg = msg.Replace("The Other People....", "");
-        }
-        else
-        {
-            SenX_KOTH_PluginMain? instance = SenX_KOTH_PluginMain.Instance;
-            if (instance?.Config != null)
-            {
-                tempTitle = instance.Config.CustomTitleEnable == false
-                    ? "Hank Says"
-                    : instance.Config.CustomTitle;
-            }
-        }
-
-        SenX_KOTH_PluginMain? inst = SenX_KOTH_PluginMain.Instance;
-        if (inst?.Config == null)
-            return;
-
-        if (!inst.Config.WebHookEnabled)
-            return;
-
-        if (alertType == 0 && !inst.Config.Show_AttackMessages)
-            return;
-
-        if (string.IsNullOrEmpty(inst.Config.WebHookUrl))
-        {
-            KoTHLog.Error(Log,"discord Webhook is enabled but the Webhook url is empty.");
-            return;
-        }
-
+        string tempTitle = DetermineTitle(msg, inst.Config);
         SendToWebhook(inst.Config.WebHookUrl, msg, tempTitle, embedColor, alertType);
     }
 
     public static void SendAlertWebHook(string msg)
     {
-        SenX_KOTH_PluginMain? inst = SenX_KOTH_PluginMain.Instance;
-        if (inst?.Config == null)
-            return;
-
-        if (!inst.Config.WebHookEnabled)
-            return;
-
-        if (string.IsNullOrEmpty(inst.Config.WebHookUrl))
-            return;
+        var inst = SenX_KOTH_PluginMain.Instance;
+        if (inst?.Config == null || !inst.Config.WebHookEnabled) return;
+        if (string.IsNullOrEmpty(inst.Config.WebHookUrl)) return;
 
         SendToWebhook(inst.Config.WebHookUrl, msg, "KoTH Zone Entry", Color.Orange, 0);
     }
 
+    private static string DetermineTitle(string msg, SenX_KOTH_PluginConfig config)
+    {
+        if (msg.Contains("First Place"))          return "FIRST PLACE";
+        if (msg.Contains("Second Place"))         return "SECOND PLACE";
+        if (msg.Contains("Third Place"))          return "THIRD PLACE";
+        if (msg.Contains("The Other People....")) return "The Other People....";
+        return config.CustomTitleEnable ? config.CustomTitle : "Hank Says";
+    }
+
     private static async void SendToWebhook(string webhookUrl, string msg, string tempTitle, Color? embedColor, int alertType)
     {
-        SenX_KOTH_PluginMain? inst = SenX_KOTH_PluginMain.Instance;
-        if (inst?.Config == null)
-            return;
+        var inst = SenX_KOTH_PluginMain.Instance;
+        if (inst?.Config == null) return;
 
         DiscordWebHook webHook = new DiscordWebHook();
         DiscordMessage message = new DiscordMessage { Username = "KoTH", AvatarUrl = "" };
@@ -120,7 +78,7 @@ namespace SenX_KOTH_Plugin.Utils;
         }
         catch (Exception e)
         {
-            KoTHLog.Error(Log,e, "Discord could be down or there is something wrong with your webhook.");
+            KoTHLog.Error(Log, e, "Discord could be down or there is something wrong with your webhook.");
         }
     }
 }
