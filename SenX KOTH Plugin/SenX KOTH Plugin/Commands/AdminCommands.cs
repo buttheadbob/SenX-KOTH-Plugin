@@ -31,16 +31,16 @@ namespace SenX_KOTH_Plugin.Commands
         public void ForceWebHookTest()
         {
             if (!CheckCooldown()) return;
-            DiscordService.SendDiscordWebHook("First Place: [Vengeful Idiots] with 2565 Points!", Color.Gold, 1);
-            DiscordService.SendDiscordWebHook("Second Place: [Space Nuggets] with 1954 Points!", Color.Silver, 1);
-            DiscordService.SendDiscordWebHook("Third Place: [Keyboard Warriors] with 584 Points!", Color.SandyBrown, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "First Place: [Vengeful Idiots] with 2565 Points!", Color.Gold, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "Second Place: [Space Nuggets] with 1954 Points!", Color.Silver, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "Third Place: [Keyboard Warriors] with 584 Points!", Color.SandyBrown, 1);
 
             var sb = new StringBuilder();
             sb.AppendLine("The Other People....");
             sb.AppendLine("Hamsters of Europa with 486 Points!");
             sb.AppendLine("TRex's with 386 Points!");
             sb.AppendLine("Muppet Empire with 212 Points!");
-            DiscordService.SendDiscordWebHook(sb.ToString(), Color.Brown, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, sb.ToString(), Color.Brown, 1);
         }
 
         [Command("CreateZone", "Creates a KoTH zone at your current position.")]

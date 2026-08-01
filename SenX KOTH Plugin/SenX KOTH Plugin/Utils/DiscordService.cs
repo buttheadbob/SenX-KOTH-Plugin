@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System;
 using System.Drawing;
+using System.Linq;
 using SenX_KOTH_Plugin.DiscordAPI;
 using Extensions = SenX_KOTH_Plugin.DiscordAPI.Extensions;
 
@@ -10,24 +11,62 @@ internal static class DiscordService
 {
     private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => DiscordService");
 
-    public static void SendDiscordWebHook(string msg, Color? embedColor = null, int alertType = 0)
+    public static void SendDiscordWebHook(WebhookEventType eventType, string msg,
+        Color? embedColor = null, int alertType = 0, string? zoneName = null)
     {
         var inst = SenX_KOTH_PluginMain.Instance;
-        if (inst?.Config == null || !inst.Config.WebHookEnabled) return;
-        if (string.IsNullOrEmpty(inst.Config.WebHookUrl)) return;
+        if (inst?.Config == null) return;
+
+        var webhooks = inst.Config.Webhooks;
+        if (webhooks == null) return;
 
         string tempTitle = DetermineTitle(msg, inst.Config);
-        SendToWebhook(inst.Config.WebHookUrl, msg, tempTitle, embedColor, alertType);
+
+        foreach (var entry in webhooks)
+        {
+            if (!entry.Enabled || string.IsNullOrEmpty(entry.Url))
+                continue;
+
+            if (!entry.AcceptsEvent(eventType))
+                continue;
+
+            if (IsZoneScoped(eventType))
+            {
+                if (!entry.AllZones)
+                {
+                    if (string.IsNullOrWhiteSpace(entry.ZoneFilter))
+                        continue;
+
+                    if (!string.IsNullOrEmpty(zoneName))
+                    {
+                        var zones = entry.ZoneFilter.Split(',')
+                            .Select(z => z.Trim())
+                            .Where(z => z.Length > 0)
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                        if (!zones.Contains(zoneName!))
+                            continue;
+                    }
+                }
+            }
+
+            SendToWebhook(entry.Url, msg, tempTitle, embedColor, alertType);
+        }
     }
 
     public static void SendAlertWebHook(string msg)
     {
-        var inst = SenX_KOTH_PluginMain.Instance;
-        if (inst?.Config == null || !inst.Config.WebHookEnabled) return;
-        if (string.IsNullOrEmpty(inst.Config.WebHookUrl)) return;
-
-        SendToWebhook(inst.Config.WebHookUrl, msg, "KoTH Zone Entry", Color.Orange, 0);
+        SendDiscordWebHook(WebhookEventType.EnterAlert, msg, Color.Orange, 0);
     }
+
+    private static bool IsZoneScoped(WebhookEventType type) => type switch
+    {
+        WebhookEventType.Capture => true,
+        WebhookEventType.Decay => true,
+        WebhookEventType.Points => true,
+        WebhookEventType.EnterAlert => true,
+        _ => false
+    };
 
     private static string DetermineTitle(string msg, SenX_KOTH_PluginConfig config)
     {

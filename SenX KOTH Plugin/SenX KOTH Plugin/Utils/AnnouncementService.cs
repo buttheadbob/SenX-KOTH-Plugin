@@ -13,10 +13,9 @@ internal static class AnnouncementService
         var config = SenX_KOTH_PluginMain.Instance?.Config;
         if (config == null || !zone.DiscordAnnounceCapture) return;
 
-        if (config.WebHookEnabled)
-            DiscordService.SendDiscordWebHook(
-                "[" + factionTag + "] " + factionName + " captured " + zone.Name + "!",
-                Color.Gold, 1);
+        DiscordService.SendDiscordWebHook(WebhookEventType.Capture,
+            "[" + factionTag + "] " + factionName + " captured " + zone.Name + "!",
+            Color.Gold, 1, zone.Name);
 
         if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
@@ -33,10 +32,9 @@ internal static class AnnouncementService
         var config = SenX_KOTH_PluginMain.Instance?.Config;
         if (config == null || !zone.DiscordAnnounceDecay) return;
 
-        if (config.WebHookEnabled)
-            DiscordService.SendDiscordWebHook(
-                zone.Name + " capture lost - returning to Neutral",
-                Color.DarkRed, 1);
+        DiscordService.SendDiscordWebHook(WebhookEventType.Decay,
+            zone.Name + " capture lost - returning to Neutral",
+            Color.DarkRed, 1, zone.Name);
 
         if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
@@ -52,10 +50,9 @@ internal static class AnnouncementService
         var config = SenX_KOTH_PluginMain.Instance?.Config;
         if (config == null || !zone.DiscordAnnouncePoints) return;
 
-        if (config.WebHookEnabled)
-            DiscordService.SendDiscordWebHook(
-                "[" + factionTag + "] " + factionName + " earned " + points + "pts in " + zone.Name + "!",
-                Color.Orange, 0);
+        DiscordService.SendDiscordWebHook(WebhookEventType.Points,
+            "[" + factionTag + "] " + factionName + " earned " + points + "pts in " + zone.Name + "!",
+            Color.Orange, 0, zone.Name);
 
         if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
@@ -73,8 +70,8 @@ internal static class AnnouncementService
         var config = SenX_KOTH_PluginMain.Instance?.Config;
         if (config == null) return;
 
-        if (config.WebHookEnabled)
-            DiscordService.SendAlertWebHook(message);
+        DiscordService.SendDiscordWebHook(WebhookEventType.EnterAlert, message,
+            Color.Orange, 0, zone.Name);
 
         if (config.NexusSendDiscord && !ShouldSkipRelay())
             NexusManager.BroadcastDiscordZoneRelay(zone.Name, new ProtoEmbed
@@ -103,11 +100,7 @@ internal static class AnnouncementService
 
     public static void RankResult(string message, Color color)
     {
-        var config = SenX_KOTH_PluginMain.Instance?.Config;
-        if (config == null) return;
-
-        if (config.WebHookEnabled)
-            DiscordService.SendDiscordWebHook(message, color, 1);
+        DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, message, color, 1);
     }
 
     public static void PeriodResults(string periodName, string resultsText)
@@ -123,11 +116,7 @@ internal static class AnnouncementService
 
     public static void RaffleWinner(string message, Color color)
     {
-        var config = SenX_KOTH_PluginMain.Instance?.Config;
-        if (config == null) return;
-
-        if (config.WebHookEnabled)
-            DiscordService.SendDiscordWebHook(message, color, 1);
+        DiscordService.SendDiscordWebHook(WebhookEventType.RaffleWinner, message, color, 1);
     }
 
     private static bool ShouldSkipRelay()

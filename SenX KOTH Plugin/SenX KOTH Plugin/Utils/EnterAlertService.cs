@@ -19,7 +19,7 @@ namespace SenX_KOTH_Plugin.Utils
             if (config == null)
                 return false;
 
-            if (!config.WebHookEnabled && !config.NexusSendDiscord)
+            if (!config.NexusSendDiscord)
                 return false;
 
             ulong steamId = player.SteamUserId;
