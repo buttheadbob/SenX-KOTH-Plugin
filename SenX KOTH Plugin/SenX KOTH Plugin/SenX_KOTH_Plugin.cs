@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using NLog;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Controls;
 using Torch;
@@ -14,6 +15,7 @@ using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Services;
 using SenX_KOTH_Plugin.Utils;
+// ReSharper disable InconsistentNaming
 
 namespace SenX_KOTH_Plugin
 {
@@ -48,7 +50,7 @@ namespace SenX_KOTH_Plugin
 
         private SenX_KOTH_PluginControl? _control;
         private QuestManager? _questManager;
-        public UserControl GetControl() => _control ??= new SenX_KOTH_PluginControl();
+        public UserControl GetControl() => _control ??= new ();
 
         public SenX_KOTH_PluginConfig? Config { get; private set; }
         public static SenX_KOTH_PluginMain? Instance { get; private set; }
@@ -154,6 +156,37 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
             ConfigPersist = JsonPersistent<SenX_KOTH_PluginConfig>.Load(
                 Path.Combine(LocalDataPath, "Config.json"));
             Config = ConfigPersist.Data;
+
+            var p = ConfigPersist;
+            var c = Config;
+
+            p.WatchCollection(c.Webhooks);
+            p.WatchCollection(c.ZoneRewards);
+            p.WatchCollection(c.WeeklyRankRewards);
+            p.WatchCollection(c.MonthlyRankRewards);
+            p.WatchCollection(c.YearlyRankRewards);
+            p.WatchCollection(c.WeeklyThresholdRewards);
+            p.WatchCollection(c.MonthlyThresholdRewards);
+            p.WatchCollection(c.YearlyThresholdRewards);
+            p.WatchCollection(c.RaffleFirstRewards);
+            p.WatchCollection(c.RaffleSecondRewards);
+            p.WatchCollection(c.RaffleThirdRewards);
+
+            void OnWebhookPropertyChanged(object? s, PropertyChangedEventArgs e)
+                => p.NotifyChanged();
+
+            foreach (var wh in c.Webhooks)
+                wh.PropertyChanged += OnWebhookPropertyChanged;
+
+            c.Webhooks.CollectionChanged += (_, e) =>
+            {
+                if (e.NewItems != null)
+                    foreach (WebhookEntry wh in e.NewItems)
+                        wh.PropertyChanged += OnWebhookPropertyChanged;
+                if (e.OldItems != null)
+                    foreach (WebhookEntry wh in e.OldItems)
+                        wh.PropertyChanged -= OnWebhookPropertyChanged;
+            };
         }
 
         public void SaveConfig() => ConfigPersist?.Save();
@@ -178,6 +211,7 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
             Supervisor.ShutDown();
             if (Config != null)
             {
+                Config.Webhooks.Dispose();
                 Config.ZoneRewards.Dispose();
                 Config.WeeklyRankRewards.Dispose();
                 Config.MonthlyRankRewards.Dispose();

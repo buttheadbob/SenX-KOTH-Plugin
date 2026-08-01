@@ -1,10 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Torch;
 using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin
 {
+    public enum WebhookEventType
+    {
+        Capture,
+        Decay,
+        Points,
+        EnterAlert,
+        RankResult,
+        RaffleWinner
+    }
+
     public enum WipePeriod
     {
         None = -1,
@@ -54,10 +65,36 @@ namespace SenX_KOTH_Plugin
         public bool OnlyOnlineMembers { get; set; }
     }
 
+    public sealed class WebhookEntry : ViewModel
+    {
+        [JsonIgnore]
+        public bool IsExpanded { get; set; }
+
+        public bool Enabled { get; set => SetValue(ref field, value); } = true;
+        public string Url { get; set => SetValue(ref field, value); } = "";
+        public bool CaptureEvents { get; set => SetValue(ref field, value); } = true;
+        public bool DecayEvents { get; set => SetValue(ref field, value); } = true;
+        public bool PointsEvents { get; set => SetValue(ref field, value); } = true;
+        public bool EnterAlerts { get; set => SetValue(ref field, value); } = true;
+        public bool RankResults { get; set => SetValue(ref field, value); } = true;
+        public bool RaffleWinners { get; set => SetValue(ref field, value); } = true;
+        public bool AllZones { get; set => SetValue(ref field, value); } = true;
+        public string ZoneFilter { get; set => SetValue(ref field, value); } = "";
+
+        public bool AcceptsEvent(WebhookEventType type) => type switch
+        {
+            WebhookEventType.Capture => CaptureEvents,
+            WebhookEventType.Decay => DecayEvents,
+            WebhookEventType.Points => PointsEvents,
+            WebhookEventType.EnterAlert => EnterAlerts,
+            WebhookEventType.RankResult => RankResults,
+            WebhookEventType.RaffleWinner => RaffleWinners,
+            _ => false
+        };
+    }
+
     public sealed class SenX_KOTH_PluginConfig : ViewModel
     {
-        public bool WebHookEnabled { get; set => SetValue(ref field, value); }
-        public string WebHookUrl { get; set => SetValue(ref field, value); } = "";
         public string MessagePrefix { get; set => SetValue(ref field, value); } = "\u27DC \u27DC \u27DC";
         public string Color { get; set => SetValue(ref field, value); } = "";
         public bool EmbedEnabled { get; set => SetValue(ref field, value); }
@@ -112,6 +149,9 @@ namespace SenX_KOTH_Plugin
 
         public string EnterAlert_MessageTemplate { get; set => SetValue(ref field, value); }
             = "{player} from [{factionTag}] entered {zoneName}";
+
+        public ObservableConcurrentUiSafeCollection<WebhookEntry> Webhooks
+            { get; set => SetValue(ref field, value); } = [];
 
         public ObservableConcurrentUiSafeCollection<ZoneRewardConfig> ZoneRewards
             { get; set => SetValue(ref field, value); } = [];

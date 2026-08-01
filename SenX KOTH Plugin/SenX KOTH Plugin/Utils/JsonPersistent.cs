@@ -28,6 +28,8 @@ internal sealed class JsonPersistent<T> : IDisposable where T : class, INotifyPr
         collection.CollectionChanged += (_, _) => OnPropertyChanged(null, null!);
     }
 
+    public void NotifyChanged() => OnPropertyChanged(null, null!);
+
     private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         _saveTimer ??= new Timer(_ => FlushSave());

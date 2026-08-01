@@ -10,6 +10,7 @@
 
     <UserControl.Resources>
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
+        <converters:InvertBoolConverter x:Key="InvertBool" />
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="NexusWarning" TargetType="TextBlock">
             <Setter Property="Background" Value="#FFF0F0"/>
@@ -731,9 +732,6 @@
 
                         <Expander Header="Discord Webhook" IsExpanded="False" Margin="0,10">
                             <StackPanel>
-                                <CheckBox IsChecked="{Binding WebHookEnabled}" Content="Webhook Enabled" Margin="5"/>
-                                <TextBlock Text="Webhook URL" Margin="5,0,0,0"/>
-                                <TextBox Margin="5" Text="{Binding WebHookUrl}"/>
                                 <CheckBox IsChecked="{Binding EmbedEnabled}" Content="Embeds Enabled" Margin="5"/>
                                 <TextBlock Text="Embed Image URL (optional)" Margin="5,0,0,0"/>
                                 <TextBox Margin="5" Text="{Binding EmbedImageUrl}"/>
@@ -744,9 +742,57 @@
                                     <TextBox Margin="5" Text="{Binding CustomTitle}" Width="200"/>
                                     <CheckBox IsChecked="{Binding CustomTitleEnable}" Content="Enable" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,5">
-                                    <Button Content="Test Rank WebHook" Margin="5" Click="SendSampleRankWebHook_Click"/>
-                                    <Button Content="Test Attack WebHook" Margin="5" Click="SendSampleAttackWebHook_Click"/>
+
+                                <TextBlock Text="Webhooks" FontWeight="Bold" Margin="5,10,5,5"/>
+                                <ListBox x:Name="WebhookList" ItemsSource="{Binding Webhooks}" MinHeight="60" MaxHeight="300">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#CCC" BorderThickness="1" Padding="6" Margin="2" CornerRadius="4">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <CheckBox IsChecked="{Binding Enabled}" Content="Enabled" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <CheckBox Grid.Column="1" IsChecked="{Binding AllZones}" Content="All Zones" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBox Grid.Column="2" Text="{Binding ZoneFilter, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"
+                                                                 IsEnabled="{Binding AllZones, Converter={StaticResource InvertBool}}"
+                                                                 ToolTip="Comma-separated zone names"/>
+                                                        <Button Grid.Column="3" Content="X" Width="24" Height="24" Margin="4,0,0,0"
+                                                                Click="DeleteWebhook_Click" Tag="{Binding}" ToolTip="Delete" Padding="0"/>
+                                                    </Grid>
+                                                    <Expander IsExpanded="{Binding IsExpanded}" Margin="0,4,0,0">
+                                                        <Expander.Header>
+                                                            <TextBlock Text="{Binding Url, TargetNullValue='(no URL)', FallbackValue='(no URL)'}"
+                                                                       TextTrimming="CharacterEllipsis" MaxWidth="600"/>
+                                                        </Expander.Header>
+                                                        <StackPanel Margin="0,4,0,0">
+                                                            <TextBlock Text="Webhook URL:" Margin="0,0,0,2"/>
+                                                            <TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+                                                            <TextBlock Text="Events:" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                                            <WrapPanel>
+                                                                <CheckBox IsChecked="{Binding CaptureEvents}" Content="Capture" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding DecayEvents}" Content="Decay" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding PointsEvents}" Content="Points" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding EnterAlerts}" Content="Enter" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding RankResults}" Content="Rank" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding RaffleWinners}" Content="Raffle" Margin="0,0,8,0"/>
+                                                            </WrapPanel>
+                                                        </StackPanel>
+                                                    </Expander>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Content="Add Webhook" Click="AddWebhook_Click" Margin="5" HorizontalAlignment="Left"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,5">
+                                    <Button Content="Test Rank" Margin="5" Click="SendSampleRankWebHook_Click"/>
+                                    <Button Content="Test Attack" Margin="5" Click="SendSampleAttackWebHook_Click"/>
                                 </StackPanel>
                             </StackPanel>
                         </Expander>
@@ -973,13 +1019,18 @@
                                     <Run FontWeight="Bold">Discord Bot:</Run><LineBreak/>
                                     <Run>  - Enable on the Discord tab with a bot token</Run><LineBreak/>
                                     <Run>  - Posts reward announcements and live scoreboard updates</Run><LineBreak/>
-                                    <Run>  - Self-managed channels: bot creates per-zone channels under a category</Run><LineBreak/>
-                                    <Run FontWeight="Bold">Discord Webhook:</Run><LineBreak/>
-                                    <Run>  - Set a webhook URL on the Discord tab</Run><LineBreak/>
-                                    <Run>  - Sends zone capture, decay, point, and enter alerts</Run><LineBreak/>
+                                    <Run>  - Self-managed channels: bot creates per-zone channels under a category</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Discord Webhooks:</Run><LineBreak/>
+                                    <Run>  - Local only — each server manages its own webhooks independently</Run><LineBreak/>
+                                    <Run>  - Add one or more webhook URLs; each can filter by event type and zone</Run><LineBreak/>
+                                    <Run>  - Event types: Capture, Decay, Points, Enter Alert, Rank Results, Raffle</Run><LineBreak/>
+                                    <Run>  - Zone filter: check "All Zones" for all zones, or list specific zones (comma-separated)</Run><LineBreak/>
+                                    <Run>  - Webhooks are NOT relayed via Nexus — each server sends its own</Run><LineBreak/><LineBreak/>
                                     <Run FontWeight="Bold">Nexus Discord Relay:</Run><LineBreak/>
-                                    <Run>  - Nexus Send: forwards zone event messages to other servers</Run><LineBreak/>
-                                    <Run>  - Nexus Receive: displays relayed messages using local bot/webhook</Run><LineBreak/>
+                                    <Run>  - Nexus Send: broadcasts zone/reward events to other servers in the cluster</Run><LineBreak/>
+                                    <Run>  - Nexus Receive: posts received broadcasts using the local Discord bot</Run><LineBreak/>
+                                    <Run>  - Requires a Discord bot on every server that receives broadcasts</Run><LineBreak/>
+                                    <Run>  - Does NOT forward webhooks — bots only</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>

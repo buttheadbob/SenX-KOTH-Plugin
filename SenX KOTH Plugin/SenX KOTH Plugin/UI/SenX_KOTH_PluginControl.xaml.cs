@@ -12,6 +12,7 @@ using SenX_KOTH_Plugin.Models;
 using System.Globalization;
 using System.Threading;
 using DrawingColor = System.Drawing.Color;
+// ReSharper disable InconsistentNaming
 
 namespace SenX_KOTH_Plugin
 {
@@ -930,16 +931,16 @@ namespace SenX_KOTH_Plugin
 
         private void SendSampleAttackWebHook_Click(object sender, RoutedEventArgs e)
         {
-            DiscordService.SendDiscordWebHook("This is a test... test test test... you've just been tested... did it work?");
+            DiscordService.SendDiscordWebHook(WebhookEventType.Capture, "This is a test... test test test... you've just been tested... did it work?");
         }
 
         private void SendSampleRankWebHook_Click(object sender, RoutedEventArgs e)
         {
-            DiscordService.SendDiscordWebHook("First Place Vengeful Idiots with 2565 Points!", DrawingColor.Gold, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "First Place Vengeful Idiots with 2565 Points!", DrawingColor.Gold, 1);
             Thread.Sleep(5000);
-            DiscordService.SendDiscordWebHook("Second Place Space Nuggets with 1954 Points!", DrawingColor.Silver, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "Second Place Space Nuggets with 1954 Points!", DrawingColor.Silver, 1);
             Thread.Sleep(5000);
-            DiscordService.SendDiscordWebHook("Third Place Legionly Legions with 584 Points!", DrawingColor.SandyBrown, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, "Third Place Legionly Legions with 584 Points!", DrawingColor.SandyBrown, 1);
             Thread.Sleep(5000);
 
             var sb = new StringBuilder();
@@ -947,7 +948,25 @@ namespace SenX_KOTH_Plugin
             sb.AppendLine("Hamsters of Europa with 486 Points!");
             sb.AppendLine("TRex's with 386 Points!");
             sb.AppendLine("Muppet Empire with 212 Points!");
-            DiscordService.SendDiscordWebHook(sb.ToString(), DrawingColor.Brown, 1);
+            DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, sb.ToString(), DrawingColor.Brown, 1);
+        }
+
+        private void AddWebhook_Click(object sender, RoutedEventArgs e)
+        {
+            SenX_KOTH_PluginConfig? config = GetConfig();
+            config?.Webhooks.Add(new ());
+            WebhookList.Items.Refresh();
+        }
+
+        private void DeleteWebhook_Click(object sender, RoutedEventArgs e)
+        {
+            var entry = (sender as Button)?.Tag as WebhookEntry;
+            var config = GetConfig();
+            if (entry != null && config != null)
+            {
+                config.Webhooks.Remove(entry);
+                WebhookList.Items.Refresh();
+            }
         }
 
         private void ClearPending_Click(object sender, RoutedEventArgs e)
@@ -992,19 +1011,26 @@ namespace KoTH.Converters
 {
     public class EnumBooleanConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (parameter is not string parameterString) return DependencyProperty.UnsetValue;
-            if (value is null) return DependencyProperty.UnsetValue;
-            if (!Enum.IsDefined(value.GetType(), value)) return DependencyProperty.UnsetValue;
+            if (parameter is not string parameterString || value is null || !Enum.IsDefined(value.GetType(), value)) return DependencyProperty.UnsetValue;
             object parameterValue = Enum.Parse(value.GetType(), parameterString);
             return parameterValue.Equals(value);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (parameter is not string parameterString) return DependencyProperty.UnsetValue;
             return Enum.Parse(targetType, parameterString);
         }
+    }
+
+    public class InvertBoolConverter : IValueConverter
+    {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => value is false;
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => value is false;
     }
 }
