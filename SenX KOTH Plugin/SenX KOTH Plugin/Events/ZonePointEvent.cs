@@ -54,6 +54,7 @@ namespace SenX_KOTH_Plugin.Events
         private int _capturePointsEarned;
         private bool _manualEvict;
         private bool _fireworksShown;
+        private bool _captureRewardGiven;
         internal bool SendFirework { get; set; }
         internal int FireworkMode { get; set; }
         public string Name => _zone.Name;
@@ -258,6 +259,7 @@ namespace SenX_KOTH_Plugin.Events
                         _state = CaptureState.Neutral;
                         _autoDecayActive = false;
                         _fireworksShown = false;
+                        _captureRewardGiven = false;
                     }
                 }
                 else if (_autoDecayActive && hadPointEntities)
@@ -462,6 +464,18 @@ namespace SenX_KOTH_Plugin.Events
                             KoTHLog.Info(Log,"Zone captured: " + _zone.Name + " by factionId " + _captureFactionId);
                             AnnouncementService.ZoneCapture(_zone, GetCaptureTag(), CaptureFactionName, _capturePointsEarned);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.MatchWon);
+
+                            // Live capture rewards
+                            var zoneReward = _config.ZoneRewards.FirstOrDefault(
+                                z => string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
+                            if (zoneReward != null && zoneReward.CommandRewards.Count > 0)
+                            {
+                                if (zoneReward.TriggerOnEveryCap || !_captureRewardGiven)
+                                {
+                                    _captureRewardGiven = true;
+                                    RewardService.CheckLiveRewards(_zone.Name, _captureFactionId);
+                                }
+                            }
                         }
                         break;
                     }
@@ -483,6 +497,7 @@ namespace SenX_KOTH_Plugin.Events
                             _lastAnnouncedProgress = 0;
                             _state = CaptureState.Neutral;
                                         _fireworksShown = false;
+                            _captureRewardGiven = false;
                             KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
                             AnnouncementService.ZoneDecay(_zone);
                             _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
@@ -771,8 +786,10 @@ namespace SenX_KOTH_Plugin.Events
             _state = CaptureState.Neutral;
             _autoDecayActive = false;
                         _fireworksShown = false;
+            _captureRewardGiven = false;
             SendFirework = false;
             _fireworksShown = false;
+            _captureRewardGiven = false;
             KoTHLog.Info(Log,"Manual reset to neutral: " + _zone.Name);
         }
 

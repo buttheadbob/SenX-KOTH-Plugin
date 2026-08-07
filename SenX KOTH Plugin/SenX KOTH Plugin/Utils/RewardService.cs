@@ -15,17 +15,14 @@ namespace SenX_KOTH_Plugin.Utils
     {
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => RewardService");
 
-        public static void CheckLiveRewards(PointEarned point)
+        public static void CheckLiveRewards(string zoneName, long factionId)
         {
             SenX_KOTH_PluginConfig? config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config == null)
                 return;
 
-            if (string.IsNullOrEmpty(point.ZoneName))
-                return;
-
             ZoneRewardConfig? zoneConfig = config.ZoneRewards.FirstOrDefault(z =>
-                string.Equals(z.ZoneName, point.ZoneName, StringComparison.OrdinalIgnoreCase));
+                string.Equals(z.ZoneName, zoneName, StringComparison.OrdinalIgnoreCase));
 
             if (zoneConfig == null || zoneConfig.CommandRewards.Count == 0)
                 return;
@@ -33,7 +30,7 @@ namespace SenX_KOTH_Plugin.Utils
             try
             {
                 IMyFaction? faction = null;
-                MyAPIGateway.Session.Factions.Factions.TryGetValue(point.FactionId, out faction);
+                MyAPIGateway.Session.Factions.Factions.TryGetValue(factionId, out faction);
                 if (faction == null)
                     return;
 
@@ -47,7 +44,7 @@ namespace SenX_KOTH_Plugin.Utils
             }
             catch (Exception ex)
             {
-                KoTHLog.Error(Log,ex, "Error executing live rewards for zone: " + point.ZoneName);
+                KoTHLog.Error(Log, ex, "Error executing live rewards for zone: " + zoneName);
             }
         }
 

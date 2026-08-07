@@ -30,6 +30,13 @@ namespace SenX_KOTH_Plugin
         Monthly = 1
     }
 
+    public enum RewardPeriod
+    {
+        Weekly = 0,
+        Monthly = 1,
+        Yearly = 2
+    }
+
     public sealed class LiveCommandReward
     {
         public bool Enabled { get; set; }
@@ -41,7 +48,6 @@ namespace SenX_KOTH_Plugin
     public sealed class ZoneRewardConfig
     {
         public string ZoneName { get; set; } = "";
-        public int PointsForPrizeThreshold { get; set; }
         public bool TriggerOnEveryCap { get; set; }
         public List<LiveCommandReward> CommandRewards { get; set; } = new();
     }
@@ -175,9 +181,21 @@ namespace SenX_KOTH_Plugin
             { get; set => SetValue(ref field, value); } = [];
 
         public bool RaffleEnabled { get; set => SetValue(ref field, value); }
-        public RafflePeriod RafflePeriod { get; set => SetValue(ref field, value); } = RafflePeriod.Weekly;
+        public RafflePeriod RafflePeriod
+        {
+            get;
+            set
+            {
+                SetValue(ref field, value);
+                OnPropertyChanged(nameof(IsRaffleWeekly));
+                OnPropertyChanged(nameof(IsRaffleMonthly));
+            }
+        } = RafflePeriod.Weekly;
         public DayOfWeek RaffleDayOfWeek { get; set => SetValue(ref field, value); } = DayOfWeek.Saturday;
         public int RaffleDayOfMonth { get; set => SetValue(ref field, value); } = 1;
+
+        public bool IsRaffleWeekly => RafflePeriod == RafflePeriod.Weekly;
+        public bool IsRaffleMonthly => RafflePeriod == RafflePeriod.Monthly;
         public int RaffleHour { get; set => SetValue(ref field, value); } = 20;
         public int RaffleMinute { get; set => SetValue(ref field, value); }
         public int TicketCost { get; set => SetValue(ref field, value); } = 10;

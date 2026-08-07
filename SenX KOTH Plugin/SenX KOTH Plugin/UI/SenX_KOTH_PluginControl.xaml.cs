@@ -23,10 +23,11 @@ namespace SenX_KOTH_Plugin
         private ZoneRewardConfig? _editingZoneReward;
         private LiveCommandReward? _editingZoneCmd;
         private RankRewardEntry? _editingRank;
-        private int _editingRankPeriod;
+        private RewardPeriod _editingRankPeriod;
         private CommandRewardEntry? _editingRankCmd;
         private ThresholdRewardEntry? _editingThreshold;
-        private int _editingThresholdPeriod;
+        private RewardPeriod _editingThresholdPeriod;
+        private CommandRewardEntry? _editingThresholdCmd;
 
         public SenX_KOTH_PluginControl()
         {
@@ -49,7 +50,7 @@ namespace SenX_KOTH_Plugin
             }
         }
 
-        public ObservableConcurrentUiSafeCollection<string> ZoneNames { get; } = new();
+        public ObservableConcurrentUiSafeCollection<string> ZoneNames { get; } = [];
 
         private void RefreshZoneNames()
         {
@@ -444,7 +445,6 @@ namespace SenX_KOTH_Plugin
         private void PopulateZoneRewardEditor(ZoneRewardConfig zrc)
         {
             ZoneRewardEditor_Name.Text = zrc.ZoneName;
-            ZoneRewardEditor_Threshold.Text = zrc.PointsForPrizeThreshold.ToString();
             ZoneRewardEditor_EveryCap.IsChecked = zrc.TriggerOnEveryCap;
             ZoneRewardCmdList.ItemsSource = zrc.CommandRewards;
         }
@@ -453,8 +453,6 @@ namespace SenX_KOTH_Plugin
         {
             if (_editingZoneReward == null) return;
             _editingZoneReward.ZoneName = ZoneRewardEditor_Name.Text;
-            int.TryParse(ZoneRewardEditor_Threshold.Text, out int threshold);
-            _editingZoneReward.PointsForPrizeThreshold = threshold;
             _editingZoneReward.TriggerOnEveryCap = ZoneRewardEditor_EveryCap.IsChecked == true;
 
             var config = GetConfig();
@@ -531,8 +529,7 @@ namespace SenX_KOTH_Plugin
         private void AddRank_Click(object sender, RoutedEventArgs e)
         {
             _editingRank = new RankRewardEntry();
-            _editingRankPeriod = 0;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Weekly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -542,8 +539,7 @@ namespace SenX_KOTH_Plugin
         {
             _editingRank = (sender as Button)?.Tag as RankRewardEntry;
             if (_editingRank == null) return;
-            _editingRankPeriod = 0;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Weekly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -551,17 +547,15 @@ namespace SenX_KOTH_Plugin
 
         private void DeleteRank_Click(object sender, RoutedEventArgs e)
         {
-            var item = (sender as Button)?.Tag as RankRewardEntry;
             var config = GetConfig();
-            if (item != null && config != null)
+            if (sender is Button { Tag: RankRewardEntry item } && config != null)
                 config.WeeklyRankRewards.Remove(item);
         }
 
         private void AddMonthlyRank_Click(object sender, RoutedEventArgs e)
         {
             _editingRank = new RankRewardEntry();
-            _editingRankPeriod = 1;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Monthly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -571,8 +565,7 @@ namespace SenX_KOTH_Plugin
         {
             _editingRank = (sender as Button)?.Tag as RankRewardEntry;
             if (_editingRank == null) return;
-            _editingRankPeriod = 1;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Monthly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -589,8 +582,7 @@ namespace SenX_KOTH_Plugin
         private void AddYearlyRank_Click(object sender, RoutedEventArgs e)
         {
             _editingRank = new RankRewardEntry();
-            _editingRankPeriod = 2;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Yearly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -600,8 +592,7 @@ namespace SenX_KOTH_Plugin
         {
             _editingRank = (sender as Button)?.Tag as RankRewardEntry;
             if (_editingRank == null) return;
-            _editingRankPeriod = 2;
-            _editingThreshold = null;
+            _editingRankPeriod = RewardPeriod.Yearly;
             PopulateRankEditor();
             RankEditorPanel.Visibility = Visibility.Visible;
             HideRankCmdEditor();
@@ -617,42 +608,39 @@ namespace SenX_KOTH_Plugin
 
         private void PopulateRankEditor()
         {
-            if (_editingRank != null)
-            {
-                RankEditor_Label.Text = "Rank Number:";
-                RankEditorPanel.Header = "Rank Editor";
-                RankEditor_Rank.Text = _editingRank.Rank.ToString();
-                RankCommandList.ItemsSource = _editingRank.Commands;
-            }
-            else if (_editingThreshold != null)
-            {
-                RankEditor_Label.Text = "Min Points:";
-                RankEditorPanel.Header = "Threshold Editor";
-                RankEditor_Rank.Text = _editingThreshold.MinPoints.ToString();
-                RankCommandList.ItemsSource = _editingThreshold.Commands;
-            }
+            if (_editingRank == null) return;
+            RankEditor_Label.Text = "Rank Number:";
+            RankEditorPanel.Header = "Rank Editor";
+            RankEditor_Rank.Text = _editingRank.Rank.ToString();
+            RankCommandList.ItemsSource = _editingRank.Commands;
+        }
+
+        private void PopulateThresholdEditor()
+        {
+            if (_editingThreshold == null) return;
+            ThresholdEditorPanel.Header = "Threshold Editor";
+            ThresholdEditor_MinPoints.Text = _editingThreshold.MinPoints.ToString();
+            ThresholdCommandList.ItemsSource = _editingThreshold.Commands;
         }
 
         private void SaveRank_Click(object sender, RoutedEventArgs e)
         {
-            if (_editingThreshold != null)
+            if (_editingRank == null) return;
+            if (!int.TryParse(RankEditor_Rank.Text, out int rank))
             {
-                SaveThreshold_Click(sender, e);
+                MessageBox.Show("Please enter a valid rank number.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            if (_editingRank == null) return;
-            int.TryParse(RankEditor_Rank.Text, out int rank);
             _editingRank.Rank = rank;
 
             var config = GetConfig();
             if (config == null) return;
 
-            if (_editingRankPeriod == 0 && !config.WeeklyRankRewards.Contains(_editingRank))
+            if (_editingRankPeriod == RewardPeriod.Weekly && !config.WeeklyRankRewards.Contains(_editingRank))
                 config.WeeklyRankRewards.Add(_editingRank);
-            else if (_editingRankPeriod == 1 && !config.MonthlyRankRewards.Contains(_editingRank))
+            else if (_editingRankPeriod == RewardPeriod.Monthly && !config.MonthlyRankRewards.Contains(_editingRank))
                 config.MonthlyRankRewards.Add(_editingRank);
-            else if (_editingRankPeriod == 2 && !config.YearlyRankRewards.Contains(_editingRank))
+            else if (_editingRankPeriod == RewardPeriod.Yearly && !config.YearlyRankRewards.Contains(_editingRank))
                 config.YearlyRankRewards.Add(_editingRank);
 
             RankEditorPanel.Visibility = Visibility.Collapsed;
@@ -665,7 +653,6 @@ namespace SenX_KOTH_Plugin
             RankEditorPanel.Visibility = Visibility.Collapsed;
             HideRankCmdEditor();
             _editingRank = null;
-            _editingThreshold = null;
         }
 
         private void AddRankCmd_Click(object sender, RoutedEventArgs e)
@@ -687,10 +674,7 @@ namespace SenX_KOTH_Plugin
         {
             var item = (sender as Button)?.Tag as CommandRewardEntry;
             if (item != null)
-            {
                 _editingRank?.Commands.Remove(item);
-                _editingThreshold?.Commands.Remove(item);
-            }
             RankCommandList.Items.Refresh();
         }
 
@@ -717,8 +701,6 @@ namespace SenX_KOTH_Plugin
 
             if (_editingRank != null && !_editingRank.Commands.Contains(_editingRankCmd))
                 _editingRank.Commands.Add(_editingRankCmd);
-            else if (_editingThreshold != null && !_editingThreshold.Commands.Contains(_editingRankCmd))
-                _editingThreshold.Commands.Add(_editingRankCmd);
 
             HideRankCmdEditor();
             RankCommandList.Items.Refresh();
@@ -746,25 +728,94 @@ namespace SenX_KOTH_Plugin
             _editingRaffleCmd = null;
         }
 
+        // --- Threshold command handlers ---
+
+        private void AddThresholdCmd_Click(object sender, RoutedEventArgs e)
+        {
+            _editingThresholdCmd = new CommandRewardEntry();
+            PopulateThresholdCmdEditor();
+            ThresholdCmdEditor.Visibility = Visibility.Visible;
+        }
+
+        private void EditThresholdCmd_Click(object sender, RoutedEventArgs e)
+        {
+            _editingThresholdCmd = (sender as Button)?.Tag as CommandRewardEntry;
+            if (_editingThresholdCmd == null) return;
+            PopulateThresholdCmdEditor();
+            ThresholdCmdEditor.Visibility = Visibility.Visible;
+        }
+
+        private void DeleteThresholdCmd_Click(object sender, RoutedEventArgs e)
+        {
+            var item = (sender as Button)?.Tag as CommandRewardEntry;
+            if (item != null)
+                _editingThreshold?.Commands.Remove(item);
+            ThresholdCommandList.Items.Refresh();
+        }
+
+        private void PopulateThresholdCmdEditor()
+        {
+            if (_editingThresholdCmd == null) return;
+            ThresholdCmd_PerFaction.IsChecked = _editingThresholdCmd.PerFactionMember;
+            ThresholdCmd_OnlineOnly.IsChecked = _editingThresholdCmd.OnlyOnlineMembers;
+            ThresholdCmd_Command.Text = _editingThresholdCmd.CommandText;
+        }
+
+        private void SaveThresholdCmd_Click(object sender, RoutedEventArgs e)
+        {
+            if (_editingRaffleCmd != null)
+            {
+                SaveRaffleCmd_Click(sender, e);
+                return;
+            }
+
+            if (_editingThresholdCmd == null) return;
+            _editingThresholdCmd.PerFactionMember = ThresholdCmd_PerFaction.IsChecked == true;
+            _editingThresholdCmd.OnlyOnlineMembers = ThresholdCmd_OnlineOnly.IsChecked == true;
+            _editingThresholdCmd.CommandText = ThresholdCmd_Command.Text;
+
+            if (_editingThreshold != null && !_editingThreshold.Commands.Contains(_editingThresholdCmd))
+                _editingThreshold.Commands.Add(_editingThresholdCmd);
+
+            HideThresholdCmdEditor();
+            ThresholdCommandList.Items.Refresh();
+        }
+
+        private void CancelThresholdCmd_Click(object sender, RoutedEventArgs e)
+        {
+            HideThresholdCmdEditor();
+        }
+
+        private void HideThresholdCmdEditor()
+        {
+            ThresholdCmdEditor.Visibility = Visibility.Collapsed;
+            _editingThresholdCmd = null;
+        }
+
+        private void CancelThreshold_Click(object sender, RoutedEventArgs e)
+        {
+            ThresholdEditorPanel.Visibility = Visibility.Collapsed;
+            HideThresholdCmdEditor();
+            _editingThreshold = null;
+        }
+
         private void AddThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = new ThresholdRewardEntry();
-            _editingThresholdPeriod = 0;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Weekly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void EditThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = (sender as Button)?.Tag as ThresholdRewardEntry;
             if (_editingThreshold == null) return;
-            _editingThresholdPeriod = 0;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Weekly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void DeleteThreshold_Click(object sender, RoutedEventArgs e)
@@ -778,22 +829,20 @@ namespace SenX_KOTH_Plugin
         private void AddMonthlyThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = new ThresholdRewardEntry();
-            _editingThresholdPeriod = 1;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Monthly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void EditMonthlyThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = (sender as Button)?.Tag as ThresholdRewardEntry;
             if (_editingThreshold == null) return;
-            _editingThresholdPeriod = 1;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Monthly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void DeleteMonthlyThreshold_Click(object sender, RoutedEventArgs e)
@@ -807,22 +856,20 @@ namespace SenX_KOTH_Plugin
         private void AddYearlyThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = new ThresholdRewardEntry();
-            _editingThresholdPeriod = 2;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Yearly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void EditYearlyThreshold_Click(object sender, RoutedEventArgs e)
         {
             _editingThreshold = (sender as Button)?.Tag as ThresholdRewardEntry;
             if (_editingThreshold == null) return;
-            _editingThresholdPeriod = 2;
-            _editingRank = null;
-            PopulateRankEditor();
-            RankEditorPanel.Visibility = Visibility.Visible;
-            HideRankCmdEditor();
+            _editingThresholdPeriod = RewardPeriod.Yearly;
+            PopulateThresholdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Visible;
+            HideThresholdCmdEditor();
         }
 
         private void DeleteYearlyThreshold_Click(object sender, RoutedEventArgs e)
@@ -836,21 +883,25 @@ namespace SenX_KOTH_Plugin
         private void SaveThreshold_Click(object sender, RoutedEventArgs e)
         {
             if (_editingThreshold == null) return;
-            int.TryParse(RankEditor_Rank.Text, out int min);
+            if (!int.TryParse(ThresholdEditor_MinPoints.Text, out int min))
+            {
+                MessageBox.Show("Please enter a valid minimum points value.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             _editingThreshold.MinPoints = min;
 
             var config = GetConfig();
             if (config == null) return;
 
-            if (_editingThresholdPeriod == 0 && !config.WeeklyThresholdRewards.Contains(_editingThreshold))
+            if (_editingThresholdPeriod == RewardPeriod.Weekly && !config.WeeklyThresholdRewards.Contains(_editingThreshold))
                 config.WeeklyThresholdRewards.Add(_editingThreshold);
-            else if (_editingThresholdPeriod == 1 && !config.MonthlyThresholdRewards.Contains(_editingThreshold))
+            else if (_editingThresholdPeriod == RewardPeriod.Monthly && !config.MonthlyThresholdRewards.Contains(_editingThreshold))
                 config.MonthlyThresholdRewards.Add(_editingThreshold);
-            else if (_editingThresholdPeriod == 2 && !config.YearlyThresholdRewards.Contains(_editingThreshold))
+            else if (_editingThresholdPeriod == RewardPeriod.Yearly && !config.YearlyThresholdRewards.Contains(_editingThreshold))
                 config.YearlyThresholdRewards.Add(_editingThreshold);
 
-            RankEditorPanel.Visibility = Visibility.Collapsed;
-            HideRankCmdEditor();
+            ThresholdEditorPanel.Visibility = Visibility.Collapsed;
+            HideThresholdCmdEditor();
             _editingThreshold = null;
         }
 
