@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using SenX_KOTH_Plugin.Utils;
 using Torch;
 
 namespace SenX_KOTH_Plugin.Models
@@ -23,7 +22,7 @@ namespace SenX_KOTH_Plugin.Models
 
     internal sealed class RaffleTicketsData : ViewModel
     {
-        public ObservableConcurrentUiSafeCollection<RaffleTicketEntry> Tickets { get; set => SetValue(ref field, value); } = new();
+        public List<RaffleTicketEntry> Tickets { get; set => SetValue(ref field, value); } = new();
         public DateTime LastDrawDate { get; set => SetValue(ref field, value); }
     }
 }

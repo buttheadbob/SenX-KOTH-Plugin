@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using Torch;
-using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin
 {
@@ -56,12 +56,18 @@ namespace SenX_KOTH_Plugin
     {
         public int Rank { get; set; } = 1;
         public List<CommandRewardEntry> Commands { get; set; } = new();
+
+        [JsonIgnore]
+        public string DisplayText => $"Rank {Rank} ({Commands.Count} commands)";
     }
 
     public sealed class ThresholdRewardEntry
     {
         public int MinPoints { get; set; }
         public List<CommandRewardEntry> Commands { get; set; } = new();
+
+        [JsonIgnore]
+        public string DisplayText => $"Min {MinPoints} pts ({Commands.Count} cmds)";
     }
 
     public sealed class CommandRewardEntry
@@ -156,28 +162,28 @@ namespace SenX_KOTH_Plugin
         public string EnterAlert_MessageTemplate { get; set => SetValue(ref field, value); }
             = "{player} from [{factionTag}] entered {zoneName}";
 
-        public ObservableConcurrentUiSafeCollection<WebhookEntry> Webhooks
+        public ObservableCollection<WebhookEntry> Webhooks
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<ZoneRewardConfig> ZoneRewards
+        public ObservableCollection<ZoneRewardConfig> ZoneRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<RankRewardEntry> WeeklyRankRewards
+        public ObservableCollection<RankRewardEntry> WeeklyRankRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<RankRewardEntry> MonthlyRankRewards
+        public ObservableCollection<RankRewardEntry> MonthlyRankRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<RankRewardEntry> YearlyRankRewards
+        public ObservableCollection<RankRewardEntry> YearlyRankRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> WeeklyThresholdRewards
+        public ObservableCollection<ThresholdRewardEntry> WeeklyThresholdRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> MonthlyThresholdRewards
+        public ObservableCollection<ThresholdRewardEntry> MonthlyThresholdRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<ThresholdRewardEntry> YearlyThresholdRewards
+        public ObservableCollection<ThresholdRewardEntry> YearlyThresholdRewards
             { get; set => SetValue(ref field, value); } = [];
 
         public bool RaffleEnabled { get; set => SetValue(ref field, value); }
@@ -200,13 +206,13 @@ namespace SenX_KOTH_Plugin
         public int RaffleMinute { get; set => SetValue(ref field, value); }
         public int TicketCost { get; set => SetValue(ref field, value); } = 10;
 
-        public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleFirstRewards
+        public ObservableCollection<CommandRewardEntry> RaffleFirstRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleSecondRewards
+        public ObservableCollection<CommandRewardEntry> RaffleSecondRewards
             { get; set => SetValue(ref field, value); } = [];
 
-        public ObservableConcurrentUiSafeCollection<CommandRewardEntry> RaffleThirdRewards
+        public ObservableCollection<CommandRewardEntry> RaffleThirdRewards
             { get; set => SetValue(ref field, value); } = [];
     }
 }

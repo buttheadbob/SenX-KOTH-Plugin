@@ -395,9 +395,7 @@
                                                                 <ColumnDefinition Width="50"/>
                                                                 <ColumnDefinition Width="50"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <TextBlock VerticalAlignment="Center">
-                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
-                                                            </TextBlock>
+                                                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                         </Grid>
@@ -418,9 +416,7 @@
                                                                 <ColumnDefinition Width="50"/>
                                                                 <ColumnDefinition Width="50"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <TextBlock VerticalAlignment="Center">
-                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
-                                                            </TextBlock>
+                                                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditMonthlyRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteMonthlyRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                         </Grid>
@@ -441,9 +437,7 @@
                                                                 <ColumnDefinition Width="50"/>
                                                                 <ColumnDefinition Width="50"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <TextBlock VerticalAlignment="Center">
-                                                                <Run Text="Rank "/><Run Text="{Binding Rank}"/><Run Text=" ("/><Run Text="{Binding Commands.Count}"/><Run Text=" commands)"/>
-                                                            </TextBlock>
+                                                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditYearlyRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteYearlyRank_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                         </Grid>
@@ -521,9 +515,7 @@
                                                         <ColumnDefinition Width="50"/>
                                                         <ColumnDefinition Width="50"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock VerticalAlignment="Center">
-                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
-                                                    </TextBlock>
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                 </Grid>
@@ -542,9 +534,7 @@
                                                         <ColumnDefinition Width="50"/>
                                                         <ColumnDefinition Width="50"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock VerticalAlignment="Center">
-                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
-                                                    </TextBlock>
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditMonthlyThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteMonthlyThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                 </Grid>
@@ -563,9 +553,7 @@
                                                         <ColumnDefinition Width="50"/>
                                                         <ColumnDefinition Width="50"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock VerticalAlignment="Center">
-                                                        <Run Text="Min "/><Run Text="{Binding MinPoints}"/><Run Text=" pts ("/><Run Text="{Binding Commands.Count}"/><Run Text=" cmds)"/>
-                                                    </TextBlock>
+                                                    <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}"/>
                                                 <Button Grid.Column="1" Content="Edit" Click="EditYearlyThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
                                                 <Button Grid.Column="2" Content="X" Click="DeleteYearlyThreshold_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
                                                 </Grid>

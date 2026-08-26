@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -31,6 +32,8 @@ namespace SenX_KOTH_Plugin
 
         public SenX_KOTH_PluginControl()
         {
+            SenX_KOTH_PluginMain.UiDispatcher = Dispatcher;
+
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             DataContext = config;
             InitializeComponent();
@@ -50,7 +53,7 @@ namespace SenX_KOTH_Plugin
             }
         }
 
-        public ObservableConcurrentUiSafeCollection<string> ZoneNames { get; } = [];
+        public ObservableCollection<string> ZoneNames { get; } = [];
 
         private void RefreshZoneNames()
         {

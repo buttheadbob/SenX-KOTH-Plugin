@@ -106,30 +106,6 @@ internal static class ZoneManager
         }
     }
 
-    public static KothZone? CreateZone(ZoneListData data, string name, float radius, Vector3D position, string adminName)
-    {
-        if (data.Zones.Any(z => string.Equals(z.Name, name, StringComparison.OrdinalIgnoreCase)))
-        {
-            KoTHLog.Warn(Log,adminName + " tried to create duplicate zone: " + name);
-            return null;
-        }
-
-        var zone = new KothZone
-        {
-            Name = name,
-            X = position.X, Y = position.Y, Z = position.Z,
-            OriginX = position.X, OriginY = position.Y, OriginZ = position.Z,
-            Radius = Math.Max(10f, Math.Min(500f, radius)),
-            ColorR = 0.529f, ColorG = 0.808f, ColorB = 0.922f,
-            Texture = "SafeZone_Texture_Default",
-            Enabled = true, PersistVisual = true
-        };
-
-        CreateSafeZoneEntity(zone, position);
-        data.Zones.Add(zone);
-        return zone;
-    }
-
     public static bool DeleteZone(ZoneListData data, string name)
     {
         var config = data.Zones.FirstOrDefault(z =>

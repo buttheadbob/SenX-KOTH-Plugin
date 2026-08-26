@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
@@ -56,6 +57,17 @@ namespace SenX_KOTH_Plugin
         public static SenX_KOTH_PluginMain? Instance { get; private set; }
         public static NexusGlobalAPI? NexusGlobalAPI { get; private set; }
 
+        internal static Dispatcher? UiDispatcher;
+
+        internal static void RunOnUiThread(Action action)
+        {
+            var dispatcher = UiDispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+                dispatcher.Invoke(action);
+            else
+                action();
+        }
+
         internal static JsonPersistent<SenX_KOTH_PluginConfig>? ConfigPersist { get; private set; }
         internal static JsonPersistent<PendingTransactionsData>? PendingCreditsPersist { get; private set; }
         internal static JsonPersistent<ZoneListData>? ZonePersist { get; private set; }
@@ -64,8 +76,6 @@ namespace SenX_KOTH_Plugin
     {
         base.Init(torch);
         Instance = this;
-        ObservableConcurrentUiSafeCollectionStatic.SetSynchronizationContext(
-            System.Threading.SynchronizationContext.Current!);
 
         SetupConfig();
 
@@ -209,20 +219,6 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
         {
             _ = Discord.DiscordBotService.StopAsync();
             Supervisor.ShutDown();
-            if (Config != null)
-            {
-                Config.Webhooks.Dispose();
-                Config.ZoneRewards.Dispose();
-                Config.WeeklyRankRewards.Dispose();
-                Config.MonthlyRankRewards.Dispose();
-                Config.YearlyRankRewards.Dispose();
-                Config.WeeklyThresholdRewards.Dispose();
-                Config.MonthlyThresholdRewards.Dispose();
-                Config.YearlyThresholdRewards.Dispose();
-                Config.RaffleFirstRewards.Dispose();
-                Config.RaffleSecondRewards.Dispose();
-                Config.RaffleThirdRewards.Dispose();
-            }
             PendingCreditsPersist?.Dispose();
             ConfigPersist?.Dispose();
             ZonePersist?.Dispose();

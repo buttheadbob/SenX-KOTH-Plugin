@@ -8,6 +8,7 @@ Do not use git commands unless told directly by the user.
 Do not overcomplicate code.  If you can create simple and small code instead of complicated wrappers, that is better.
 Do not use agents or tasks.
 Do not use scripts, do all the work yourself.
+Do not make changes to code, add code, remove code, etc, without my permission.
 
 ## Project Rules
 Mods are always .net framework 4.8 with language version 6

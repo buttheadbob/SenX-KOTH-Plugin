@@ -163,13 +163,9 @@
     <Compile Include="SenX KOTH Plugin\Utils\KoTHLog.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\KothAudioManager.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\MaybeNull.cs" />
-    <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentDictionary.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentHashSet.cs" />
-    <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentUiSafeCollection.cs" />
-    <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentUiSafeCollectionStatic.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\RewardService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ScoreManager.cs" />
-    <Compile Include="SenX KOTH Plugin\Utils\SenxChannel.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ZoneManager.cs" />
     <Compile Include="Settings\SenX_KOTH_PluginConfig.cs" />
     <EmbeddedResource Include="SenX KOTH Plugin\Properties\Resources.resx">

@@ -172,8 +172,6 @@ namespace SenX_KOTH_Plugin.Commands
             results.AppendLine("  !KoTH BuyTicket [count] - Buy raffle tickets");
             results.AppendLine();
             results.AppendLine("Admin Commands:");
-            results.AppendLine("  !KoTH CreateZone <name> [radius] - Create a zone");
-            results.AppendLine("  !KoTH DeleteZone <name> - Delete a zone");
             results.AppendLine("  !KoTH GivePoint <id_or_tag> <value> - Adjust bank points");
             results.AppendLine("  !KoTH ForceTest    - Test Discord webhook");
 

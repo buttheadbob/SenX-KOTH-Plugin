@@ -102,7 +102,7 @@ namespace SenX_KOTH_Plugin.Nexus
             var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
             if (persist != null)
             {
-                persist.Data.Credits.Add(entry);
+                SenX_KOTH_PluginMain.RunOnUiThread(() => persist.Data.Credits.Add(entry));
                 persist.Save();
             }
             if (_authorityId != 0)
@@ -376,9 +376,13 @@ namespace SenX_KOTH_Plugin.Nexus
                 var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
                 if (persist != null)
                 {
-                    int before = persist.Data.Credits.Count;
-                    persist.Data.Credits.RemoveAll(c => c.RequestId == resp.RequestId);
-                    if (persist.Data.Credits.Count < before) persist.Save();
+                    SenX_KOTH_PluginMain.RunOnUiThread(() =>
+                    {
+                        int before = persist.Data.Credits.Count;
+                        foreach (var c in persist.Data.Credits.Where(x => x.RequestId == resp.RequestId).ToList())
+                            persist.Data.Credits.Remove(c);
+                        if (persist.Data.Credits.Count < before) persist.Save();
+                    });
                 }
             }
             catch (Exception ex) { KoTHLog.Error(Log, ex, "Failed to handle authority response."); }

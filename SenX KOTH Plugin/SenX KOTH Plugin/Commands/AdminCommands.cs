@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Text;
 using Torch.Commands.Permissions;
 using Torch.Commands;
 using VRage.Game.ModAPI;
-using SenX_KOTH_Plugin.Events;
-using SenX_KOTH_Plugin.Models;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin.Commands
@@ -41,64 +36,6 @@ namespace SenX_KOTH_Plugin.Commands
             sb.AppendLine("TRex's with 386 Points!");
             sb.AppendLine("Muppet Empire with 212 Points!");
             DiscordService.SendDiscordWebHook(WebhookEventType.RankResult, sb.ToString(), Color.Brown, 1);
-        }
-
-        [Command("CreateZone", "Creates a KoTH zone at your current position.")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void CreateZone(string name, float radius = 50f)
-        {
-            if (!CheckCooldown()) return;
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                Context.Respond("Usage: !KoTH CreateZone <name> [radius]");
-                return;
-            }
-
-            var player = Context.Player;
-            if (player?.Character == null)
-            {
-                Context.Respond("You must be in-game with a character to create a zone.");
-                return;
-            }
-
-            var persist = SenX_KOTH_PluginMain.ZonePersist;
-            if (persist == null) return;
-
-            var pos = player.Character.WorldMatrix.Translation;
-            var zone = ZoneManager.CreateZone(persist.Data, name, radius, pos, player.DisplayName ?? "Admin");
-
-            if (zone != null)
-            {
-                persist.Save();
-                Context.Respond("Zone '" + name + "' created at your position with radius " + zone.Radius + "m.");
-            }
-            else
-            {
-                Context.Respond("Failed to create zone '" + name + "'. It may already exist.");
-            }
-        }
-
-        [Command("DeleteZone", "Deletes a KoTH zone by name.")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void DeleteZone(string name)
-        {
-            if (!CheckCooldown()) return;
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                Context.Respond("Usage: !KoTH DeleteZone <name>");
-                return;
-            }
-
-            var persist = SenX_KOTH_PluginMain.ZonePersist;
-            if (persist == null) return;
-
-            if (ZoneManager.DeleteZone(persist.Data, name))
-            {
-                persist.Save();
-                Context.Respond("Zone '" + name + "' deleted.");
-            }
-            else
-                Context.Respond("Zone '" + name + "' not found.");
         }
 
         [Command("GivePoint", "Gives or removes faction bank points. Usage: !KoTH GivePoint <factionId_or_tag> <value>")]
