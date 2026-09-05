@@ -109,15 +109,10 @@
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="System.Windows.Forms" />
-    <ProjectReference Include="..\SenxDiscordBot\SenxDiscordBot.csproj">
-      <Name>SenxDiscordBot</Name>
-      <Project>{4e8a9b5c-d7f2-4e1a-8c3d-6b7e9a0f1d2c}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SenX KOTH Plugin\Commands\AdminCommands.cs" />
     <Compile Include="SenX KOTH Plugin\Commands\PlayerCommands.cs" />
-    <Compile Include="SenX KOTH Plugin\Discord\DiscordBotService.cs" />
     <Compile Include="SenX KOTH Plugin\DiscordAPI\DiscordWebhook.cs" />
     <Compile Include="SenX KOTH Plugin\DiscordAPI\WebHook_Classes.cs" />
     <Compile Include="SenX KOTH Plugin\DiscordAPI\WebHook_Exceptions.cs" />
@@ -126,14 +121,10 @@
     <Compile Include="SenX KOTH Plugin\Events\ZonePointEvent.cs" />
     <Compile Include="SenX KOTH Plugin\Events\ResetEvent.cs" />
     <Compile Include="SenX KOTH Plugin\Events\RaffleEvent.cs" />
-    <Compile Include="SenX KOTH Plugin\Events\LiveScoreboardEvent.cs" />
     <Compile Include="SenX KOTH Plugin\Models\KothZone.cs" />
     <Compile Include="SenX KOTH Plugin\Models\FactionBank.cs" />
-    <Compile Include="SenX KOTH Plugin\Models\PendingTransactions.cs" />
     <Compile Include="SenX KOTH Plugin\Models\PersistentData.cs" />
     <Compile Include="SenX KOTH Plugin\Messages\QuestUpdateMessage.cs" />
-    <Compile Include="SenX KOTH Plugin\Nexus\NexusGlobalAPI.cs" />
-    <Compile Include="SenX KOTH Plugin\Nexus\NexusManager.cs" />
     <Compile Include="SenX KOTH Plugin\Services\Supervisor.cs" />
     <Compile Include="SenX KOTH Plugin\Services\QuestManager.cs" />
     <Compile Include="SenX KOTH Plugin\UI\SenX_KOTH_PluginControl.xaml.cs">
@@ -166,6 +157,8 @@
     <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentHashSet.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\RewardService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ScoreManager.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\SharedFile.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\PointBuffer.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ZoneManager.cs" />
     <Compile Include="Settings\SenX_KOTH_PluginConfig.cs" />
     <EmbeddedResource Include="SenX KOTH Plugin\Properties\Resources.resx">
@@ -185,9 +178,6 @@
     </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)SenxDiscordBot\bin\x64\$(Configuration)\SenxDiscordBot.dll" "$(TargetDir)SenxDiscordBot.dll" /y</PostBuildEvent>
-  </PropertyGroup>
   <ItemGroup>
     <Content Include="manifest.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -1,6 +1,5 @@
 using System.Timers;
 using SenX_KOTH_Plugin.Models;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 
 namespace SenX_KOTH_Plugin.Events
@@ -11,7 +10,7 @@ namespace SenX_KOTH_Plugin.Events
         private Timer? _timer;
 
         public string Name => "RaffleEvent";
-        public bool ShouldRun => _config.RaffleEnabled && NexusManager.IsAuthorityLocal();
+        public bool ShouldRun => _config.RaffleEnabled;
         public bool IsRunning { get; private set; }
 
         public RaffleEvent(SenX_KOTH_PluginConfig config) => _config = config;

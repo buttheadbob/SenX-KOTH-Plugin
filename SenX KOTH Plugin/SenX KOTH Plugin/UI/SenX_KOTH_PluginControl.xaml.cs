@@ -8,7 +8,6 @@ using System.Windows.Data;
 using SenX_KOTH_Plugin.Events;
 using SenX_KOTH_Plugin.Services;
 using SenX_KOTH_Plugin.Utils;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Models;
 using System.Globalization;
 using System.Threading;
@@ -42,15 +41,6 @@ namespace SenX_KOTH_Plugin
 
             if (config != null && string.IsNullOrEmpty(config.SharedDataPath))
                 config.SharedDataPath = SenX_KOTH_PluginMain.LocalDataPath;
-
-            var pendingData = SenX_KOTH_PluginMain.PendingCreditsPersist?.Data;
-            if (pendingData != null)
-            {
-                PendingGrid.ItemsSource = pendingData.Credits;
-                pendingData.Credits.CollectionChanged += (_, _) =>
-                    PendingCount.Text = pendingData.Credits.Count + " pending";
-                PendingCount.Text = pendingData.Credits.Count + " pending";
-            }
         }
 
         public ObservableCollection<string> ZoneNames { get; } = [];
@@ -114,6 +104,7 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_DiscordDecay.IsChecked = true;
             ZoneEditor_DiscordPoints.IsChecked = true;
             ZoneEditor_DiscordEnter.IsChecked = true;
+            ZoneEditor_DiscordEviction.IsChecked = true;
             ZoneEditor_SchedMon.IsChecked = true;
             ZoneEditor_SchedTue.IsChecked = true;
             ZoneEditor_SchedWed.IsChecked = true;
@@ -175,6 +166,7 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_DiscordDecay.IsChecked = _editingZone.DiscordAnnounceDecay;
             ZoneEditor_DiscordPoints.IsChecked = _editingZone.DiscordAnnouncePoints;
             ZoneEditor_DiscordEnter.IsChecked = _editingZone.DiscordAnnounceEnter;
+            ZoneEditor_DiscordEviction.IsChecked = _editingZone.DiscordAnnounceEviction;
             ZoneEditor_SchedMon.IsChecked = _editingZone.ScheduleMonday;
             ZoneEditor_SchedTue.IsChecked = _editingZone.ScheduleTuesday;
             ZoneEditor_SchedWed.IsChecked = _editingZone.ScheduleWednesday;
@@ -377,6 +369,7 @@ namespace SenX_KOTH_Plugin
             _editingZone.DiscordAnnounceDecay = ZoneEditor_DiscordDecay.IsChecked == true;
             _editingZone.DiscordAnnouncePoints = ZoneEditor_DiscordPoints.IsChecked == true;
             _editingZone.DiscordAnnounceEnter = ZoneEditor_DiscordEnter.IsChecked == true;
+            _editingZone.DiscordAnnounceEviction = ZoneEditor_DiscordEviction.IsChecked == true;
         }
 
         private void SaveScheduleFields()
@@ -1021,14 +1014,6 @@ namespace SenX_KOTH_Plugin
                 config.Webhooks.Remove(entry);
                 WebhookList.Items.Refresh();
             }
-        }
-
-        private void ClearPending_Click(object sender, RoutedEventArgs e)
-        {
-            var persist = SenX_KOTH_PluginMain.PendingCreditsPersist;
-            if (persist == null) return;
-            persist.Data.Credits.Clear();
-            persist.Save();
         }
 
         private void BrowseSharedPath_Click(object sender, RoutedEventArgs e)

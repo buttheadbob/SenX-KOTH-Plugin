@@ -5,8 +5,6 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenX KOTH Plugin", "SenX KOTH Plugin\SenX KOTH Plugin.csproj", "{CEE4A2A6-FF55-4BC6-AF1E-EFD9AB0A0EC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenxDiscordBot", "SenxDiscordBot\SenxDiscordBot.csproj", "{4E8A9B5C-D7F2-4E1A-8C3D-6B7E9A0F1D2C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenX_KOTH_Plugin.Mod", "SenX_KOTH_Plugin.Mod\SenX_KOTH_Plugin.Mod.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Global
@@ -19,10 +17,6 @@ Global
 		{CEE4A2A6-FF55-4BC6-AF1E-EFD9AB0A0EC6}.Debug|x64.Build.0 = Debug|x64
 		{CEE4A2A6-FF55-4BC6-AF1E-EFD9AB0A0EC6}.Release|x64.ActiveCfg = Release|x64
 		{CEE4A2A6-FF55-4BC6-AF1E-EFD9AB0A0EC6}.Release|x64.Build.0 = Release|x64
-		{4E8A9B5C-D7F2-4E1A-8C3D-6B7E9A0F1D2C}.Debug|x64.ActiveCfg = Debug|x64
-		{4E8A9B5C-D7F2-4E1A-8C3D-6B7E9A0F1D2C}.Debug|x64.Build.0 = Debug|x64
-		{4E8A9B5C-D7F2-4E1A-8C3D-6B7E9A0F1D2C}.Release|x64.ActiveCfg = Release|x64
-		{4E8A9B5C-D7F2-4E1A-8C3D-6B7E9A0F1D2C}.Release|x64.Build.0 = Release|x64
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.ActiveCfg = Debug|x64
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.Build.0 = Debug|x64
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x64.ActiveCfg = Release|x64

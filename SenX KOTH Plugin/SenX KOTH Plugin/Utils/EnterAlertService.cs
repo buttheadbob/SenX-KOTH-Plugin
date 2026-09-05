@@ -15,13 +15,6 @@ namespace SenX_KOTH_Plugin.Utils
 
         public bool ShouldAlert(IMyPlayer player, string zoneName)
         {
-            SenX_KOTH_PluginConfig? config = SenX_KOTH_PluginMain.Instance?.Config;
-            if (config == null)
-                return false;
-
-            if (!config.NexusSendDiscord)
-                return false;
-
             ulong steamId = player.SteamUserId;
             if (steamId == 0)
                 return false;

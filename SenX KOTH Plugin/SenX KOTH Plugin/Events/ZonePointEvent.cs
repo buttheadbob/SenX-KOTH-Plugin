@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Timers;
 using NLog;
@@ -10,7 +9,6 @@ using Sandbox.Game.Entities.Character;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using SenX_KOTH_Plugin.Models;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
@@ -203,16 +201,13 @@ namespace SenX_KOTH_Plugin.Events
                         var fc = factionCounts[faction.FactionId];
                         factionCounts[faction.FactionId] = (fc.suits + 1, fc.grids);
 
-                        var player = FindPlayer(identityId);
-                        if (player != null && EnterAlerts.ShouldAlert(player, _zone.Name))
-                        {
-                            var msg = EnterAlerts.BuildMessage(player, faction, _zone.Name, cacheEntry.Position, _zone.Radius);
-                            AnnouncementService.ZoneEnterAlert(_zone, msg);
-                        }
+                        if (_zone.PointsPerSuit > 0)
+                            TryEnterAlert(identityId, faction, cacheEntry.Position);
                     }
                     else if (ent is MyCubeGrid grid)
                     {
-                        if (!grid.GetFatBlocks<MyCockpit>().Any(c => c.IsOccupied)) continue;
+                        var cockpits = grid.GetFatBlocks<MyCockpit>();
+                        if (!cockpits.Any(c => c.IsOccupied)) continue;
                         if (grid.BigOwners == null || grid.BigOwners.Count == 0) continue;
                         var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(grid.BigOwners[0]);
                         if (faction == null) continue;
@@ -220,6 +215,20 @@ namespace SenX_KOTH_Plugin.Events
                             factionCounts[faction.FactionId] = (0, 0);
                         var fc = factionCounts[faction.FactionId];
                         factionCounts[faction.FactionId] = (fc.suits, fc.grids + 1);
+
+                        if (_zone.PointsPerGrid > 0)
+                        {
+                            foreach (var cockpit in cockpits)
+                            {
+                                if (!cockpit.IsOccupied) continue;
+                                var pilot = cockpit.Pilot;
+                                if (pilot == null || pilot.IsDead) continue;
+                                var pid = pilot.GetPlayerIdentityId();
+                                if (pid == 0) continue;
+                                var pilotFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(pid);
+                                TryEnterAlert(pid, pilotFaction, cacheEntry.Position);
+                            }
+                        }
                     }
                 }
 
@@ -533,46 +542,7 @@ namespace SenX_KOTH_Plugin.Events
 
                 KoTHLog.Info(Log,"Points: [" + faction.Tag + "] +" + points + "pts in " + _zone.Name);
 
-                if (NexusManager.IsAuthorityLocal())
-                {
-                    BankService.CreditPoints(faction.FactionId, faction.Name, faction.Tag, points);
-
-                    var eventPath = Path.Combine(SenX_KOTH_PluginMain.LocalDataPath, "EventData.json");
-                    EventData eventData;
-                    if (File.Exists(eventPath))
-                        eventData = Newtonsoft.Json.JsonConvert.DeserializeObject<EventData>(File.ReadAllText(eventPath)) ?? new EventData();
-                    else
-                        eventData = new EventData();
-                    eventData.WeekEvents.Add(new PointEarned { Points = points, FactionId = faction.FactionId, FactionName = faction.Name, FactionTag = faction.Tag, EarnedAt = DateTime.UtcNow, ZoneName = _zone.Name });
-                    var dir = Path.GetDirectoryName(eventPath);
-                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                    File.WriteAllText(eventPath, Newtonsoft.Json.JsonConvert.SerializeObject(eventData, Newtonsoft.Json.Formatting.Indented));
-
-                    var scorePath = Path.Combine(SenX_KOTH_PluginMain.DataPath, "ScoreData.json");
-                    ScoreFile scores;
-                    if (File.Exists(scorePath))
-                        scores = Newtonsoft.Json.JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(scorePath)) ?? new ScoreFile();
-                    else
-                        scores = new ScoreFile();
-                    var existing = scores.WeekScores.FirstOrDefault(s => s.Key == faction.Name);
-                    if (existing.Key != null)
-                    {
-                        var idx = scores.WeekScores.IndexOf(existing);
-                        scores.WeekScores[idx] = new KeyValuePair<string, ulong>(faction.Name, existing.Value + (ulong)points);
-                    }
-                    else
-                        scores.WeekScores.Add(new KeyValuePair<string, ulong>(faction.Name, (ulong)points));
-                    File.WriteAllText(scorePath, Newtonsoft.Json.JsonConvert.SerializeObject(scores, Newtonsoft.Json.Formatting.Indented));
-                }
-                else
-                {
-                    NexusManager.SaveAndSendPointCredit(new PointCreditEntry
-                    {
-                        RequestId = Guid.NewGuid(),
-                        FactionId = faction.FactionId, FactionName = faction.Name, FactionTag = faction.Tag,
-                        Points = points, ZoneName = _zone.Name, EarnedAt = DateTime.UtcNow
-                    });
-                }
+                PointBuffer.Record(faction.FactionId, faction.Name, faction.Tag, points, _zone.Name);
 
                 _audio.Play2DSound(0, SoundCueType.PointEarned);
                 AnnouncementService.ZonePointsEarned(_zone, faction.Tag, faction.Name, points);
@@ -733,6 +703,14 @@ namespace SenX_KOTH_Plugin.Events
             foreach (var p in players)
                 if (p.IdentityId == identityId) return p;
             return null;
+        }
+
+        private void TryEnterAlert(long identityId, IMyFaction? faction, Vector3D position)
+        {
+            var player = FindPlayer(identityId);
+            if (player == null || !EnterAlerts.ShouldAlert(player, _zone.Name)) return;
+            var msg = EnterAlerts.BuildMessage(player, faction, _zone.Name, position, _zone.Radius);
+            AnnouncementService.ZoneEnterAlert(_zone, msg);
         }
 
         private void DiscoverZone()

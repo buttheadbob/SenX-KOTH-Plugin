@@ -1,4 +1,3 @@
-using Newtonsoft.Json;
 using NLog;
 using System;
 using System.ComponentModel;
@@ -13,7 +12,6 @@ using Torch.API.Session;
 using Torch.Session;
 using SenX_KOTH_Plugin.Events;
 using SenX_KOTH_Plugin.Models;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Services;
 using SenX_KOTH_Plugin.Utils;
 // ReSharper disable InconsistentNaming
@@ -55,7 +53,6 @@ namespace SenX_KOTH_Plugin
 
         public SenX_KOTH_PluginConfig? Config { get; private set; }
         public static SenX_KOTH_PluginMain? Instance { get; private set; }
-        public static NexusGlobalAPI? NexusGlobalAPI { get; private set; }
 
         internal static Dispatcher? UiDispatcher;
 
@@ -69,7 +66,6 @@ namespace SenX_KOTH_Plugin
         }
 
         internal static JsonPersistent<SenX_KOTH_PluginConfig>? ConfigPersist { get; private set; }
-        internal static JsonPersistent<PendingTransactionsData>? PendingCreditsPersist { get; private set; }
         internal static JsonPersistent<ZoneListData>? ZonePersist { get; private set; }
 
         public override void Init(ITorchBase torch)
@@ -90,25 +86,13 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
     KoTHLog.Info(Log,"Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
     ZonePersist.WatchCollection(ZonePersist.Data.Zones);
 
-    if (NexusManager.IsAuthorityLocal())
-    {
-        Directory.CreateDirectory(DataPath);
+    Directory.CreateDirectory(DataPath);
 
-        Events.Add(new ResetEvent(config));
-        KoTHLog.Info(Log,"Registered event: ResetEvent");
+    Events.Add(new ResetEvent(config));
+    KoTHLog.Info(Log,"Registered event: ResetEvent");
 
-        Events.Add(new RaffleEvent(config));
-        KoTHLog.Info(Log,"Registered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
-
-        Events.Add(new LiveScoreboardEvent(config));
-        KoTHLog.Info(Log,"Registered event: LiveScoreboardEvent — DiscordBotEnabled=" + config.DiscordBotEnabled);
-    }
-    else if (config.IsDataModeNexus)
-    {
-        PendingCreditsPersist = JsonPersistent<PendingTransactionsData>.Load(Path.Combine(LocalDataPath, "PendingTransactions.json"));
-        KoTHLog.Info(Log,"PendingTransactions loaded — Credits: " + PendingCreditsPersist.Data.Credits.Count);
-        PendingCreditsPersist.WatchCollection(PendingCreditsPersist.Data.Credits);
-    }
+    Events.Add(new RaffleEvent(config));
+    KoTHLog.Info(Log,"Registered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
 
         TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
         if (sessionManager != null)
@@ -123,31 +107,20 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
             {
                 case TorchSessionState.Loaded:
                     KoTHLog.Info(Log,"Session Loaded! Registered events: " + Events.Count);
-                    NexusGlobalAPI = new NexusGlobalAPI(OnNexusEnabled);
-                    NexusManager.Initialize();
                     Supervisor.Init();
+                    PointBuffer.Start();
                     _questManager = new QuestManager(Events);
                     _questManager.Init();
-                    _ = Discord.DiscordBotService.StartAsync();
                     break;
 
                 case TorchSessionState.Unloading:
                     KoTHLog.Info(Log,"Session Unloading!");
-                    _ = Discord.DiscordBotService.StopAsync();
                     _questManager?.Shutdown();
                     _questManager = null;
                     Supervisor.ShutDown();
-                    NexusManager.Shutdown();
-                    NexusGlobalAPI?.Unload();
-                    NexusGlobalAPI = null;
+                    PointBuffer.Stop();
                     break;
             }
-        }
-
-        private void OnNexusEnabled()
-        {
-            KoTHLog.Info(Log,"Nexus 3 API connected. Server ID: " + NexusGlobalAPI?.CurrentServerID);
-            NexusManager.Initialize();
         }
 
         public override void Update()
@@ -203,23 +176,18 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
 
         internal static EventData? LoadEventData()
         {
-            var path = Path.Combine(LocalDataPath, "EventData.json");
-            if (!File.Exists(path)) return null;
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<EventData>(File.ReadAllText(path));
+            return SharedFile.Read<EventData>(Path.Combine(LocalDataPath, "EventData.json"));
         }
 
         internal static ScoreFile? LoadScoreFile()
         {
-            var path = Path.Combine(DataPath, "ScoreData.json");
-            if (!File.Exists(path)) return null;
-            return JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(path));
+            return SharedFile.Read<ScoreFile>(Path.Combine(DataPath, "ScoreData.json"));
         }
 
         public override void Dispose()
         {
-            _ = Discord.DiscordBotService.StopAsync();
             Supervisor.ShutDown();
-            PendingCreditsPersist?.Dispose();
+            PointBuffer.Stop();
             ConfigPersist?.Dispose();
             ZonePersist?.Dispose();
             base.Dispose();

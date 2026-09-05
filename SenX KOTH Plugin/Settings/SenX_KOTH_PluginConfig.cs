@@ -12,6 +12,7 @@ namespace SenX_KOTH_Plugin
         Decay,
         Points,
         EnterAlert,
+        Eviction,
         RankResult,
         RaffleWinner
     }
@@ -88,6 +89,7 @@ namespace SenX_KOTH_Plugin
         public bool DecayEvents { get; set => SetValue(ref field, value); } = true;
         public bool PointsEvents { get; set => SetValue(ref field, value); } = true;
         public bool EnterAlerts { get; set => SetValue(ref field, value); } = true;
+        public bool EvictionEvents { get; set => SetValue(ref field, value); } = true;
         public bool RankResults { get; set => SetValue(ref field, value); } = true;
         public bool RaffleWinners { get; set => SetValue(ref field, value); } = true;
         public bool AllZones { get; set => SetValue(ref field, value); } = true;
@@ -99,6 +101,7 @@ namespace SenX_KOTH_Plugin
             WebhookEventType.Decay => DecayEvents,
             WebhookEventType.Points => PointsEvents,
             WebhookEventType.EnterAlert => EnterAlerts,
+            WebhookEventType.Eviction => EvictionEvents,
             WebhookEventType.RankResult => RankResults,
             WebhookEventType.RaffleWinner => RaffleWinners,
             _ => false
@@ -136,27 +139,8 @@ namespace SenX_KOTH_Plugin
         public bool MonthlyRewardsEnabled { get; set => SetValue(ref field, value); } = true;
         public bool YearlyRewardsEnabled { get; set => SetValue(ref field, value); } = true;
 
-        public bool NexusSendDiscord { get; set => SetValue(ref field, value); }
-        public bool NexusReceiveDiscord { get; set => SetValue(ref field, value); }
-
-        public bool IsDataAuthority { get; set { SetValue(ref field, value); OnPropertyChanged(nameof(CanRunEvents)); OnPropertyChanged(nameof(IsNexusNonAuthority)); } }
-
-        public bool IsDataModeNexus { get; set { SetValue(ref field, value); OnPropertyChanged(nameof(IsDataModeFile)); OnPropertyChanged(nameof(CanRunEvents)); OnPropertyChanged(nameof(IsNexusNonAuthority)); } }
-        public bool IsDataModeFile => !IsDataModeNexus;
-        public bool CanRunEvents => !IsDataModeNexus || IsDataAuthority;
-        public bool IsNexusNonAuthority => IsDataModeNexus && !IsDataAuthority;
         public string SharedDataPath { get; set => SetValue(ref field, value); } = "";
 
-        public bool DiscordBotEnabled { get; set => SetValue(ref field, value); }
-        public string DiscordBotToken { get; set => SetValue(ref field, value); } = "";
-        public ulong RewardChannelId { get; set => SetValue(ref field, value); }
-        public ulong LiveScoreboardChannelId { get; set => SetValue(ref field, value); }
-        public bool SelfManagedChannelsEnabled { get; set => SetValue(ref field, value); }
-        public ulong KoTHCategoryId { get; set => SetValue(ref field, value); }
-        public ulong DiscordGuildId { get; set => SetValue(ref field, value); }
-        public ulong LiveScoreboardMessageId { get; set => SetValue(ref field, value); }
-        public int DiscordUpdateIntervalSeconds { get; set => SetValue(ref field, value); } = 30;
-        public string DiscordChannelPrefix { get; set => SetValue(ref field, value); } = "zone-";
         public bool DebugLoggingEnabled { get; set => SetValue(ref field, value); }
 
         public string EnterAlert_MessageTemplate { get; set => SetValue(ref field, value); }

@@ -5,11 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using Newtonsoft.Json;
 using NLog;
-using SenX_KOTH_Plugin.Discord;
 using SenX_KOTH_Plugin.Models;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Utils;
 using DrawingColor = System.Drawing.Color;
 
@@ -23,7 +20,7 @@ namespace SenX_KOTH_Plugin.Events
         private Timer? _timer;
 
         public string Name => "ResetEvent";
-        public bool ShouldRun => NexusManager.IsAuthorityLocal();
+        public bool ShouldRun => true;
         public bool IsRunning { get; private set; }
 
         public ResetEvent(SenX_KOTH_PluginConfig config) => _config = config;
@@ -53,7 +50,13 @@ namespace SenX_KOTH_Plugin.Events
 
         private void Tick(object? sender, ElapsedEventArgs e)
         {
-            try { ProcessWeekly(); ProcessMonthly(); ProcessYearly(); }
+            try
+            {
+                PointBuffer.Flush();
+                ProcessWeekly();
+                ProcessMonthly();
+                ProcessYearly();
+            }
             catch (Exception ex) { KoTHLog.Error(Log, ex, "Error in ResetEvent tick."); }
         }
 
@@ -77,34 +80,6 @@ namespace SenX_KOTH_Plugin.Events
                 || now.Year != _config.LastYearlyProcessYear;
         }
 
-        // --- File helpers ---
-
-        private EventData LoadEventData()
-        {
-            if (!File.Exists(EventPath)) return new EventData();
-            return JsonConvert.DeserializeObject<EventData>(File.ReadAllText(EventPath)) ?? new EventData();
-        }
-
-        private ScoreFile LoadScoreData()
-        {
-            if (!File.Exists(ScorePath)) return new ScoreFile();
-            return JsonConvert.DeserializeObject<ScoreFile>(File.ReadAllText(ScorePath)) ?? new ScoreFile();
-        }
-
-        private void SaveEventData(EventData data)
-        {
-            var dir = Path.GetDirectoryName(EventPath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            File.WriteAllText(EventPath, JsonConvert.SerializeObject(data, Formatting.Indented));
-        }
-
-        private void SaveScoreData(ScoreFile data)
-        {
-            var dir = Path.GetDirectoryName(ScorePath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            File.WriteAllText(ScorePath, JsonConvert.SerializeObject(data, Formatting.Indented));
-        }
-
         // --- Period processing ---
 
         private void ProcessWeekly()
@@ -112,32 +87,38 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessWeekly(now)) return;
 
-            var scores = LoadScoreData();
+            List<KeyValuePair<string, int>>? weekList = null;
 
-            if (_config.WeeklyRewardsEnabled)
+            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
-                var weekList = scores.WeekScores
-                    .OrderByDescending(x => x.Value)
-                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
-                    .ToList();
-
-                if (_config.Show_WeeklyResults)
+                var scores = data ?? new ScoreFile();
+                if (_config.WeeklyRewardsEnabled)
                 {
-                    AnnouncePeriodResults("Weekly", weekList,
-                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
-                    RewardService.ExecutePeriodRewards(_config.WeeklyRankRewards.ToList(),
-                        _config.WeeklyThresholdRewards.ToList(), weekList);
+                    weekList = scores.WeekScores
+                        .OrderByDescending(x => x.Value)
+                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .ToList();
                 }
+                MergeScores(scores.WeekScores, scores.MonthScores);
+                scores.WeekScores.Clear();
+                return scores;
+            }, out _);
+
+            if (_config.WeeklyRewardsEnabled && _config.Show_WeeklyResults && weekList != null)
+            {
+                AnnouncePeriodResults("Weekly", weekList,
+                    DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
+                RewardService.ExecutePeriodRewards(_config.WeeklyRankRewards.ToList(),
+                    _config.WeeklyThresholdRewards.ToList(), weekList);
             }
 
-            var events = LoadEventData();
-            MergePoints(events.WeekEvents, events.MonthEvents);
-            events.WeekEvents.Clear();
-            SaveEventData(events);
-
-            MergeScores(scores.WeekScores, scores.MonthScores);
-            scores.WeekScores.Clear();
-            SaveScoreData(scores);
+            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            {
+                var events = data ?? new EventData();
+                MergePoints(events.WeekEvents, events.MonthEvents);
+                events.WeekEvents.Clear();
+                return events;
+            }, out _);
 
             _config.LastWeeklyProcessWeek = GetIsoWeek(now);
             _config.LastWeeklyProcessYear = now.Year;
@@ -149,32 +130,38 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessMonthly(now)) return;
 
-            var scores = LoadScoreData();
+            List<KeyValuePair<string, int>>? monthList = null;
 
-            if (_config.MonthlyRewardsEnabled)
+            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
-                var monthList = scores.MonthScores
-                    .OrderByDescending(x => x.Value)
-                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
-                    .ToList();
-
-                if (_config.Show_MonthlyResults)
+                var scores = data ?? new ScoreFile();
+                if (_config.MonthlyRewardsEnabled)
                 {
-                    AnnouncePeriodResults("Monthly", monthList,
-                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Silver);
-                    RewardService.ExecutePeriodRewards(_config.MonthlyRankRewards.ToList(),
-                        _config.MonthlyThresholdRewards.ToList(), monthList);
+                    monthList = scores.MonthScores
+                        .OrderByDescending(x => x.Value)
+                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .ToList();
                 }
+                MergeScores(scores.MonthScores, scores.YearScores);
+                scores.MonthScores.Clear();
+                return scores;
+            }, out _);
+
+            if (_config.MonthlyRewardsEnabled && _config.Show_MonthlyResults && monthList != null)
+            {
+                AnnouncePeriodResults("Monthly", monthList,
+                    DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Silver);
+                RewardService.ExecutePeriodRewards(_config.MonthlyRankRewards.ToList(),
+                    _config.MonthlyThresholdRewards.ToList(), monthList);
             }
 
-            var events = LoadEventData();
-            MergePoints(events.MonthEvents, events.YearEvents);
-            events.MonthEvents.Clear();
-            SaveEventData(events);
-
-            MergeScores(scores.MonthScores, scores.YearScores);
-            scores.MonthScores.Clear();
-            SaveScoreData(scores);
+            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            {
+                var events = data ?? new EventData();
+                MergePoints(events.MonthEvents, events.YearEvents);
+                events.MonthEvents.Clear();
+                return events;
+            }, out _);
 
             _config.LastMonthlyProcessMonth = now.Month;
             _config.LastMonthlyProcessYear = now.Year;
@@ -186,30 +173,36 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessYearly(now)) return;
 
-            var scores = LoadScoreData();
+            List<KeyValuePair<string, int>>? yearList = null;
 
-            if (_config.YearlyRewardsEnabled)
+            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
-                var yearList = scores.YearScores
-                    .OrderByDescending(x => x.Value)
-                    .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
-                    .ToList();
-
-                if (_config.Show_YearlyResults)
+                var scores = data ?? new ScoreFile();
+                if (_config.YearlyRewardsEnabled)
                 {
-                    AnnouncePeriodResults("Yearly", yearList,
-                        DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
-                    RewardService.ExecutePeriodRewards(_config.YearlyRankRewards.ToList(),
-                        _config.YearlyThresholdRewards.ToList(), yearList);
+                    yearList = scores.YearScores
+                        .OrderByDescending(x => x.Value)
+                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .ToList();
                 }
+                scores.YearScores.Clear();
+                return scores;
+            }, out _);
+
+            if (_config.YearlyRewardsEnabled && _config.Show_YearlyResults && yearList != null)
+            {
+                AnnouncePeriodResults("Yearly", yearList,
+                    DrawingColor.Gold, DrawingColor.Silver, DrawingColor.SandyBrown, DrawingColor.Green);
+                RewardService.ExecutePeriodRewards(_config.YearlyRankRewards.ToList(),
+                    _config.YearlyThresholdRewards.ToList(), yearList);
             }
 
-            var events = LoadEventData();
-            events.YearEvents.Clear();
-            SaveEventData(events);
-
-            scores.YearScores.Clear();
-            SaveScoreData(scores);
+            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            {
+                var events = data ?? new EventData();
+                events.YearEvents.Clear();
+                return events;
+            }, out _);
 
             _config.LastYearlyProcessYear = now.Year;
             SenX_KOTH_PluginMain.ConfigPersist?.Save();
@@ -248,12 +241,12 @@ namespace SenX_KOTH_Plugin.Events
             DrawingColor firstColor, DrawingColor secondColor, DrawingColor thirdColor, DrawingColor restColor)
         {
             var results = new StringBuilder();
-            var botResults = new StringBuilder();
+            var periodResults = new StringBuilder();
             var sentRest = false;
             for (int i = 0; i < sortedScores.Count; i++)
             {
                 string medal = i == 0 ? "\U0001f947 " : i == 1 ? "\U0001f948 " : i == 2 ? "\U0001f949 " : "    ";
-                botResults.AppendLine(medal + sortedScores[i].Key + " \u2014 " + sortedScores[i].Value + " pts");
+                periodResults.AppendLine(medal + sortedScores[i].Key + " \u2014 " + sortedScores[i].Value + " pts");
 
                 switch (i)
                 {
@@ -265,7 +258,7 @@ namespace SenX_KOTH_Plugin.Events
             }
             if (sortedScores.Count > 3 && results.Length > 0) AnnouncementService.RankResult(results.ToString(), restColor);
 
-            AnnouncementService.PeriodResults(periodName, botResults.ToString());
+            AnnouncementService.PeriodResults(periodName, periodResults.ToString());
         }
     }
 }

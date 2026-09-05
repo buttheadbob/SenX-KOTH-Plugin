@@ -8,7 +8,6 @@ using Torch.Commands.Permissions;
 using Torch.Mod;
 using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
-using SenX_KOTH_Plugin.Nexus;
 using SenX_KOTH_Plugin.Models;
 using SenX_KOTH_Plugin.Utils;
 
@@ -180,7 +179,7 @@ namespace SenX_KOTH_Plugin.Commands
 
         [Command("Bank", "Show faction bank balance and raffle tickets.")]
         [Permission(MyPromoteLevel.None)]
-        public async void Bank()
+        public void Bank()
         {
             if (!CheckCooldown()) return;
             if (Context.Player == null) return;
@@ -188,45 +187,25 @@ namespace SenX_KOTH_Plugin.Commands
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             int ticketCost = config?.TicketCost ?? 10;
 
-            if (NexusManager.IsAuthorityLocal())
-            {
-                var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(Context.Player.IdentityId);
-                if (faction == null) { Context.Respond("You are not in a faction."); return; }
-                if (!faction.IsFounder(Context.Player.IdentityId) && !faction.IsLeader(Context.Player.IdentityId))
-                { Context.Respond("Only faction founders and leaders can view bank details."); return; }
+            var faction = Sandbox.ModAPI.MyAPIGateway.Session.Factions.TryGetPlayerFaction(Context.Player.IdentityId);
+            if (faction == null) { Context.Respond("You are not in a faction."); return; }
+            if (!faction.IsFounder(Context.Player.IdentityId) && !faction.IsLeader(Context.Player.IdentityId))
+            { Context.Respond("Only faction founders and leaders can view bank details."); return; }
 
-                var (balance, tickets) = BankService.GetBalance(faction.FactionId);
+            var (balance, tickets) = BankService.GetBalance(faction.FactionId);
 
-                var sb = new StringBuilder();
-                sb.AppendLine("=== " + faction.Tag + " Bank ===");
-                sb.AppendLine("Balance: " + balance + " pts");
-                sb.AppendLine("Raffle Tickets Purchased: " + tickets);
-                sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
-                sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? balance / ticketCost : 0));
-                SendResult(sb.ToString(), faction.Tag + " Bank");
-            }
-            else
-            {
-                var req = new BankBalanceRequest { RequestId = Guid.NewGuid(), PlayerIdentityId = Context.Player.IdentityId };
-                var response = await NexusManager.SendToAuthority(req);
-                if (response.Approved)
-                {
-                    var sb = new StringBuilder();
-                    sb.AppendLine("=== " + response.FactionTag + " Bank ===");
-                    sb.AppendLine("Balance: " + response.Balance + " pts");
-                    sb.AppendLine("Raffle Tickets Purchased: " + response.TicketCount);
-                    sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
-                    sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? response.Balance / ticketCost : 0));
-                    SendResult(sb.ToString(), response.FactionTag + " Bank");
-                }
-                else
-                    Context.Respond(response.Message);
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine("=== " + faction.Tag + " Bank ===");
+            sb.AppendLine("Balance: " + balance + " pts");
+            sb.AppendLine("Raffle Tickets Purchased: " + tickets);
+            sb.AppendLine("Ticket Cost: " + ticketCost + " pts each");
+            sb.AppendLine("Max Tickets You Can Buy: " + (ticketCost > 0 ? balance / ticketCost : 0));
+            SendResult(sb.ToString(), faction.Tag + " Bank");
         }
 
         [Command("BuyTicket", "Buy raffle tickets. Usage: !KoTH BuyTicket [count]. Founder/leader only.")]
         [Permission(MyPromoteLevel.None)]
-        public async void BuyTicket(int count = 1)
+        public void BuyTicket(int count = 1)
         {
             if (!CheckCooldown()) return;
             if (Context.Player == null)
@@ -239,19 +218,10 @@ namespace SenX_KOTH_Plugin.Commands
             var config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config == null) return;
 
-            if (NexusManager.IsAuthorityLocal())
-            {
-                if (BankService.BuyTickets(config, Context.Player.IdentityId, count, out string result))
-                    Context.Respond(result);
-                else
-                    Context.Respond(result);
-            }
+            if (BankService.BuyTickets(config, Context.Player.IdentityId, count, out string result))
+                Context.Respond(result);
             else
-            {
-                var req = new TicketPurchaseRequest { RequestId = Guid.NewGuid(), PlayerIdentityId = Context.Player.IdentityId, Count = count };
-                var response = await NexusManager.SendToAuthority(req);
-                Context.Respond(response.Message);
-            }
+                Context.Respond(result);
         }
 
         private void SendResult(string message, string prefix)

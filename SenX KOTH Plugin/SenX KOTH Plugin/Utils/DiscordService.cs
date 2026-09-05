@@ -65,6 +65,7 @@ internal static class DiscordService
         WebhookEventType.Decay => true,
         WebhookEventType.Points => true,
         WebhookEventType.EnterAlert => true,
+        WebhookEventType.Eviction => true,
         _ => false
     };
 

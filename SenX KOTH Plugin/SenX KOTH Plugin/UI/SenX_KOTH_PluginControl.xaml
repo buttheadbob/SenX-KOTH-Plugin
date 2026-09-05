@@ -12,13 +12,6 @@
         <converters:EnumBooleanConverter x:Key="enumBooleanConverter" />
         <converters:InvertBoolConverter x:Key="InvertBool" />
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <Style x:Key="NexusWarning" TargetType="TextBlock">
-            <Setter Property="Background" Value="#FFF0F0"/>
-            <Setter Property="Foreground" Value="#CC0000"/>
-            <Setter Property="Padding" Value="5,2"/>
-            <Setter Property="Margin" Value="0,0,0,5"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -244,6 +237,7 @@
                                                 <CheckBox x:Name="ZoneEditor_DiscordDecay" Content="Decay" Margin="0,2"/>
                                                 <CheckBox x:Name="ZoneEditor_DiscordPoints" Content="Points Earned" Margin="0,2"/>
                                                 <CheckBox x:Name="ZoneEditor_DiscordEnter" Content="Player Enter" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_DiscordEviction" Content="Eviction" Margin="0,2"/>
                                             </StackPanel>
                                         </GroupBox>
 
@@ -263,14 +257,9 @@
                 <StackPanel Margin="10">
                         <Button Content="Save Config" Margin="5" Click="SaveButton_OnClick" HorizontalAlignment="Left"/>
 
-                        <GroupBox Header="Data Mode" Margin="0,10">
+                        <GroupBox Header="Shared Data Path" Margin="0,10">
                             <StackPanel>
-                                <RadioButton GroupName="DataMode" IsChecked="{Binding IsDataModeNexus}" Content="Nexus Authority" Margin="5,0"/>
-                                <CheckBox IsChecked="{Binding IsDataAuthority}" Content="This server is the authority" Margin="20,3,5,3"
-                                          Visibility="{Binding IsDataModeNexus, Converter={StaticResource BoolToVis}}"/>
-                                <RadioButton GroupName="DataMode" Content="Shared File Path" Margin="5,0"
-                                             IsChecked="{Binding IsDataModeFile, Mode=OneWay}"/>
-                                <TextBlock Text="Shared Data Path" Margin="5,10,5,0"/>
+                                <TextBlock Text="Optional. Set a network folder so multiple servers share KoTH data (banks, raffle, scores)." Margin="5,0,5,5" TextWrapping="Wrap" Foreground="Gray"/>
                                 <Grid Margin="5,0,5,5">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -288,15 +277,8 @@
             <TabItem Header="Rewards">
                 <StackPanel Margin="10">
 
-                        <GroupBox Margin="0,5" Padding="3"
-                                  Visibility="{Binding IsDataModeFile, Converter={StaticResource BoolToVis}}"
-                                  BorderBrush="#E0D8A0" Background="#FFFBE0">
-                            <TextBlock Text="Shared file mode: all servers share data. Configure rewards, raffle, and Discord bot on one server only."
-                                       Foreground="#8B7500" TextWrapping="Wrap" Padding="3"/>
-                        </GroupBox>
-
                         <TabControl Margin="0,10">
-                            <TabItem Header="Reward Settings" IsEnabled="{Binding CanRunEvents}">
+                            <TabItem Header="Reward Settings">
                                 <StackPanel Margin="10">
                                 <TextBlock Text="Rewards are processed automatically at the end of each period. Disable a reward period to skip issuing rewards (points will still cascade to the next period)." Margin="5,0" TextWrapping="Wrap" FontStyle="Italic"/>
                                 <CheckBox IsChecked="{Binding WeeklyRewardsEnabled}" Content="Weekly Rewards" Margin="5"/>
@@ -381,7 +363,7 @@
                             </StackPanel>
                             </TabItem>
 
-                            <TabItem Header="Rank Rewards" IsEnabled="{Binding CanRunEvents}">
+                            <TabItem Header="Rank Rewards">
                                 <StackPanel Margin="10">
                                 <TabControl x:Name="RankPeriodTabs" Margin="5">
                                     <TabItem Header="Weekly">
@@ -502,7 +484,7 @@
                             </StackPanel>
                             </TabItem>
 
-                            <TabItem Header="Threshold Rewards" IsEnabled="{Binding CanRunEvents}">
+                            <TabItem Header="Threshold Rewards">
                                 <StackPanel Margin="10">
                             <TabControl Margin="5">
                                 <TabItem Header="Weekly"><StackPanel Margin="10">
@@ -617,7 +599,7 @@
                             </StackPanel>
                             </TabItem>
 
-                            <TabItem Header="Raffle" IsEnabled="{Binding CanRunEvents}">
+                            <TabItem Header="Raffle">
                                 <StackPanel Margin="10">
                                 <CheckBox IsChecked="{Binding RaffleEnabled}" Content="Raffle Enabled" Margin="5"/>
                                 <StackPanel Orientation="Horizontal" Margin="5">
@@ -743,26 +725,12 @@
                             </StackPanel>
                             </TabItem>
                         </TabControl>
-
-                        <GroupBox Margin="0,5" Padding="3"
-                                  Visibility="{Binding IsNexusNonAuthority, Converter={StaticResource BoolToVis}}"
-                                  BorderBrush="#E0C0C0" Background="#FFF8F8">
-                            <TextBlock Text="This server is not the Nexus authority. Reward processing and raffle draws will not run on this server."
-                                       Foreground="#CC0000" TextWrapping="Wrap" Padding="3"/>
-                        </GroupBox>
                     </StackPanel>
             </TabItem>
 
             <!-- ============ DISCORD TAB ============ -->
             <TabItem Header="Discord">
                 <StackPanel Margin="10">
-
-                        <GroupBox Margin="0,5" Padding="3"
-                                  Visibility="{Binding IsDataModeFile, Converter={StaticResource BoolToVis}}"
-                                  BorderBrush="#E0D8A0" Background="#FFFBE0">
-                            <TextBlock Text="Shared file mode: all servers share data. Configure Discord bot, rewards, and raffle on one server only."
-                                       Foreground="#8B7500" TextWrapping="Wrap" Padding="3"/>
-                        </GroupBox>
 
                         <TabControl Margin="0,10">
                             <TabItem Header="Discord Webhook">
@@ -813,6 +781,7 @@
                                                                 <CheckBox IsChecked="{Binding DecayEvents}" Content="Decay" Margin="0,0,8,0"/>
                                                                 <CheckBox IsChecked="{Binding PointsEvents}" Content="Points" Margin="0,0,8,0"/>
                                                                 <CheckBox IsChecked="{Binding EnterAlerts}" Content="Enter" Margin="0,0,8,0"/>
+                                                                <CheckBox IsChecked="{Binding EvictionEvents}" Content="Eviction" Margin="0,0,8,0"/>
                                                                 <CheckBox IsChecked="{Binding RankResults}" Content="Rank" Margin="0,0,8,0"/>
                                                                 <CheckBox IsChecked="{Binding RaffleWinners}" Content="Raffle" Margin="0,0,8,0"/>
                                                             </WrapPanel>
@@ -832,33 +801,7 @@
                             </StackPanel>
                             </TabItem>
 
-                            <TabItem Header="Discord Bot" IsEnabled="{Binding CanRunEvents}">
-                                <StackPanel Margin="10">
-                                <CheckBox IsChecked="{Binding DiscordBotEnabled}" Content="Discord Bot Enabled" Margin="5"/>
-                                <TextBlock Text="Bot Token" Margin="5,0,0,0"/>
-                                <TextBox Margin="5" Text="{Binding DiscordBotToken}"/>
-                                <TextBlock Text="Reward Announcement Channel ID" Margin="5,0,0,0"/>
-                                <TextBox Margin="5" Text="{Binding RewardChannelId}"/>
-                                <TextBlock Text="Live Scoreboard Channel ID" Margin="5,0,0,0"/>
-                                <TextBox Margin="5" Text="{Binding LiveScoreboardChannelId}"/>
-
-                                <CheckBox IsChecked="{Binding SelfManagedChannelsEnabled}" Content="Self-Managed Channels (bot creates channels under a category)" Margin="5,10,5,5"/>
-                                <TextBlock Text="KoTH Category ID" Margin="5,5,0,0"/>
-                                <TextBox Margin="5" Text="{Binding KoTHCategoryId}"/>
-                                <TextBlock Text="Guild (Server) ID" Margin="5,0,0,0"/>
-                                <TextBox Margin="5" Text="{Binding DiscordGuildId}"/>
-                                <StackPanel Orientation="Horizontal" Margin="5,5,5,0">
-                                    <TextBlock Text="Update Interval (sec):" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding DiscordUpdateIntervalSeconds}" Width="50" Margin="5,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="5,0">
-                                    <TextBlock Text="Channel Name Prefix:" VerticalAlignment="Center"/>
-                                    <TextBox Text="{Binding DiscordChannelPrefix}" Width="100" Margin="5,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                            </TabItem>
-
-                            <TabItem Header="Announcements" IsEnabled="{Binding CanRunEvents}">
+                            <TabItem Header="Announcements">
                                 <StackPanel Margin="10">
                                 <CheckBox IsChecked="{Binding Show_WeeklyResults}" Content="Show Weekly Results" Margin="5"/>
                                 <CheckBox IsChecked="{Binding Show_MonthlyResults}" Content="Show Monthly Results" Margin="5"/>
@@ -875,40 +818,6 @@
                             </StackPanel>
                             </TabItem>
                         </TabControl>
-
-                        <GroupBox Margin="0,10" Padding="3"
-                                  Visibility="{Binding IsNexusNonAuthority, Converter={StaticResource BoolToVis}}"
-                                  BorderBrush="#E0C0C0" Background="#FFF8F8">
-                            <TextBlock Text="This server is not the Nexus authority. Discord bot, live scoreboard, reward announcements, and zone channels will not run on this server."
-                                       Foreground="#CC0000" TextWrapping="Wrap" Padding="3"/>
-                        </GroupBox>
-                    </StackPanel>
-            </TabItem>
-
-            <!-- ============ PENDING TAB ============ -->
-            <TabItem Header="Pending" Visibility="{Binding IsDataModeNexus, Converter={StaticResource BoolToVis}}">
-                <StackPanel Margin="10">
-                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">
-                            Pending Point Credits
-                        </TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10" Foreground="Gray">
-                            Points earned while the authority server was offline.
-                            Cleared automatically when the authority acknowledges them.
-                        </TextBlock>
-                        <DataGrid x:Name="PendingGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                                  MinHeight="100">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Faction" Binding="{Binding FactionName}" Width="*"/>
-                                <DataGridTextColumn Header="Tag" Binding="{Binding FactionTag}" Width="80"/>
-                                <DataGridTextColumn Header="Points" Binding="{Binding Points}" Width="80"/>
-                                <DataGridTextColumn Header="Zone" Binding="{Binding ZoneName}" Width="*"/>
-                                <DataGridTextColumn Header="Earned" Binding="{Binding EarnedAt}" Width="150"/>
-                                <DataGridTextColumn Header="ID" Binding="{Binding RequestId}" Width="250"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <TextBlock x:Name="PendingCount" Margin="0,5" Foreground="Gray"/>
-                        <Button Content="Clear All Pending" Click="ClearPending_Click"
-                                HorizontalAlignment="Left" Margin="0,5" Padding="8,3"/>
                     </StackPanel>
             </TabItem>
 
@@ -951,9 +860,7 @@
                         <Expander Header="Data Modes" Margin="0,5">
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
-                                    <Run FontWeight="Bold">Standalone</Run><Run> — Default. Each server is independent.</Run><LineBreak/>
-                                    <Run FontWeight="Bold">Nexus Authority</Run><Run> — One server is the authority and holds all bank, raffle, and score data. Non-authority servers relay operations via Nexus. Check the authority checkbox on one server only.</Run><LineBreak/>
-                                    <Run FontWeight="Bold">Shared File Path</Run><Run> — Set a network folder. All servers read/write the same files with a file lock. Configure rewards, raffle, and Discord bot on one server only.</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Shared File Path</Run><Run> — Set a network folder so multiple servers read/write the same KoTH data (banks, raffle, scores) with a file lock. Leave blank to keep all data local to this server.</Run><LineBreak/><LineBreak/>
                                     <Run>See the Settings tab to configure.</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
@@ -1054,14 +961,8 @@
                                     <Run FontWeight="Bold">Discord Webhooks:</Run><LineBreak/>
                                     <Run>  - Local only — each server manages its own webhooks independently</Run><LineBreak/>
                                     <Run>  - Add one or more webhook URLs; each can filter by event type and zone</Run><LineBreak/>
-                                    <Run>  - Event types: Capture, Decay, Points, Enter Alert, Rank Results, Raffle</Run><LineBreak/>
+                                    <Run>  - Event types: Capture, Decay, Points, Enter Alert, Eviction, Rank Results, Raffle</Run><LineBreak/>
                                     <Run>  - Zone filter: check "All Zones" for all zones, or list specific zones (comma-separated)</Run><LineBreak/>
-                                    <Run>  - Webhooks are NOT relayed via Nexus — each server sends its own</Run><LineBreak/><LineBreak/>
-                                    <Run FontWeight="Bold">Nexus Discord Relay:</Run><LineBreak/>
-                                    <Run>  - Nexus Send: broadcasts zone/reward events to other servers in the cluster</Run><LineBreak/>
-                                    <Run>  - Nexus Receive: posts received broadcasts using the local Discord bot</Run><LineBreak/>
-                                    <Run>  - Requires a Discord bot on every server that receives broadcasts</Run><LineBreak/>
-                                    <Run>  - Does NOT forward webhooks — bots only</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>
@@ -1081,12 +982,10 @@
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap" FontFamily="Consolas">
                                     <Run FontStyle="Italic">Location: Torch Instance\Senx_Koth\</Run><LineBreak/><LineBreak/>
-                                    <Run FontWeight="Bold">All servers:</Run><LineBreak/>
+                                    <Run FontWeight="Bold">Local server data:</Run><LineBreak/>
                                     <Run>  Config.json, Zones.json, EventData.json</Run><LineBreak/><LineBreak/>
-                                    <Run FontWeight="Bold">Authority / shared path:</Run><LineBreak/>
-                                    <Run>  FactionBanks.json, RaffleTickets.json, ScoreData.json</Run><LineBreak/><LineBreak/>
-                                    <Run FontWeight="Bold">Non-authority (Nexus):</Run><LineBreak/>
-                                    <Run>  PendingTransactions.json</Run><LineBreak/>
+                                    <Run FontWeight="Bold">Shared path / bank data:</Run><LineBreak/>
+                                    <Run>  FactionBanks.json, RaffleTickets.json, ScoreData.json</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>
