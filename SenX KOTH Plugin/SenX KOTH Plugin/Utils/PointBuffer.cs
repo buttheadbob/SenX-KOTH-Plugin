@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
-using Newtonsoft.Json;
 using NLog;
 using SenX_KOTH_Plugin.Models;
 
@@ -27,8 +27,10 @@ internal static class PointBuffer
 
     public static void Start()
     {
+        _timer?.Stop();
+        _timer?.Dispose();
         _timer = new Timer(60000);
-        _timer.Elapsed += (_, _) => Flush();
+        _timer.Elapsed += async (_, _) => await FlushAsync();
         _timer.Start();
     }
 
@@ -37,7 +39,7 @@ internal static class PointBuffer
         _timer?.Stop();
         _timer?.Dispose();
         _timer = null;
-        Flush();
+        _ = FlushAsync();
     }
 
     public static void Record(long factionId, string name, string tag, int points, string zoneName)
@@ -64,7 +66,7 @@ internal static class PointBuffer
         }
     }
 
-    public static void Flush()
+    public static async Task FlushAsync()
     {
         Dictionary<long, (string Name, string Tag, int Points)> bank;
         Dictionary<long, ulong> scores;
@@ -81,9 +83,9 @@ internal static class PointBuffer
 
         try
         {
-            bool bankOk = FlushBank(bank);
-            bool scoreOk = FlushScores(scores);
-            bool eventOk = FlushEvents(events);
+            bool bankOk = await FlushBankAsync(bank).ConfigureAwait(false);
+            bool scoreOk = await FlushScoresAsync(scores).ConfigureAwait(false);
+            bool eventOk = await FlushEventsAsync(events).ConfigureAwait(false);
 
             lock (Sync)
             {
@@ -107,43 +109,31 @@ internal static class PointBuffer
         }
     }
 
-    private static bool FlushBank(Dictionary<long, (string Name, string Tag, int Points)> bank)
+    private static async Task<bool> FlushBankAsync(Dictionary<long, (string Name, string Tag, int Points)> bank)
     {
-        try
+        var (ok, _) = await SharedFile.ReadModifyWriteAsync<BanksData>(BankService.BankPath, d =>
         {
-            var path = BankService.BankPath;
-            BanksData d;
-            if (File.Exists(path))
-                d = JsonConvert.DeserializeObject<BanksData>(File.ReadAllText(path)) ?? new BanksData();
-            else
-                d = new BanksData();
-
+            var data = d ?? new BanksData();
             foreach (var kv in bank)
             {
-                var entry = d.Banks.FirstOrDefault(b => b.FactionId == kv.Key);
+                var entry = data.Banks.FirstOrDefault(b => b.FactionId == kv.Key);
                 if (entry == null)
                 {
                     entry = new FactionBankEntry { FactionId = kv.Key, FactionName = kv.Value.Name, FactionTag = kv.Value.Tag };
-                    d.Banks.Add(entry);
+                    data.Banks.Add(entry);
                 }
                 entry.FactionName = kv.Value.Name;
                 entry.FactionTag = kv.Value.Tag;
                 entry.Points += kv.Value.Points;
             }
-
-            File.WriteAllText(path, JsonConvert.SerializeObject(d, Formatting.Indented));
-            return true;
-        }
-        catch (Exception ex)
-        {
-            KoTHLog.Error(Log, ex, "Failed to write bank: " + BankService.BankPath);
-            return false;
-        }
+            return data;
+        }).ConfigureAwait(false);
+        return ok;
     }
 
-    private static bool FlushScores(Dictionary<long, ulong> scores)
+    private static async Task<bool> FlushScoresAsync(Dictionary<long, ulong> scores)
     {
-        return SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
+        var (ok, _) = await SharedFile.ReadModifyWriteAsync<ScoreFile>(ScorePath, data =>
         {
             var d = data ?? new ScoreFile();
             foreach (var kv in scores)
@@ -155,16 +145,18 @@ internal static class PointBuffer
                     d.WeekScores.Add(new KeyValuePair<long, ulong>(kv.Key, kv.Value));
             }
             return d;
-        }, out _);
+        }).ConfigureAwait(false);
+        return ok;
     }
 
-    private static bool FlushEvents(List<PointEarned> events)
+    private static async Task<bool> FlushEventsAsync(List<PointEarned> events)
     {
-        return SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+        var (ok, _) = await SharedFile.ReadModifyWriteAsync<EventData>(EventPath, data =>
         {
             var d = data ?? new EventData();
             d.WeekEvents.AddRange(events);
             return d;
-        }, out _);
+        }).ConfigureAwait(false);
+        return ok;
     }
 }

@@ -51,6 +51,27 @@ namespace SenX_KOTH_Plugin
         public string ZoneName { get; set; } = "";
         public bool TriggerOnEveryCap { get; set; }
         public List<LiveCommandReward> CommandRewards { get; set; } = new();
+
+        public bool CargoEnabled { get; set; }
+        public bool CargoTriggerOnEveryCap { get; set; }
+        public string GridName { get; set; } = "";
+        public string ContainerName { get; set; } = "";
+        public List<CargoRewardItem> CargoItems { get; set; } = new();
+    }
+
+    public sealed class CargoRewardItem
+    {
+        public string TypeId { get; set; } = "";
+        public string SubtypeId { get; set; } = "";
+        public long Quantity { get; set; }
+
+        public override string ToString()
+        {
+            var type = TypeId.StartsWith("MyObjectBuilder_", StringComparison.OrdinalIgnoreCase)
+                ? TypeId.Substring("MyObjectBuilder_".Length)
+                : TypeId;
+            return type + "/" + SubtypeId + " x " + Quantity.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
+        }
     }
 
     public sealed class RankRewardEntry
@@ -74,7 +95,6 @@ namespace SenX_KOTH_Plugin
     public sealed class CommandRewardEntry
     {
         public string CommandText { get; set; } = "";
-        public bool PerFactionMember { get; set; }
         public bool OnlyOnlineMembers { get; set; }
     }
 

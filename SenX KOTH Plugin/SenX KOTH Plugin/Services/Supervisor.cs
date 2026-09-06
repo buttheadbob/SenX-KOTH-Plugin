@@ -16,6 +16,8 @@ internal static class Supervisor
     public static void Init()
     {
         KoTHLog.Info(Log,"Supervisor starting — 60s check interval");
+        _timer?.Stop();
+        _timer?.Dispose();
         _timer = new(60000);
         _timer.Elapsed += RunChecks;
         _timer.Start();

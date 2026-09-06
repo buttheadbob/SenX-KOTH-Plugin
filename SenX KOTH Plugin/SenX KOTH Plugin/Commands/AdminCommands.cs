@@ -1,5 +1,7 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Text;
+using NLog;
 using Torch.Commands.Permissions;
 using Torch.Commands;
 using VRage.Game.ModAPI;
@@ -10,6 +12,8 @@ namespace SenX_KOTH_Plugin.Commands
     [Category("KoTH")]
     public sealed class KothAdminCommands : CommandModule
     {
+        private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => AdminCommands");
+
         private bool CheckCooldown()
         {
             if (Context.Player == null) return true;
@@ -40,14 +44,20 @@ namespace SenX_KOTH_Plugin.Commands
 
         [Command("GivePoint", "Gives or removes faction bank points. Usage: !KoTH GivePoint <factionId_or_tag> <value>")]
         [Permission(MyPromoteLevel.Admin)]
-        public void GivePoint(string input, int value)
+        public async void GivePoint(string input, int value)
         {
             if (!CheckCooldown()) return;
 
-            if (BankService.AdminAdjustPoints(input, value, out string result))
-                Context.Respond(result);
-            else
-                Context.Respond(result);
+            try
+            {
+                string result = await BankService.AdminAdjustPointsAsync(input, value);
+                GameThread.Invoke(() => Context.Respond(result), "KoTH");
+            }
+            catch (Exception ex)
+            {
+                KoTHLog.Error(Log, ex, "GivePoint command failed");
+                GameThread.Invoke(() => Context.Respond("An error occurred, please try again."), "KoTH");
+            }
         }
     }
 }

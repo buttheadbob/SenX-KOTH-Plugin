@@ -2,6 +2,7 @@ using NLog;
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Torch;
@@ -69,37 +70,37 @@ namespace SenX_KOTH_Plugin
         internal static JsonPersistent<ZoneListData>? ZonePersist { get; private set; }
 
         public override void Init(ITorchBase torch)
-    {
-        base.Init(torch);
-        Instance = this;
+        {
+            base.Init(torch);
+            Instance = this;
 
-        SetupConfig();
+            SetupConfig();
 
-var config = Config;
-if (config == null)
-{
-    KoTHLog.Error(Log,"Config failed to load; skipping event initialization.");
-    return;
-}
+            var config = Config;
+            if (config == null)
+            {
+                KoTHLog.Error(Log, "Config failed to load; skipping event initialization.");
+                return;
+            }
 
-ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zones.json"));
-    KoTHLog.Info(Log,"Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
-    ZonePersist.WatchCollection(ZonePersist.Data.Zones);
+            ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zones.json"));
+            KoTHLog.Info(Log, "Zones loaded — Count: " + ZonePersist.Data.Zones.Count);
+            ZonePersist.WatchCollection(ZonePersist.Data.Zones);
 
-    Directory.CreateDirectory(DataPath);
+            Directory.CreateDirectory(DataPath);
 
-    Events.Add(new ResetEvent(config));
-    KoTHLog.Info(Log,"Registered event: ResetEvent");
+            Events.Add(new ResetEvent(config));
+            KoTHLog.Info(Log, "Registered event: ResetEvent");
 
-    Events.Add(new RaffleEvent(config));
-    KoTHLog.Info(Log,"Registered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
+            Events.Add(new RaffleEvent(config));
+            KoTHLog.Info(Log, "Registered event: RaffleEvent — Enabled=" + config.RaffleEnabled);
 
-        TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
-        if (sessionManager != null)
-            sessionManager.SessionStateChanged += SessionChanged;
-        else
-            KoTHLog.Warn(Log,"No session manager loaded!");
-    }
+            TorchSessionManager? sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
+            if (sessionManager != null)
+                sessionManager.SessionStateChanged += SessionChanged;
+            else
+                KoTHLog.Warn(Log, "No session manager loaded!");
+        }
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
@@ -125,7 +126,7 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
 
         public override void Update()
         {
-            foreach (IKothEvent e in Events)
+            foreach (IKothEvent e in Events.Snapshot)
             {
                 if (e.IsRunning)
                     e.Update();
@@ -174,14 +175,14 @@ ZonePersist = JsonPersistent<ZoneListData>.Load(Path.Combine(LocalDataPath, "Zon
 
         public void SaveConfig() => ConfigPersist?.Save();
 
-        internal static EventData? LoadEventData()
+        internal static Task<(bool ok, EventData? data)> LoadEventDataAsync()
         {
-            return SharedFile.Read<EventData>(Path.Combine(LocalDataPath, "EventData.json"));
+            return SharedFile.ReadAsync<EventData>(Path.Combine(LocalDataPath, "EventData.json"), 0);
         }
 
-        internal static ScoreFile? LoadScoreFile()
+        internal static Task<(bool ok, ScoreFile? data)> LoadScoreFileAsync()
         {
-            return SharedFile.Read<ScoreFile>(Path.Combine(DataPath, "ScoreData.json"));
+            return SharedFile.ReadAsync<ScoreFile>(Path.Combine(DataPath, "ScoreData.json"), 0);
         }
 
         public override void Dispose()

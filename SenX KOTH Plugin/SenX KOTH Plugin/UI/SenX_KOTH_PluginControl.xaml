@@ -154,6 +154,8 @@
                                                     <TextBox x:Name="ZoneEditor_PtsGrid" Width="60"/>
                                                 </StackPanel>
                                                 <TextBlock Text="(capture, decay, and point awards)" FontStyle="Italic" FontSize="10" Margin="5,0,0,0"/>
+                                                <CheckBox x:Name="ZoneEditor_IgnoreNpcs" Content="Ignore NPC Characters &amp; Grids (no Steam ID)" Margin="0,2"/>
+                                                <CheckBox x:Name="ZoneEditor_IgnoreStations" Content="Ignore Station-mode Grids" Margin="0,2"/>
                                             </StackPanel>
                                         </GroupBox>
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
@@ -313,10 +315,11 @@
                                         <TextBlock Text="Zone Name:"/>
                                         <ComboBox x:Name="ZoneRewardEditor_Name" Margin="0,3"
                                                   ItemsSource="{Binding ZoneNames, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
-                                        <CheckBox x:Name="ZoneRewardEditor_EveryCap" Content="Trigger On Every Cap" Margin="0,5"
-                                                  ToolTip="If checked, reward fires on every capture. If unchecked, only fires once per neutral-captured cycle until the zone resets to neutral."/>
+                                        <GroupBox Header="Commands" Margin="0,5" Padding="8">
+                                            <StackPanel>
+                                                <CheckBox x:Name="ZoneRewardEditor_EveryCap" Content="Trigger On Every Cap" Margin="0,0,0,5"
+                                                          ToolTip="If checked, command rewards fire on every capture. If unchecked, they only fire once per neutral-captured cycle until the zone resets to neutral."/>
 
-                                        <TextBlock Text="Commands:" FontWeight="Bold" Margin="0,10,0,5"/>
                                         <ListBox x:Name="ZoneRewardCmdList" MinHeight="30">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
@@ -347,10 +350,71 @@
                                                 </StackPanel>
                                                 <TextBlock Text="Command:" Margin="0,5,0,0"/>
                                                 <TextBox x:Name="ZoneCmd_Command" Margin="0,3" MinHeight="25"/>
+                                                <TextBlock Text="Variables: {playerid}, {factionid}, {factionname}, {factiontag}" Margin="0,3,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,5">
                                                     <Button Content="Confirm" Click="SaveZoneRewardCmd_Click"/>
                                                     <Button Content="Cancel" Click="CancelZoneRewardCmd_Click" Margin="5,0"/>
                                                 </StackPanel>
+                                            </StackPanel>
+                                        </GroupBox>
+                                            </StackPanel>
+                                        </GroupBox>
+
+                                        <GroupBox Header="Cargo Delivery" Margin="0,5" Padding="8">
+                                            <StackPanel>
+                                                <CheckBox x:Name="ZoneReward_CargoEnabled" Content="Deliver items to station cargo on capture" Margin="0,0,0,5"/>
+                                                <CheckBox x:Name="ZoneReward_CargoEveryCap" Content="Trigger On Every Cap" Margin="0,0,0,5"
+                                                          ToolTip="If checked, cargo delivery fires on every capture. If unchecked, it only fires once per neutral-captured cycle until the zone resets to neutral."/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Grid Name:" VerticalAlignment="Center" Width="95"/>
+                                                    <TextBox x:Name="ZoneReward_GridName" Width="200" Margin="5,0"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="Container Name:" VerticalAlignment="Center" Width="95"/>
+                                                    <TextBox x:Name="ZoneReward_ContainerName" Width="200" Margin="5,0"/>
+                                                </StackPanel>
+                                                <TextBlock Text="Items:" FontWeight="Bold" Margin="0,8,0,3"/>
+                                                <ListBox x:Name="ZoneRewardCargoList" MinHeight="40">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Width="520">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="50"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding}" ToolTip="{Binding}"/>
+                                                                <Button Grid.Column="1" Content="Edit" Click="EditZoneRewardCargo_Click" Tag="{Binding}" Margin="1" Padding="1" Width="36"/>
+                                                                <Button Grid.Column="2" Content="X" Click="DeleteZoneRewardCargo_Click" Tag="{Binding}" Margin="1" Padding="1" Width="30"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                                <Button Content="Add Item" Click="AddZoneRewardCargo_Click" Margin="0,5" HorizontalAlignment="Left"/>
+
+                                                <GroupBox x:Name="ZoneRewardCargoItemEditor" Header="Item Editor" Visibility="Collapsed" Padding="8" Margin="0,5">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                            <TextBlock Text="Type:" VerticalAlignment="Center" Width="60"/>
+                                                            <TextBox x:Name="ZoneRewardCargo_Type" Width="160" Margin="5,0"/>
+                                                            <TextBlock Text="e.g. Ingot, Ore, Component, AmmoMagazine" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                            <TextBlock Text="Subtype:" VerticalAlignment="Center" Width="60"/>
+                                                            <TextBox x:Name="ZoneRewardCargo_Subtype" Width="160" Margin="5,0"/>
+                                                            <TextBlock Text="e.g. Gold, SteelPlate" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                            <TextBlock Text="Quantity:" VerticalAlignment="Center" Width="60"/>
+                                                            <TextBox x:Name="ZoneRewardCargo_Qty" Width="160" Margin="5,0" PreviewTextInput="NumericOnly_PreviewTextInput"/>
+                                                            <TextBlock Text="whole units only" VerticalAlignment="Center" Margin="10,0,0,0" FontStyle="Italic" FontSize="10"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                                            <Button Content="Confirm" Click="SaveZoneRewardCargo_Click"/>
+                                                            <Button Content="Cancel" Click="CancelZoneRewardCargo_Click" Margin="5,0"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </GroupBox>
                                             </StackPanel>
                                         </GroupBox>
 
@@ -448,7 +512,6 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
@@ -470,11 +533,11 @@
                         <GroupBox x:Name="RankCmdEditor" Header="Command Editor" Visibility="Collapsed" Padding="8" Margin="5">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="RankCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
                                     <CheckBox x:Name="RankCmd_OnlineOnly" Content="Online Only"/>
                                 </StackPanel>
                                 <TextBlock Text="Command:" Margin="0,5,0,0"/>
                                 <TextBox x:Name="RankCmd_Command" Margin="0,3" MinHeight="25"/>
+                                <TextBlock Text="Variables: {playerid}, {factionid}, {factionname}, {factiontag}" Margin="0,3,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,5">
                                     <Button Content="Confirm" Click="SaveRankCmd_Click"/>
                                     <Button Content="Cancel" Click="CancelRankCmd_Click" Margin="5,0"/>
@@ -563,7 +626,6 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
@@ -585,11 +647,11 @@
                         <GroupBox x:Name="ThresholdCmdEditor" Header="Command Editor" Visibility="Collapsed" Padding="8" Margin="5">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <CheckBox x:Name="ThresholdCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
                                     <CheckBox x:Name="ThresholdCmd_OnlineOnly" Content="Online Only"/>
                                 </StackPanel>
                                 <TextBlock Text="Command:" Margin="0,5,0,0"/>
                                 <TextBox x:Name="ThresholdCmd_Command" Margin="0,3" MinHeight="25"/>
+                                <TextBlock Text="Variables: {playerid}, {factionid}, {factionname}, {factiontag}" Margin="0,3,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,5">
                                     <Button Content="Confirm" Click="SaveThresholdCmd_Click"/>
                                     <Button Content="Cancel" Click="CancelThresholdCmd_Click" Margin="5,0"/>
@@ -650,7 +712,6 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
@@ -673,7 +734,6 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
@@ -696,7 +756,6 @@
                                                     <ColumnDefinition Width="50"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                                    <Run Text="{Binding PerFactionMember, StringFormat='[PerMember]'}"/>
                                                     <Run Text="{Binding OnlyOnlineMembers, StringFormat='[Online]'}"/>
                                                     <Run Text=" "/><Run Text="{Binding CommandText}"/>
                                                 </TextBlock>
@@ -711,11 +770,11 @@
                                 <GroupBox x:Name="RaffleCmdEditor" Header="Raffle Command" Visibility="Collapsed" Padding="8" Margin="5">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <CheckBox x:Name="RaffleCmd_PerFaction" Content="Per Faction Member" Margin="0,0,10,0"/>
                                             <CheckBox x:Name="RaffleCmd_OnlineOnly" Content="Online Only"/>
                                         </StackPanel>
                                         <TextBlock Text="Command:" Margin="0,5,0,0"/>
                                         <TextBox x:Name="RaffleCmd_Command" Margin="0,3" MinHeight="25"/>
+                                        <TextBlock Text="Variables: {playerid}, {factionid}, {factionname}, {factiontag}" Margin="0,3,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
                                             <Button Content="Confirm" Click="SaveRaffleCmd_Click"/>
                                             <Button Content="Cancel" Click="CancelRaffleCmd_Click" Margin="5,0"/>
@@ -813,7 +872,7 @@
                                 <StackPanel Margin="10">
                                 <TextBlock Text="Message Template" Margin="5,0,0,0"/>
                                 <TextBox Margin="5" Text="{Binding EnterAlert_MessageTemplate}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40"/>
-                                <TextBlock Text="Variables: {player}, {steamId}, {factionTag}, {factionName}, {zoneName}, {planet}, {x}, {y}, {z}, {radius}, {time}" Margin="5" FontStyle="Italic" TextWrapping="Wrap"/>
+                                <TextBlock Text="Variables: {player}, {steamId}, {factionTag}, {factionName}, {zoneName}, {x}, {y}, {z}, {radius}, {time}" Margin="5" FontStyle="Italic" TextWrapping="Wrap"/>
                                 <Button Content="Test Enter Alert" Margin="5" Click="SendSampleEnterAlertWebHook_Click" HorizontalAlignment="Left"/>
                             </StackPanel>
                             </TabItem>
@@ -848,10 +907,9 @@
                         <Expander Header="Admin Commands" Margin="0,5">
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
-                                    <Run>  !KoTH CreateZone name [radius] — Create a zone at your position</Run><LineBreak/>
-                                    <Run>  !KoTH DeleteZone name         — Delete a zone</Run><LineBreak/>
                                     <Run>  !KoTH GivePoint tag value      — Adjust faction bank points</Run><LineBreak/>
                                     <Run>  !KoTH ForceTest               — Test Discord webhook</Run><LineBreak/>
+                                    <Run FontStyle="Italic">  (Zones are created/deleted from the Zones tab, not via chat)</Run><LineBreak/>
                                     <Run FontStyle="Italic">  (All commands have a 5-second cooldown)</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
@@ -861,6 +919,7 @@
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
                                     <Run FontWeight="Bold">Shared File Path</Run><Run> — Set a network folder so multiple servers read/write the same KoTH data (banks, raffle, scores) with a file lock. Leave blank to keep all data local to this server.</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Multi-server note:</Run><Run> enable Show Weekly/Monthly/Yearly Results on only one server — that server is the designated announcer and processes the period rewards. Points still cascade across periods even when disabled.</Run><LineBreak/><LineBreak/>
                                     <Run>See the Settings tab to configure.</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
@@ -870,7 +929,7 @@
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
                                     <Run>  - Zones use native Space Engineers safe zone entities</Run><LineBreak/>
-                                    <Run>  - Created at admin position via !koth createzone or the Zones tab</Run><LineBreak/>
+                                    <Run>  - Created at admin position via the Zones tab</Run><LineBreak/>
                                     <Run>  - Configurable per zone: radius (10-500m), color, texture, schedule</Run><LineBreak/>
                                     <Run>  - Per-zone schedules: set active days of week and time windows</Run><LineBreak/>
                                     <Run>  - Dynamic zones: random repositioning within an annulus, GPS announcements</Run><LineBreak/>
@@ -954,15 +1013,29 @@
                         <Expander Header="Discord" Margin="0,5">
                             <StackPanel Margin="10,5">
                                 <TextBlock TextWrapping="Wrap">
-                                    <Run FontWeight="Bold">Discord Bot:</Run><LineBreak/>
-                                    <Run>  - Enable on the Discord tab with a bot token</Run><LineBreak/>
-                                    <Run>  - Posts reward announcements and live scoreboard updates</Run><LineBreak/>
-                                    <Run>  - Self-managed channels: bot creates per-zone channels under a category</Run><LineBreak/><LineBreak/>
                                     <Run FontWeight="Bold">Discord Webhooks:</Run><LineBreak/>
                                     <Run>  - Local only — each server manages its own webhooks independently</Run><LineBreak/>
                                     <Run>  - Add one or more webhook URLs; each can filter by event type and zone</Run><LineBreak/>
-                                    <Run>  - Event types: Capture, Decay, Points, Enter Alert, Eviction, Rank Results, Raffle</Run><LineBreak/>
+                                    <Run>  - Event types: Capture, Decay, Points, Enter, Eviction, Rank, Raffle</Run><LineBreak/>
                                     <Run>  - Zone filter: check "All Zones" for all zones, or list specific zones (comma-separated)</Run><LineBreak/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander Header="Rewards" Margin="0,5">
+                            <StackPanel Margin="10,5">
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run FontWeight="Bold">Reward commands are Torch/server commands run automatically when a reward fires. They support these variables (case-sensitive, lowercase):</Run><LineBreak/>
+                                    <Run FontFamily="Consolas">  {playerid}     — winning player's Steam ID</Run><LineBreak/>
+                                    <Run FontFamily="Consolas">  {factionid}    — faction ID</Run><LineBreak/>
+                                    <Run FontFamily="Consolas">  {factionname}  — faction name</Run><LineBreak/>
+                                    <Run FontFamily="Consolas">  {factiontag}   — faction tag</Run><LineBreak/><LineBreak/>
+                                    <Run FontWeight="Bold">Reward types:</Run><LineBreak/>
+                                    <Run>  - Per-Zone Live Rewards — fire when a faction fully captures a zone; optional "Trigger On Every Cap", "Per Faction Member" (all members vs. players in zone), "Online Only"</Run><LineBreak/>
+                                    <Run>  - Rank Rewards — weekly/monthly/yearly; fire for factions finishing at a given rank</Run><LineBreak/>
+                                    <Run>  - Threshold Rewards — weekly/monthly/yearly; fire for factions reaching a minimum point total</Run><LineBreak/>
+                                    <Run>  - Raffle Rewards — 1st/2nd/3rd place raffle draw commands</Run><LineBreak/><LineBreak/>
+                                    <Run FontStyle="Italic">  (Reward Settings tab: disable Weekly/Monthly/Yearly to skip issuing rewards; points still cascade to the next period.)</Run><LineBreak/>
                                 </TextBlock>
                             </StackPanel>
                         </Expander>

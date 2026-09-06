@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NLog;
-using Sandbox.Game.World;
+using Sandbox.Game;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using Torch.API;
 using Torch.API.Managers;
 using Torch.Commands;
+using VRage;
+using VRage.Game;
 using VRage.Game.ModAPI;
 
 namespace SenX_KOTH_Plugin.Utils
@@ -15,7 +17,7 @@ namespace SenX_KOTH_Plugin.Utils
     {
         private static readonly Logger Log = LogManager.GetLogger("KoTH Plugin => RewardService");
 
-        public static void CheckLiveRewards(string zoneName, long factionId)
+        public static void CheckLiveRewards(string zoneName, long factionId, IReadOnlyCollection<long> zoneIdentityIds)
         {
             SenX_KOTH_PluginConfig? config = SenX_KOTH_PluginMain.Instance?.Config;
             if (config == null)
@@ -39,13 +41,111 @@ namespace SenX_KOTH_Plugin.Utils
                     if (!reward.Enabled || string.IsNullOrEmpty(reward.CommandText))
                         continue;
 
-                    ExecuteRewardCommand(reward, faction);
+                    ExecuteRewardCommand(reward, faction, zoneIdentityIds);
                 }
             }
             catch (Exception ex)
             {
                 KoTHLog.Error(Log, ex, "Error executing live rewards for zone: " + zoneName);
             }
+        }
+
+        /// <summary>
+        /// Deposits the configured cargo reward into the first cargo container that
+        /// matches the reward's grid name and container name. Whole units only — items
+        /// that do not fit are left undeposited and logged.
+        /// </summary>
+        public static void DeliverCargoReward(ZoneRewardConfig zoneReward)
+        {
+            if (zoneReward == null || zoneReward.CargoItems.Count == 0)
+                return;
+
+            GameThread.Invoke(() =>
+            {
+                try
+                {
+                    MyCubeGrid? grid = null;
+                    foreach (var entity in MyEntities.GetEntities())
+                    {
+                        if (entity is MyCubeGrid candidate && !candidate.Closed && !candidate.MarkedForClose &&
+                            string.Equals(candidate.DisplayName, zoneReward.GridName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            grid = candidate;
+                            break;
+                        }
+                    }
+
+                    if (grid == null)
+                    {
+                        KoTHLog.Warn(Log, "Cargo reward: grid '" + zoneReward.GridName + "' not found for zone '" + zoneReward.ZoneName + "'.");
+                        return;
+                    }
+
+                    MyCargoContainer? container = null;
+                    foreach (var block in grid.GetFatBlocks<MyCargoContainer>())
+                    {
+                        if (!block.Closed && !block.MarkedForClose &&
+                            string.Equals(block.DisplayNameText, zoneReward.ContainerName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            container = block;
+                            break;
+                        }
+                    }
+
+                    if (container == null)
+                    {
+                        KoTHLog.Warn(Log, "Cargo reward: cargo container '" + zoneReward.ContainerName + "' not found on grid '" + grid.DisplayName + "'.");
+                        return;
+                    }
+
+                    foreach (var item in zoneReward.CargoItems)
+                    {
+                        if (item == null || item.Quantity <= 0) continue;
+
+                        MyObjectBuilder_PhysicalObject? builder = ItemBuilder.Create(item.TypeId, item.SubtypeId);
+                        if (builder == null)
+                        {
+                            KoTHLog.Warn(Log, "Cargo reward: unsupported item type '" + item.TypeId + "/" + item.SubtypeId + "'.");
+                            continue;
+                        }
+
+                        long remaining = item.Quantity;
+                        long deposited = 0;
+
+                        for (int i = 0; i < container.InventoryCount && remaining > 0; i++)
+                        {
+                            if (container.GetInventoryBase(i) is not MyInventory inv) continue;
+
+                            MyFixedPoint fits = MyFixedPoint.Floor(inv.ComputeAmountThatFits(builder.GetObjectId()));
+                            long fitsWhole = (long)(double)fits;
+                            if (fitsWhole <= 0) continue;
+
+                            long toAdd = Math.Min(remaining, fitsWhole);
+                            inv.AddItems(Whole(toAdd), builder);
+                            inv.Refresh();
+
+                            deposited += toAdd;
+                            remaining -= toAdd;
+                        }
+
+                        if (deposited > 0)
+                            KoTHLog.Info(Log, "Cargo reward: deposited " + deposited + "x " + item.TypeId + "/" + item.SubtypeId + " into '" + container.DisplayNameText + "' on '" + grid.DisplayName + "'.");
+
+                        if (remaining > 0)
+                            KoTHLog.Warn(Log, "Cargo reward: only " + deposited + "/" + item.Quantity + "x " + item.TypeId + "/" + item.SubtypeId + " fit in container '" + container.DisplayNameText + "' — " + remaining + " not deposited.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    KoTHLog.Error(Log, ex, "Error delivering cargo reward for zone: " + zoneReward.ZoneName);
+                }
+            });
+        }
+
+        private static MyFixedPoint Whole(long value)
+        {
+            if (value <= 0) return MyFixedPoint.Zero;
+            return new MyFixedPoint { RawValue = value * 1_000_000L };
         }
 
         public static void ExecutePeriodRewards(
@@ -77,42 +177,13 @@ namespace SenX_KOTH_Plugin.Utils
             }
         }
 
-        private static void ExecuteRewardCommand(LiveCommandReward reward, IMyFaction faction)
+        private static void ExecuteRewardCommand(LiveCommandReward reward, IMyFaction faction, IReadOnlyCollection<long> zoneIdentityIds)
         {
-            if (reward.PerFactionMember)
-            {
-                List<IMyPlayer> players = new List<IMyPlayer>();
-                MyAPIGateway.Players.GetPlayers(players);
+            IEnumerable<long> targetIds = reward.PerFactionMember
+                ? faction.Members.Keys
+                : zoneIdentityIds;
 
-                foreach (IMyPlayer player in players)
-                {
-                    if (player.IdentityId == 0)
-                        continue;
-
-                    IMyFaction? playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
-                    if (playerFaction == null || playerFaction.FactionId != faction.FactionId)
-                        continue;
-
-                    if (reward.OnlyOnlineMembers && player.Character == null)
-                        continue;
-
-                    string command = reward.CommandText.Replace("{playerid}", player.SteamUserId.ToString());
-                    command = command.Replace("{factionid}", faction.FactionId.ToString());
-                    command = command.Replace("{factionname}", faction.Name);
-                    command = command.Replace("{factiontag}", faction.Tag);
-
-                    RunTorchCommand(command);
-                }
-            }
-            else
-            {
-                string command = reward.CommandText;
-                command = command.Replace("{factionid}", faction.FactionId.ToString());
-                command = command.Replace("{factionname}", faction.Name);
-                command = command.Replace("{factiontag}", faction.Tag);
-
-                RunTorchCommand(command);
-            }
+            ExecutePlayerCommands(reward.CommandText, faction, targetIds, reward.OnlyOnlineMembers);
         }
 
         private static void ExecuteCommandRewards(List<CommandRewardEntry> commands, IMyFaction? faction)
@@ -125,40 +196,32 @@ namespace SenX_KOTH_Plugin.Utils
                 if (string.IsNullOrEmpty(cmd.CommandText))
                     continue;
 
-                if (cmd.PerFactionMember)
+                ExecutePlayerCommands(cmd.CommandText, faction, faction.Members.Keys, cmd.OnlyOnlineMembers);
+            }
+        }
+
+        internal static void ExecutePlayerCommands(string commandText, IMyFaction faction, IEnumerable<long> identityIds, bool onlyOnline)
+        {
+            foreach (long identityId in identityIds)
+            {
+                ulong steamId = MyAPIGateway.Players.TryGetSteamId(identityId);
+                if (steamId == 0)
+                    continue;
+
+                if (onlyOnline)
                 {
-                    List<IMyPlayer> players = new List<IMyPlayer>();
-                    MyAPIGateway.Players.GetPlayers(players);
-
-                    foreach (IMyPlayer player in players)
-                    {
-                        if (player.IdentityId == 0)
-                            continue;
-
-                        IMyFaction? playerFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(player.IdentityId);
-                        if (playerFaction == null || playerFaction.FactionId != faction.FactionId)
-                            continue;
-
-                        if (cmd.OnlyOnlineMembers && player.Character == null)
-                            continue;
-
-                        string command = cmd.CommandText.Replace("{playerid}", player.SteamUserId.ToString());
-                        command = command.Replace("{factionid}", faction.FactionId.ToString());
-                        command = command.Replace("{factionname}", faction.Name);
-                        command = command.Replace("{factiontag}", faction.Tag);
-
-                        RunTorchCommand(command);
-                    }
+                    IMyPlayer? player = MyAPIGateway.Players.TryGetIdentityId(identityId);
+                    if (player == null || player.Character == null)
+                        continue;
                 }
-                else
-                {
-                    string command = cmd.CommandText;
-                    command = command.Replace("{factionid}", faction.FactionId.ToString());
-                    command = command.Replace("{factionname}", faction.Name);
-                    command = command.Replace("{factiontag}", faction.Tag);
 
-                    RunTorchCommand(command);
-                }
+                string command = commandText
+                    .Replace("{playerid}", steamId.ToString())
+                    .Replace("{factionid}", faction.FactionId.ToString())
+                    .Replace("{factionname}", faction.Name)
+                    .Replace("{factiontag}", faction.Tag);
+
+                RunTorchCommand(command);
             }
         }
 

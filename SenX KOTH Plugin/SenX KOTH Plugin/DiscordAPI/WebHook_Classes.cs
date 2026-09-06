@@ -6,12 +6,6 @@ namespace SenX_KOTH_Plugin.DiscordAPI
 {
     public sealed class DiscordMessage
     {
-        readonly JsonSerializerSettings jsonSettings = new()
-        {
-            Formatting = Formatting.Indented,
-            NullValueHandling = NullValueHandling.Ignore
-        };
-
         public DiscordMessage()
         {
             Embeds = new List<DiscordEmbed>();

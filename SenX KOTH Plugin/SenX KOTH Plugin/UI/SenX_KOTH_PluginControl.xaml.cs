@@ -22,6 +22,7 @@ namespace SenX_KOTH_Plugin
         private bool _isNewZone;
         private ZoneRewardConfig? _editingZoneReward;
         private LiveCommandReward? _editingZoneCmd;
+        private CargoRewardItem? _editingCargoItem;
         private RankRewardEntry? _editingRank;
         private RewardPeriod _editingRankPeriod;
         private CommandRewardEntry? _editingRankCmd;
@@ -85,6 +86,8 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_AwardInterval.Text = "5";
             ZoneEditor_PtsSuit.Text = "1";
             ZoneEditor_PtsGrid.Text = "0";
+            ZoneEditor_IgnoreNpcs.IsChecked = false;
+            ZoneEditor_IgnoreStations.IsChecked = false;
             ZoneEditor_MinDist.Text = "100";
             ZoneEditor_MaxDist.Text = "500";
             ZoneEditor_MoveInterval.Text = "60";
@@ -147,6 +150,8 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_AwardInterval.Text = _editingZone.PointAwardIntervalSeconds.ToString();
             ZoneEditor_PtsSuit.Text = _editingZone.PointsPerSuit.ToString();
             ZoneEditor_PtsGrid.Text = _editingZone.PointsPerGrid.ToString();
+            ZoneEditor_IgnoreNpcs.IsChecked = _editingZone.IgnoreNpcs;
+            ZoneEditor_IgnoreStations.IsChecked = _editingZone.IgnoreStations;
             ZoneEditor_MinDist.Text = _editingZone.MinDistance.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_MaxDist.Text = _editingZone.MaxDistance.ToString("F0", CultureInfo.InvariantCulture);
             ZoneEditor_MoveInterval.Text = _editingZone.DynamicMoveIntervalSeconds.ToString();
@@ -230,11 +235,6 @@ namespace SenX_KOTH_Plugin
             var evt = SenX_KOTH_PluginMain.Events.OfType<ZonePointEvent>()
                 .FirstOrDefault(z => string.Equals(z.Name, zone.Name, StringComparison.OrdinalIgnoreCase));
             evt?.ManualReset();
-        }
-
-        private void RefreshZonesList()
-        {
-            ZonesList.ItemsSource = SenX_KOTH_PluginMain.ZonePersist?.Data.Zones;
         }
 
         private void SaveZone_Click(object sender, RoutedEventArgs e)
@@ -408,6 +408,8 @@ namespace SenX_KOTH_Plugin
             _editingZone.PointsPerSuit = ps;
             int.TryParse(ZoneEditor_PtsGrid.Text, out int pg);
             _editingZone.PointsPerGrid = pg;
+            _editingZone.IgnoreNpcs = ZoneEditor_IgnoreNpcs.IsChecked == true;
+            _editingZone.IgnoreStations = ZoneEditor_IgnoreStations.IsChecked == true;
         }
 
         private void CancelZone_Click(object sender, RoutedEventArgs e)
@@ -422,6 +424,7 @@ namespace SenX_KOTH_Plugin
             PopulateZoneRewardEditor(_editingZoneReward);
             ZoneRewardEditorPanel.Visibility = Visibility.Visible;
             HideZoneRewardCmdEditor();
+            HideZoneRewardCargoItemEditor();
         }
 
         private void EditZoneReward_Click(object sender, RoutedEventArgs e)
@@ -431,6 +434,7 @@ namespace SenX_KOTH_Plugin
             PopulateZoneRewardEditor(_editingZoneReward);
             ZoneRewardEditorPanel.Visibility = Visibility.Visible;
             HideZoneRewardCmdEditor();
+            HideZoneRewardCargoItemEditor();
         }
 
         private void DeleteZoneReward_Click(object sender, RoutedEventArgs e)
@@ -446,6 +450,12 @@ namespace SenX_KOTH_Plugin
             ZoneRewardEditor_Name.Text = zrc.ZoneName;
             ZoneRewardEditor_EveryCap.IsChecked = zrc.TriggerOnEveryCap;
             ZoneRewardCmdList.ItemsSource = zrc.CommandRewards;
+
+            ZoneReward_CargoEnabled.IsChecked = zrc.CargoEnabled;
+            ZoneReward_CargoEveryCap.IsChecked = zrc.CargoTriggerOnEveryCap;
+            ZoneReward_GridName.Text = zrc.GridName;
+            ZoneReward_ContainerName.Text = zrc.ContainerName;
+            ZoneRewardCargoList.ItemsSource = zrc.CargoItems;
         }
 
         private void SaveZoneReward_Click(object sender, RoutedEventArgs e)
@@ -454,11 +464,18 @@ namespace SenX_KOTH_Plugin
             _editingZoneReward.ZoneName = ZoneRewardEditor_Name.Text;
             _editingZoneReward.TriggerOnEveryCap = ZoneRewardEditor_EveryCap.IsChecked == true;
 
+            _editingZoneReward.CargoEnabled = ZoneReward_CargoEnabled.IsChecked == true;
+            _editingZoneReward.CargoTriggerOnEveryCap = ZoneReward_CargoEveryCap.IsChecked == true;
+            _editingZoneReward.GridName = ZoneReward_GridName.Text.Trim();
+            _editingZoneReward.ContainerName = ZoneReward_ContainerName.Text.Trim();
+
             var config = GetConfig();
             if (config != null && !config.ZoneRewards.Contains(_editingZoneReward))
                 config.ZoneRewards.Add(_editingZoneReward);
 
             ZoneRewardEditorPanel.Visibility = Visibility.Collapsed;
+            HideZoneRewardCmdEditor();
+            HideZoneRewardCargoItemEditor();
             _editingZoneReward = null;
         }
 
@@ -466,6 +483,7 @@ namespace SenX_KOTH_Plugin
         {
             ZoneRewardEditorPanel.Visibility = Visibility.Collapsed;
             HideZoneRewardCmdEditor();
+            HideZoneRewardCargoItemEditor();
             _editingZoneReward = null;
         }
 
@@ -523,6 +541,89 @@ namespace SenX_KOTH_Plugin
         {
             ZoneRewardCmdEditor.Visibility = Visibility.Collapsed;
             _editingZoneCmd = null;
+        }
+
+        private void AddZoneRewardCargo_Click(object sender, RoutedEventArgs e)
+        {
+            _editingCargoItem = new CargoRewardItem();
+            PopulateZoneRewardCargoEditor();
+            ZoneRewardCargoItemEditor.Visibility = Visibility.Visible;
+        }
+
+        private void EditZoneRewardCargo_Click(object sender, RoutedEventArgs e)
+        {
+            _editingCargoItem = (sender as Button)?.Tag as CargoRewardItem;
+            if (_editingCargoItem == null) return;
+            PopulateZoneRewardCargoEditor();
+            ZoneRewardCargoItemEditor.Visibility = Visibility.Visible;
+        }
+
+        private void DeleteZoneRewardCargo_Click(object sender, RoutedEventArgs e)
+        {
+            var item = (sender as Button)?.Tag as CargoRewardItem;
+            if (item != null)
+                _editingZoneReward?.CargoItems.Remove(item);
+            ZoneRewardCargoList.Items.Refresh();
+        }
+
+        private void PopulateZoneRewardCargoEditor()
+        {
+            if (_editingCargoItem == null) return;
+            ZoneRewardCargo_Type.Text = _editingCargoItem.TypeId;
+            ZoneRewardCargo_Subtype.Text = _editingCargoItem.SubtypeId;
+            ZoneRewardCargo_Qty.Text = _editingCargoItem.Quantity > 0 ? _editingCargoItem.Quantity.ToString() : "";
+        }
+
+        private void SaveZoneRewardCargo_Click(object sender, RoutedEventArgs e)
+        {
+            if (_editingCargoItem == null) return;
+
+            string type = ZoneRewardCargo_Type.Text.Trim();
+            string subtype = ZoneRewardCargo_Subtype.Text.Trim();
+            if (string.IsNullOrWhiteSpace(type) || string.IsNullOrWhiteSpace(subtype))
+            {
+                MessageBox.Show("Both Type and Subtype are required.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!long.TryParse(ZoneRewardCargo_Qty.Text, out long quantity) || quantity <= 0)
+            {
+                MessageBox.Show("Quantity must be a whole number greater than zero.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            _editingCargoItem.TypeId = type;
+            _editingCargoItem.SubtypeId = subtype;
+            _editingCargoItem.Quantity = quantity;
+
+            if (_editingZoneReward != null && !_editingZoneReward.CargoItems.Contains(_editingCargoItem))
+                _editingZoneReward.CargoItems.Add(_editingCargoItem);
+
+            HideZoneRewardCargoItemEditor();
+            ZoneRewardCargoList.Items.Refresh();
+        }
+
+        private void CancelZoneRewardCargo_Click(object sender, RoutedEventArgs e)
+        {
+            HideZoneRewardCargoItemEditor();
+        }
+
+        private void HideZoneRewardCargoItemEditor()
+        {
+            ZoneRewardCargoItemEditor.Visibility = Visibility.Collapsed;
+            _editingCargoItem = null;
+        }
+
+        private void NumericOnly_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            foreach (char c in e.Text)
+            {
+                if (!char.IsDigit(c))
+                {
+                    e.Handled = true;
+                    return;
+                }
+            }
         }
 
         private void AddRank_Click(object sender, RoutedEventArgs e)
@@ -680,7 +781,6 @@ namespace SenX_KOTH_Plugin
         private void PopulateRankCmdEditor()
         {
             if (_editingRankCmd == null) return;
-            RankCmd_PerFaction.IsChecked = _editingRankCmd.PerFactionMember;
             RankCmd_OnlineOnly.IsChecked = _editingRankCmd.OnlyOnlineMembers;
             RankCmd_Command.Text = _editingRankCmd.CommandText;
         }
@@ -694,7 +794,6 @@ namespace SenX_KOTH_Plugin
             }
 
             if (_editingRankCmd == null) return;
-            _editingRankCmd.PerFactionMember = RankCmd_PerFaction.IsChecked == true;
             _editingRankCmd.OnlyOnlineMembers = RankCmd_OnlineOnly.IsChecked == true;
             _editingRankCmd.CommandText = RankCmd_Command.Text;
 
@@ -755,7 +854,6 @@ namespace SenX_KOTH_Plugin
         private void PopulateThresholdCmdEditor()
         {
             if (_editingThresholdCmd == null) return;
-            ThresholdCmd_PerFaction.IsChecked = _editingThresholdCmd.PerFactionMember;
             ThresholdCmd_OnlineOnly.IsChecked = _editingThresholdCmd.OnlyOnlineMembers;
             ThresholdCmd_Command.Text = _editingThresholdCmd.CommandText;
         }
@@ -769,7 +867,6 @@ namespace SenX_KOTH_Plugin
             }
 
             if (_editingThresholdCmd == null) return;
-            _editingThresholdCmd.PerFactionMember = ThresholdCmd_PerFaction.IsChecked == true;
             _editingThresholdCmd.OnlyOnlineMembers = ThresholdCmd_OnlineOnly.IsChecked == true;
             _editingThresholdCmd.CommandText = ThresholdCmd_Command.Text;
 
@@ -953,7 +1050,6 @@ namespace SenX_KOTH_Plugin
         private void PopulateRaffleCmdEditor()
         {
             if (_editingRaffleCmd == null) return;
-            RaffleCmd_PerFaction.IsChecked = _editingRaffleCmd.PerFactionMember;
             RaffleCmd_OnlineOnly.IsChecked = _editingRaffleCmd.OnlyOnlineMembers;
             RaffleCmd_Command.Text = _editingRaffleCmd.CommandText;
         }
@@ -961,7 +1057,6 @@ namespace SenX_KOTH_Plugin
         private void SaveRaffleCmd_Click(object sender, RoutedEventArgs e)
         {
             if (_editingRaffleCmd == null) return;
-            _editingRaffleCmd.PerFactionMember = RaffleCmd_PerFaction.IsChecked == true;
             _editingRaffleCmd.OnlyOnlineMembers = RaffleCmd_OnlineOnly.IsChecked == true;
             _editingRaffleCmd.CommandText = RaffleCmd_Command.Text;
 

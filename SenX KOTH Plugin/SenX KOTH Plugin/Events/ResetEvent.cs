@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using NLog;
 using SenX_KOTH_Plugin.Models;
@@ -30,6 +31,8 @@ namespace SenX_KOTH_Plugin.Events
 
         public void Start()
         {
+            _timer?.Stop();
+            _timer?.Dispose();
             _timer = new Timer(60000);
             _timer.Elapsed += Tick;
             _timer.Start();
@@ -48,14 +51,14 @@ namespace SenX_KOTH_Plugin.Events
         public void IntegrityCheck() { }
         public void Save() { }
 
-        private void Tick(object? sender, ElapsedEventArgs e)
+        private async void Tick(object? sender, ElapsedEventArgs e)
         {
             try
             {
-                PointBuffer.Flush();
-                ProcessWeekly();
-                ProcessMonthly();
-                ProcessYearly();
+                await PointBuffer.FlushAsync().ConfigureAwait(false);
+                await ProcessWeeklyAsync().ConfigureAwait(false);
+                await ProcessMonthlyAsync().ConfigureAwait(false);
+                await ProcessYearlyAsync().ConfigureAwait(false);
             }
             catch (Exception ex) { KoTHLog.Error(Log, ex, "Error in ResetEvent tick."); }
         }
@@ -82,14 +85,14 @@ namespace SenX_KOTH_Plugin.Events
 
         // --- Period processing ---
 
-        private void ProcessWeekly()
+        private async Task ProcessWeeklyAsync()
         {
             var now = DateTime.Now;
             if (!ShouldProcessWeekly(now)) return;
 
             List<KeyValuePair<long, int>>? weekList = null;
 
-            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
+            await SharedFile.ReadModifyWriteAsync<ScoreFile>(ScorePath, data =>
             {
                 var scores = data ?? new ScoreFile();
                 if (_config.WeeklyRewardsEnabled)
@@ -102,7 +105,7 @@ namespace SenX_KOTH_Plugin.Events
                 MergeScores(scores.WeekScores, scores.MonthScores);
                 scores.WeekScores.Clear();
                 return scores;
-            }, out _);
+            }).ConfigureAwait(false);
 
             if (_config.WeeklyRewardsEnabled && _config.Show_WeeklyResults && weekList != null)
             {
@@ -112,27 +115,27 @@ namespace SenX_KOTH_Plugin.Events
                     _config.WeeklyThresholdRewards.ToList(), weekList);
             }
 
-            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            await SharedFile.ReadModifyWriteAsync<EventData>(EventPath, data =>
             {
                 var events = data ?? new EventData();
                 MergePoints(events.WeekEvents, events.MonthEvents);
                 events.WeekEvents.Clear();
                 return events;
-            }, out _);
+            }).ConfigureAwait(false);
 
             _config.LastWeeklyProcessWeek = GetIsoWeek(now);
             _config.LastWeeklyProcessYear = now.Year;
             SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
-        private void ProcessMonthly()
+        private async Task ProcessMonthlyAsync()
         {
             var now = DateTime.Now;
             if (!ShouldProcessMonthly(now)) return;
 
             List<KeyValuePair<long, int>>? monthList = null;
 
-            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
+            await SharedFile.ReadModifyWriteAsync<ScoreFile>(ScorePath, data =>
             {
                 var scores = data ?? new ScoreFile();
                 if (_config.MonthlyRewardsEnabled)
@@ -145,7 +148,7 @@ namespace SenX_KOTH_Plugin.Events
                 MergeScores(scores.MonthScores, scores.YearScores);
                 scores.MonthScores.Clear();
                 return scores;
-            }, out _);
+            }).ConfigureAwait(false);
 
             if (_config.MonthlyRewardsEnabled && _config.Show_MonthlyResults && monthList != null)
             {
@@ -155,27 +158,27 @@ namespace SenX_KOTH_Plugin.Events
                     _config.MonthlyThresholdRewards.ToList(), monthList);
             }
 
-            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            await SharedFile.ReadModifyWriteAsync<EventData>(EventPath, data =>
             {
                 var events = data ?? new EventData();
                 MergePoints(events.MonthEvents, events.YearEvents);
                 events.MonthEvents.Clear();
                 return events;
-            }, out _);
+            }).ConfigureAwait(false);
 
             _config.LastMonthlyProcessMonth = now.Month;
             _config.LastMonthlyProcessYear = now.Year;
             SenX_KOTH_PluginMain.ConfigPersist?.Save();
         }
 
-        private void ProcessYearly()
+        private async Task ProcessYearlyAsync()
         {
             var now = DateTime.Now;
             if (!ShouldProcessYearly(now)) return;
 
             List<KeyValuePair<long, int>>? yearList = null;
 
-            SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
+            await SharedFile.ReadModifyWriteAsync<ScoreFile>(ScorePath, data =>
             {
                 var scores = data ?? new ScoreFile();
                 if (_config.YearlyRewardsEnabled)
@@ -187,7 +190,7 @@ namespace SenX_KOTH_Plugin.Events
                 }
                 scores.YearScores.Clear();
                 return scores;
-            }, out _);
+            }).ConfigureAwait(false);
 
             if (_config.YearlyRewardsEnabled && _config.Show_YearlyResults && yearList != null)
             {
@@ -197,12 +200,12 @@ namespace SenX_KOTH_Plugin.Events
                     _config.YearlyThresholdRewards.ToList(), yearList);
             }
 
-            SharedFile.ReadModifyWrite<EventData>(EventPath, data =>
+            await SharedFile.ReadModifyWriteAsync<EventData>(EventPath, data =>
             {
                 var events = data ?? new EventData();
                 events.YearEvents.Clear();
                 return events;
-            }, out _);
+            }).ConfigureAwait(false);
 
             _config.LastYearlyProcessYear = now.Year;
             SenX_KOTH_PluginMain.ConfigPersist?.Save();
@@ -210,24 +213,26 @@ namespace SenX_KOTH_Plugin.Events
 
         private static void MergePoints(List<PointEarned> from, List<PointEarned> to)
         {
-            foreach (var pt in from)
-            {
-                if (!to.Any(e => e.FromServerID == pt.FromServerID && e.EventId == pt.EventId))
-                    to.Add(pt);
-            }
+            to.AddRange(from);
         }
 
         internal static void MergeScores(
             List<KeyValuePair<long, ulong>> from,
             List<KeyValuePair<long, ulong>> to)
         {
+            var index = new Dictionary<long, int>();
+            for (int i = 0; i < to.Count; i++)
+                index[to[i].Key] = i;
+
             foreach (var kv in from)
             {
-                int idx = to.FindIndex(x => x.Key == kv.Key);
-                if (idx >= 0)
+                if (index.TryGetValue(kv.Key, out int idx))
                     to[idx] = new KeyValuePair<long, ulong>(kv.Key, to[idx].Value + kv.Value);
                 else
+                {
+                    index[kv.Key] = to.Count;
                     to.Add(kv);
+                }
             }
         }
 

@@ -150,10 +150,10 @@
     <Compile Include="SenX KOTH Plugin\Utils\DiscordService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\EnterAlertService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\GameThread.cs" />
+    <Compile Include="SenX KOTH Plugin\Utils\ItemBuilder.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\JsonPersistent.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\KoTHLog.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\KothAudioManager.cs" />
-    <Compile Include="SenX KOTH Plugin\Utils\MaybeNull.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ObservableConcurrentHashSet.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\RewardService.cs" />
     <Compile Include="SenX KOTH Plugin\Utils\ScoreManager.cs" />

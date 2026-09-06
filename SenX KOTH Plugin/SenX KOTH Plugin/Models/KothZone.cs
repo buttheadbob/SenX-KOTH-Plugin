@@ -41,6 +41,9 @@ internal sealed class KothZone
     public int PointsPerSuit { get; set; } = 1;
     public int PointsPerGrid { get; set; }
 
+    public bool IgnoreNpcs { get; set; }
+    public bool IgnoreStations { get; set; }
+
     public bool DynamicZone { get; set; }
     public double OriginX { get; set; }
     public double OriginY { get; set; }

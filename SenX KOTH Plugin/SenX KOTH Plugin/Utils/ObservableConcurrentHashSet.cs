@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace SenX_KOTH_Plugin.Utils;
@@ -12,6 +13,7 @@ public class ObservableConcurrentHashSet<T> : INotifyCollectionChanged, INotifyP
 {
     private readonly HashSet<T> _items;
     private readonly object _lock = new();
+    private volatile T[] _snapshot = Array.Empty<T>();
 
     public ObservableConcurrentHashSet() => _items = [];
 
@@ -19,13 +21,20 @@ public class ObservableConcurrentHashSet<T> : INotifyCollectionChanged, INotifyP
 
     public int Count { get { lock (_lock) return _items.Count; } }
 
+    /// <summary>Immutable point-in-time snapshot, rebuilt on mutation. Safe to enumerate without locking.</summary>
+    public T[] Snapshot => _snapshot;
+
     public event NotifyCollectionChangedEventHandler? CollectionChanged;
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public bool Add(T item)
     {
         bool added;
-        lock (_lock) added = _items.Add(item);
+        lock (_lock)
+        {
+            added = _items.Add(item);
+            if (added) _snapshot = _items.ToArray();
+        }
 
         if (added)
         {
@@ -39,7 +48,11 @@ public class ObservableConcurrentHashSet<T> : INotifyCollectionChanged, INotifyP
     public bool Remove(T item)
     {
         bool removed;
-        lock (_lock) removed = _items.Remove(item);
+        lock (_lock)
+        {
+            removed = _items.Remove(item);
+            if (removed) _snapshot = _items.ToArray();
+        }
 
         if (removed)
         {
@@ -56,7 +69,11 @@ public class ObservableConcurrentHashSet<T> : INotifyCollectionChanged, INotifyP
         lock (_lock)
         {
             hadItems = _items.Count > 0;
-            if (hadItems) _items.Clear();
+            if (hadItems)
+            {
+                _items.Clear();
+                _snapshot = Array.Empty<T>();
+            }
         }
 
         if (hadItems)
@@ -70,12 +87,7 @@ public class ObservableConcurrentHashSet<T> : INotifyCollectionChanged, INotifyP
 
     public List<T> ToList() { lock (_lock) return [.. _items]; }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        List<T> snapshot;
-        lock (_lock) snapshot = [.. _items];
-        return snapshot.GetEnumerator();
-    }
+    public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_snapshot).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

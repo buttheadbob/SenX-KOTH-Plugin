@@ -17,6 +17,8 @@ namespace SenX_KOTH_Plugin.Events
 
         public void Start()
         {
+            _timer?.Stop();
+            _timer?.Dispose();
             _timer = new Timer(60000);
             _timer.Elapsed += Tick;
             _timer.Start();
@@ -35,9 +37,9 @@ namespace SenX_KOTH_Plugin.Events
         public void IntegrityCheck() { }
         public void Save() { }
 
-        private void Tick(object? sender, ElapsedEventArgs e)
+        private async void Tick(object? sender, ElapsedEventArgs e)
         {
-            BankService.CheckRaffleDraw(_config);
+            await BankService.CheckRaffleDrawAsync(_config);
         }
     }
 }

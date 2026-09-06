@@ -52,7 +52,9 @@ namespace SenX_KOTH_Plugin.Events
         private int _capturePointsEarned;
         private bool _manualEvict;
         private bool _fireworksShown;
-        private bool _captureRewardGiven;
+        private bool _captureCommandsGiven;
+        private bool _captureCargoGiven;
+        private volatile Dictionary<long, HashSet<long>> _zoneFactionIdentities = new();
         internal bool SendFirework { get; set; }
         internal int FireworkMode { get; set; }
         public string Name => _zone.Name;
@@ -183,6 +185,7 @@ namespace SenX_KOTH_Plugin.Events
                 var entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref sphere);
 
                 var factionCounts = new Dictionary<long, (int suits, int grids)>();
+                var factionIdentities = new Dictionary<long, HashSet<long>>();
 
                 foreach (var ent in entities)
                 {
@@ -194,8 +197,10 @@ namespace SenX_KOTH_Plugin.Events
                         if (character.IsDead) continue;
                         var identityId = character.GetPlayerIdentityId();
                         if (identityId == 0) continue;
+                        if (_zone.IgnoreNpcs && IsNpc(identityId)) continue;
                         var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(identityId);
                         if (faction == null) continue;
+                        AddIdentity(factionIdentities, faction.FactionId, identityId);
                         if (!factionCounts.ContainsKey(faction.FactionId))
                             factionCounts[faction.FactionId] = (0, 0);
                         var fc = factionCounts[faction.FactionId];
@@ -209,6 +214,7 @@ namespace SenX_KOTH_Plugin.Events
                         var cockpits = grid.GetFatBlocks<MyCockpit>();
                         if (!cockpits.Any(c => c.IsOccupied)) continue;
                         if (grid.BigOwners == null || grid.BigOwners.Count == 0) continue;
+                        if ((_zone.IgnoreNpcs && IsNpc(grid.BigOwners[0])) || (_zone.IgnoreStations && grid.IsStatic)) continue;
                         var faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(grid.BigOwners[0]);
                         if (faction == null) continue;
                         if (!factionCounts.ContainsKey(faction.FactionId))
@@ -216,21 +222,24 @@ namespace SenX_KOTH_Plugin.Events
                         var fc = factionCounts[faction.FactionId];
                         factionCounts[faction.FactionId] = (fc.suits, fc.grids + 1);
 
-                        if (_zone.PointsPerGrid > 0)
+                        foreach (var cockpit in cockpits)
                         {
-                            foreach (var cockpit in cockpits)
-                            {
-                                if (!cockpit.IsOccupied) continue;
-                                var pilot = cockpit.Pilot;
-                                if (pilot == null || pilot.IsDead) continue;
-                                var pid = pilot.GetPlayerIdentityId();
-                                if (pid == 0) continue;
-                                var pilotFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(pid);
+                            if (!cockpit.IsOccupied) continue;
+                            var pilot = cockpit.Pilot;
+                            if (pilot == null || pilot.IsDead) continue;
+                            var pid = pilot.GetPlayerIdentityId();
+                            if (pid == 0) continue;
+                            var pilotFaction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(pid);
+                            if (pilotFaction != null)
+                                AddIdentity(factionIdentities, pilotFaction.FactionId, pid);
+
+                            if (_zone.PointsPerGrid > 0)
                                 TryEnterAlert(pid, pilotFaction, cacheEntry.Position);
-                            }
                         }
                     }
                 }
+
+                _zoneFactionIdentities = factionIdentities;
 
                 var prevState = _state;
 
@@ -262,13 +271,7 @@ namespace SenX_KOTH_Plugin.Events
 
                     if (_captureProgress <= 0)
                     {
-                        _captureProgress = 0;
-                        _captureFactionId = 0;
-                        _capturePointsEarned = 0;
-                        _state = CaptureState.Neutral;
-                        _autoDecayActive = false;
-                        _fireworksShown = false;
-                        _captureRewardGiven = false;
+                        ResetToNeutral();
                     }
                 }
                 else if (_autoDecayActive && hadPointEntities)
@@ -440,6 +443,16 @@ namespace SenX_KOTH_Plugin.Events
                 _state = CaptureState.Capturing;
         }
 
+        private static void AddIdentity(Dictionary<long, HashSet<long>> map, long factionId, long identityId)
+        {
+            if (!map.TryGetValue(factionId, out var set))
+            {
+                set = new HashSet<long>();
+                map[factionId] = set;
+            }
+            set.Add(identityId);
+        }
+
         private void CaptureTick(object? sender, ElapsedEventArgs e)
         {
             try
@@ -484,12 +497,23 @@ namespace SenX_KOTH_Plugin.Events
                             // Live capture rewards
                             var zoneReward = _config.ZoneRewards.FirstOrDefault(
                                 z => string.Equals(z.ZoneName, _zone.Name, StringComparison.OrdinalIgnoreCase));
-                            if (zoneReward != null && zoneReward.CommandRewards.Count > 0)
+                            if (zoneReward != null)
                             {
-                                if (zoneReward.TriggerOnEveryCap || !_captureRewardGiven)
+                                if (zoneReward.CommandRewards.Count > 0
+                                    && (zoneReward.TriggerOnEveryCap || !_captureCommandsGiven))
                                 {
-                                    _captureRewardGiven = true;
-                                    RewardService.CheckLiveRewards(_zone.Name, _captureFactionId);
+                                    _captureCommandsGiven = true;
+                                    HashSet<long> inZone = _zoneFactionIdentities.TryGetValue(_captureFactionId, out var zoneIds)
+                                        ? new HashSet<long>(zoneIds)
+                                        : new HashSet<long>();
+                                    RewardService.CheckLiveRewards(_zone.Name, _captureFactionId, inZone);
+                                }
+
+                                if (zoneReward.CargoEnabled && zoneReward.CargoItems.Count > 0
+                                    && (zoneReward.CargoTriggerOnEveryCap || !_captureCargoGiven))
+                                {
+                                    _captureCargoGiven = true;
+                                    RewardService.DeliverCargoReward(zoneReward);
                                 }
                             }
                         }
@@ -508,14 +532,8 @@ namespace SenX_KOTH_Plugin.Events
 
                         if (_captureProgress <= 0)
                         {
-                            _captureProgress = 0;
-                            _capturePointsEarned = 0;
-                            _lastAnnouncedProgress = 0;
-                            _state = CaptureState.Neutral;
-                                        _fireworksShown = false;
-                            _captureRewardGiven = false;
                             long lostFactionId = _captureFactionId;
-                            _captureFactionId = 0;
+                            ResetToNeutral();
                             KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
                             AnnouncementService.ZoneDecay(_zone);
                             _audio.Play2DSound(lostFactionId, SoundCueType.ZoneLost);
@@ -602,11 +620,7 @@ namespace SenX_KOTH_Plugin.Events
 
                         if (_zone.EvictionResetCapture)
                         {
-                            _captureProgress = 0;
-                            _captureFactionId = 0;
-                            _capturePointsEarned = 0;
-                            _state = CaptureState.Neutral;
-                            _lastAnnouncedProgress = 0;
+                            ResetToNeutral();
                         }
 
                         var cacheEntry = ZoneManager.ZoneCache.FirstOrDefault(z =>
@@ -714,6 +728,11 @@ namespace SenX_KOTH_Plugin.Events
             return null;
         }
 
+        private static bool IsNpc(long identityId)
+        {
+            return identityId != 0 && MyAPIGateway.Players.TryGetSteamId(identityId) == 0;
+        }
+
         private void TryEnterAlert(long identityId, IMyFaction? faction, Vector3D position)
         {
             var player = FindPlayer(identityId);
@@ -765,18 +784,23 @@ namespace SenX_KOTH_Plugin.Events
             AnnouncementService.ZoneEviction(_zone, _manualEvict, _zone.EvictionDurationSeconds);
         }
 
-        internal void ManualReset()
+        private void ResetToNeutral()
         {
             _captureProgress = 0;
             _captureFactionId = 0;
             _capturePointsEarned = 0;
+            _lastAnnouncedProgress = 0;
             _state = CaptureState.Neutral;
             _autoDecayActive = false;
-                        _fireworksShown = false;
-            _captureRewardGiven = false;
-            SendFirework = false;
             _fireworksShown = false;
-            _captureRewardGiven = false;
+            _captureCommandsGiven = false;
+            _captureCargoGiven = false;
+        }
+
+        internal void ManualReset()
+        {
+            ResetToNeutral();
+            SendFirework = false;
             KoTHLog.Info(Log,"Manual reset to neutral: " + _zone.Name);
         }
 
