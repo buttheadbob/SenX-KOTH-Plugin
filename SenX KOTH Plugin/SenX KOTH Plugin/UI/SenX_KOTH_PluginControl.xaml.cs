@@ -69,6 +69,9 @@ namespace SenX_KOTH_Plugin
             ZoneEditor_PosX.Text = "";
             ZoneEditor_PosY.Text = "";
             ZoneEditor_PosZ.Text = "";
+            ZoneEditor_PosX.IsEnabled = true;
+            ZoneEditor_PosY.IsEnabled = true;
+            ZoneEditor_PosZ.IsEnabled = true;
             ZoneEditor_Radius.Text = "50";
             ZoneEditor_ColorR.Text = "0.53";
             ZoneEditor_ColorG.Text = "0.81";
