@@ -33,7 +33,7 @@ namespace SenX_KOTH_Plugin.Commands
         {
             if (!CheckCooldown()) return;
             var scores = SenX_KOTH_PluginMain.LoadScoreFile();
-            var weekList = (scores?.WeekScores ?? new List<KeyValuePair<string, ulong>>())
+            var weekList = (scores?.WeekScores ?? new List<KeyValuePair<long, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -44,7 +44,7 @@ namespace SenX_KOTH_Plugin.Commands
             {
                 results.AppendLine("=== Weekly Leaderboard ===");
                 foreach (var result in weekList)
-                    results.AppendLine(result.Key + " => " + result.Value);
+                    results.AppendLine(FactionLookup.GetName(result.Key) + " => " + result.Value);
 
                 var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
@@ -62,7 +62,7 @@ namespace SenX_KOTH_Plugin.Commands
         {
             if (!CheckCooldown()) return;
             var scores = SenX_KOTH_PluginMain.LoadScoreFile();
-            var monthList = (scores?.MonthScores ?? new List<KeyValuePair<string, ulong>>())
+            var monthList = (scores?.MonthScores ?? new List<KeyValuePair<long, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -73,7 +73,7 @@ namespace SenX_KOTH_Plugin.Commands
             {
                 results.AppendLine("=== Monthly Leaderboard ===");
                 foreach (var result in monthList)
-                    results.AppendLine(result.Key + " => " + result.Value);
+                    results.AppendLine(FactionLookup.GetName(result.Key) + " => " + result.Value);
 
                 var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
@@ -91,7 +91,7 @@ namespace SenX_KOTH_Plugin.Commands
         {
             if (!CheckCooldown()) return;
             var scores = SenX_KOTH_PluginMain.LoadScoreFile();
-            var yearList = (scores?.YearScores ?? new List<KeyValuePair<string, ulong>>())
+            var yearList = (scores?.YearScores ?? new List<KeyValuePair<long, ulong>>())
                 .OrderByDescending(x => x.Value).ToList();
 
             var results = new StringBuilder();
@@ -102,7 +102,7 @@ namespace SenX_KOTH_Plugin.Commands
             {
                 results.AppendLine("=== Yearly Leaderboard ===");
                 foreach (var result in yearList)
-                    results.AppendLine(result.Key + " => " + result.Value);
+                    results.AppendLine(FactionLookup.GetName(result.Key) + " => " + result.Value);
 
                 var scoreData = SenX_KOTH_PluginMain.LoadEventData();
                 if (scoreData != null)
@@ -239,15 +239,15 @@ namespace SenX_KOTH_Plugin.Commands
             results.AppendLine();
             results.AppendLine("--- " + header + " ---");
 
-            var zoneFactionPoints = new Dictionary<string, Dictionary<string, int>>();
+            var zoneFactionPoints = new Dictionary<string, Dictionary<long, int>>();
             foreach (var p in events)
             {
                 string zone = string.IsNullOrEmpty(p.ZoneName) ? "Unknown" : p.ZoneName;
                 if (!zoneFactionPoints.ContainsKey(zone))
-                    zoneFactionPoints[zone] = new Dictionary<string, int>();
-                if (!zoneFactionPoints[zone].ContainsKey(p.FactionName))
-                    zoneFactionPoints[zone][p.FactionName] = 0;
-                zoneFactionPoints[zone][p.FactionName] += p.Points;
+                    zoneFactionPoints[zone] = new Dictionary<long, int>();
+                if (!zoneFactionPoints[zone].ContainsKey(p.FactionId))
+                    zoneFactionPoints[zone][p.FactionId] = 0;
+                zoneFactionPoints[zone][p.FactionId] += p.Points;
             }
 
             foreach (var zoneEntry in zoneFactionPoints)
@@ -255,7 +255,7 @@ namespace SenX_KOTH_Plugin.Commands
                 results.AppendLine("  [" + zoneEntry.Key + "]");
                 var sorted = zoneEntry.Value.OrderByDescending(x => x.Value).ToList();
                 foreach (var factionEntry in sorted)
-                    results.AppendLine("    " + factionEntry.Key + " => " + factionEntry.Value);
+                    results.AppendLine("    " + FactionLookup.GetName(factionEntry.Key) + " => " + factionEntry.Value);
             }
         }
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Timers;
+using Newtonsoft.Json;
 using NLog;
 using SenX_KOTH_Plugin.Models;
 
@@ -14,7 +15,7 @@ internal static class PointBuffer
     private static readonly object Sync = new();
 
     private static readonly Dictionary<long, (string Name, string Tag, int Points)> BankAccum = new();
-    private static readonly Dictionary<string, ulong> WeekScoreAccum = new();
+    private static readonly Dictionary<long, ulong> WeekScoreAccum = new();
     private static readonly List<PointEarned> WeekEventAccum = new();
 
     private static Timer? _timer;
@@ -46,8 +47,8 @@ internal static class PointBuffer
             BankAccum.TryGetValue(factionId, out var bank);
             BankAccum[factionId] = (name, tag, bank.Points + points);
 
-            WeekScoreAccum.TryGetValue(name, out var score);
-            WeekScoreAccum[name] = score + (ulong)points;
+            WeekScoreAccum.TryGetValue(factionId, out var score);
+            WeekScoreAccum[factionId] = score + (ulong)points;
 
             WeekEventAccum.Add(new PointEarned
             {
@@ -66,7 +67,7 @@ internal static class PointBuffer
     public static void Flush()
     {
         Dictionary<long, (string Name, string Tag, int Points)> bank;
-        Dictionary<string, ulong> scores;
+        Dictionary<long, ulong> scores;
         List<PointEarned> events;
 
         lock (Sync)
@@ -74,7 +75,7 @@ internal static class PointBuffer
             if (_flushing || !_dirty) return;
             _flushing = true;
             bank = new Dictionary<long, (string Name, string Tag, int Points)>(BankAccum);
-            scores = new Dictionary<string, ulong>(WeekScoreAccum);
+            scores = new Dictionary<long, ulong>(WeekScoreAccum);
             events = new List<PointEarned>(WeekEventAccum);
         }
 
@@ -108,9 +109,15 @@ internal static class PointBuffer
 
     private static bool FlushBank(Dictionary<long, (string Name, string Tag, int Points)> bank)
     {
-        return SharedFile.ReadModifyWrite<BanksData>(BankService.BankPath, data =>
+        try
         {
-            var d = data ?? new BanksData();
+            var path = BankService.BankPath;
+            BanksData d;
+            if (File.Exists(path))
+                d = JsonConvert.DeserializeObject<BanksData>(File.ReadAllText(path)) ?? new BanksData();
+            else
+                d = new BanksData();
+
             foreach (var kv in bank)
             {
                 var entry = d.Banks.FirstOrDefault(b => b.FactionId == kv.Key);
@@ -123,11 +130,18 @@ internal static class PointBuffer
                 entry.FactionTag = kv.Value.Tag;
                 entry.Points += kv.Value.Points;
             }
-            return d;
-        }, out _);
+
+            File.WriteAllText(path, JsonConvert.SerializeObject(d, Formatting.Indented));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            KoTHLog.Error(Log, ex, "Failed to write bank: " + BankService.BankPath);
+            return false;
+        }
     }
 
-    private static bool FlushScores(Dictionary<string, ulong> scores)
+    private static bool FlushScores(Dictionary<long, ulong> scores)
     {
         return SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
         {
@@ -136,9 +150,9 @@ internal static class PointBuffer
             {
                 var idx = d.WeekScores.FindIndex(x => x.Key == kv.Key);
                 if (idx >= 0)
-                    d.WeekScores[idx] = new KeyValuePair<string, ulong>(kv.Key, d.WeekScores[idx].Value + kv.Value);
+                    d.WeekScores[idx] = new KeyValuePair<long, ulong>(kv.Key, d.WeekScores[idx].Value + kv.Value);
                 else
-                    d.WeekScores.Add(new KeyValuePair<string, ulong>(kv.Key, kv.Value));
+                    d.WeekScores.Add(new KeyValuePair<long, ulong>(kv.Key, kv.Value));
             }
             return d;
         }, out _);

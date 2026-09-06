@@ -395,42 +395,49 @@ namespace SenX_KOTH_Plugin.Events
                 return;
             }
 
-            var dominant = factionCounts.OrderByDescending(kv => kv.Value.suits + kv.Value.grids).First();
-            var prevFactionId = _captureFactionId;
+            if (factionCounts.Count > 1)
+            {
+                var dominant = factionCounts.OrderByDescending(kv => kv.Value.suits + kv.Value.grids).First();
+                _suitCount = dominant.Value.suits;
+                _gridCount = dominant.Value.grids;
+                _enemySuitCount = 0;
+                _enemyGridCount = 0;
 
-            _captureFactionId = dominant.Key;
-            _suitCount = dominant.Value.suits;
-            _gridCount = dominant.Value.grids;
+                foreach (var kv in factionCounts)
+                {
+                    if (kv.Key == dominant.Key) continue;
+                    _enemySuitCount += kv.Value.suits;
+                    _enemyGridCount += kv.Value.grids;
+                }
+
+                _state = CaptureState.Contested;
+                return;
+            }
+
+            var only = factionCounts.First();
+            long factionId = only.Key;
+
+            if (_captureFactionId != 0 && factionId != _captureFactionId && _captureProgress > 0)
+            {
+                _enemySuitCount = only.Value.suits;
+                _enemyGridCount = only.Value.grids;
+                _suitCount = 0;
+                _gridCount = 0;
+                _autoDecayActive = false;
+                _state = CaptureState.Decaying;
+                return;
+            }
+
+            _captureFactionId = factionId;
+            _suitCount = only.Value.suits;
+            _gridCount = only.Value.grids;
             _enemySuitCount = 0;
             _enemyGridCount = 0;
 
-            foreach (var kv in factionCounts)
-            {
-                if (kv.Key == dominant.Key) continue;
-                _enemySuitCount += kv.Value.suits;
-                _enemyGridCount += kv.Value.grids;
-            }
-
-            bool hasEnemies = factionCounts.Count > 1;
-
-            if (hasEnemies)
-            {
-                if (_state == CaptureState.Captured || _state == CaptureState.Decaying)
-                    _state = CaptureState.Decaying;
-                else
-                    _state = CaptureState.Contested;
-            }
+            if (_captureProgress >= _zone.CapturePointsNeeded)
+                _state = CaptureState.Captured;
             else
-            {
-                if (_captureProgress >= _zone.CapturePointsNeeded)
-                {
-                    _state = CaptureState.Captured;
-                }
-                else if (_captureProgress > 0 || prevFactionId == _captureFactionId)
-                    _state = CaptureState.Capturing;
-                else
-                    _state = CaptureState.Capturing;
-            }
+                _state = CaptureState.Capturing;
         }
 
         private void CaptureTick(object? sender, ElapsedEventArgs e)
@@ -507,9 +514,11 @@ namespace SenX_KOTH_Plugin.Events
                             _state = CaptureState.Neutral;
                                         _fireworksShown = false;
                             _captureRewardGiven = false;
+                            long lostFactionId = _captureFactionId;
+                            _captureFactionId = 0;
                             KoTHLog.Info(Log,"Zone capture lost: " + _zone.Name);
                             AnnouncementService.ZoneDecay(_zone);
-                            _audio.Play2DSound(_captureFactionId, SoundCueType.ZoneLost);
+                            _audio.Play2DSound(lostFactionId, SoundCueType.ZoneLost);
                         }
                         break;
                     }
@@ -544,7 +553,7 @@ namespace SenX_KOTH_Plugin.Events
 
                 PointBuffer.Record(faction.FactionId, faction.Name, faction.Tag, points, _zone.Name);
 
-                _audio.Play2DSound(0, SoundCueType.PointEarned);
+                // _audio.Play2DSound(0, SoundCueType.PointEarned);
                 AnnouncementService.ZonePointsEarned(_zone, faction.Tag, faction.Name, points);
             }
             catch (Exception ex)

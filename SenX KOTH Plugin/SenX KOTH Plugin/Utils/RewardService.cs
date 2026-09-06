@@ -51,7 +51,7 @@ namespace SenX_KOTH_Plugin.Utils
         public static void ExecutePeriodRewards(
             List<RankRewardEntry> rankRewards,
             List<ThresholdRewardEntry> thresholdRewards,
-            List<KeyValuePair<string, int>> sortedScores)
+            List<KeyValuePair<long, int>> sortedScores)
         {
             int currentRank = 1;
             for (int i = 0; i < sortedScores.Count; i++)
@@ -59,16 +59,9 @@ namespace SenX_KOTH_Plugin.Utils
                 if (i > 0 && sortedScores[i].Value < sortedScores[i - 1].Value)
                     currentRank = i + 1;
 
-                KeyValuePair<string, int> scoreEntry = sortedScores[i];
+                KeyValuePair<long, int> scoreEntry = sortedScores[i];
                 IMyFaction? faction = null;
-                foreach (IMyFaction f in MyAPIGateway.Session.Factions.Factions.Values)
-                {
-                    if (f.Tag == scoreEntry.Key || f.Name == scoreEntry.Key)
-                    {
-                        faction = f;
-                        break;
-                    }
-                }
+                MyAPIGateway.Session.Factions.Factions.TryGetValue(scoreEntry.Key, out faction);
 
                 foreach (RankRewardEntry rankReward in rankRewards)
                 {

@@ -87,7 +87,7 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessWeekly(now)) return;
 
-            List<KeyValuePair<string, int>>? weekList = null;
+            List<KeyValuePair<long, int>>? weekList = null;
 
             SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
@@ -96,7 +96,7 @@ namespace SenX_KOTH_Plugin.Events
                 {
                     weekList = scores.WeekScores
                         .OrderByDescending(x => x.Value)
-                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .Select(x => new KeyValuePair<long, int>(x.Key, (int)x.Value))
                         .ToList();
                 }
                 MergeScores(scores.WeekScores, scores.MonthScores);
@@ -130,7 +130,7 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessMonthly(now)) return;
 
-            List<KeyValuePair<string, int>>? monthList = null;
+            List<KeyValuePair<long, int>>? monthList = null;
 
             SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
@@ -139,7 +139,7 @@ namespace SenX_KOTH_Plugin.Events
                 {
                     monthList = scores.MonthScores
                         .OrderByDescending(x => x.Value)
-                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .Select(x => new KeyValuePair<long, int>(x.Key, (int)x.Value))
                         .ToList();
                 }
                 MergeScores(scores.MonthScores, scores.YearScores);
@@ -173,7 +173,7 @@ namespace SenX_KOTH_Plugin.Events
             var now = DateTime.Now;
             if (!ShouldProcessYearly(now)) return;
 
-            List<KeyValuePair<string, int>>? yearList = null;
+            List<KeyValuePair<long, int>>? yearList = null;
 
             SharedFile.ReadModifyWrite<ScoreFile>(ScorePath, data =>
             {
@@ -182,7 +182,7 @@ namespace SenX_KOTH_Plugin.Events
                 {
                     yearList = scores.YearScores
                         .OrderByDescending(x => x.Value)
-                        .Select(x => new KeyValuePair<string, int>(x.Key, (int)x.Value))
+                        .Select(x => new KeyValuePair<long, int>(x.Key, (int)x.Value))
                         .ToList();
                 }
                 scores.YearScores.Clear();
@@ -218,14 +218,14 @@ namespace SenX_KOTH_Plugin.Events
         }
 
         internal static void MergeScores(
-            List<KeyValuePair<string, ulong>> from,
-            List<KeyValuePair<string, ulong>> to)
+            List<KeyValuePair<long, ulong>> from,
+            List<KeyValuePair<long, ulong>> to)
         {
             foreach (var kv in from)
             {
                 int idx = to.FindIndex(x => x.Key == kv.Key);
                 if (idx >= 0)
-                    to[idx] = new KeyValuePair<string, ulong>(kv.Key, to[idx].Value + kv.Value);
+                    to[idx] = new KeyValuePair<long, ulong>(kv.Key, to[idx].Value + kv.Value);
                 else
                     to.Add(kv);
             }
@@ -237,7 +237,7 @@ namespace SenX_KOTH_Plugin.Events
                 d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
         }
 
-        private static void AnnouncePeriodResults(string periodName, List<KeyValuePair<string, int>> sortedScores,
+        private static void AnnouncePeriodResults(string periodName, List<KeyValuePair<long, int>> sortedScores,
             DrawingColor firstColor, DrawingColor secondColor, DrawingColor thirdColor, DrawingColor restColor)
         {
             var results = new StringBuilder();
@@ -245,15 +245,16 @@ namespace SenX_KOTH_Plugin.Events
             var sentRest = false;
             for (int i = 0; i < sortedScores.Count; i++)
             {
+                string name = FactionLookup.GetName(sortedScores[i].Key);
                 string medal = i == 0 ? "\U0001f947 " : i == 1 ? "\U0001f948 " : i == 2 ? "\U0001f949 " : "    ";
-                periodResults.AppendLine(medal + sortedScores[i].Key + " \u2014 " + sortedScores[i].Value + " pts");
+                periodResults.AppendLine(medal + name + " \u2014 " + sortedScores[i].Value + " pts");
 
                 switch (i)
                 {
-                    case 0: results.AppendLine("First Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), firstColor); results.Clear(); break;
-                    case 1: results.AppendLine("Second Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), secondColor); results.Clear(); break;
-                    case 2: results.AppendLine("Third Place"); results.AppendLine(sortedScores[i].ToString()); AnnouncementService.RankResult(results.ToString(), thirdColor); results.Clear(); break;
-                    default: if (!sentRest) { results.AppendLine("The Other People...."); sentRest = true; } results.AppendLine(sortedScores[i].ToString()); break;
+                    case 0: results.AppendLine("First Place"); results.AppendLine(name + " => " + sortedScores[i].Value); AnnouncementService.RankResult(results.ToString(), firstColor); results.Clear(); break;
+                    case 1: results.AppendLine("Second Place"); results.AppendLine(name + " => " + sortedScores[i].Value); AnnouncementService.RankResult(results.ToString(), secondColor); results.Clear(); break;
+                    case 2: results.AppendLine("Third Place"); results.AppendLine(name + " => " + sortedScores[i].Value); AnnouncementService.RankResult(results.ToString(), thirdColor); results.Clear(); break;
+                    default: if (!sentRest) { results.AppendLine("The Other People...."); sentRest = true; } results.AppendLine(name + " => " + sortedScores[i].Value); break;
                 }
             }
             if (sortedScores.Count > 3 && results.Length > 0) AnnouncementService.RankResult(results.ToString(), restColor);

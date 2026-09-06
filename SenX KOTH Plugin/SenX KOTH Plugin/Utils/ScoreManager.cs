@@ -1,7 +1,9 @@
 ﻿using ProtoBuf;
 using System;
 using System.Collections.Generic;
+using Sandbox.ModAPI;
 using Torch;
+using VRage.Game.ModAPI;
 
 namespace SenX_KOTH_Plugin.Utils
 {
@@ -22,8 +24,18 @@ namespace SenX_KOTH_Plugin.Utils
 
     public sealed class ScoreFile : ViewModel
     {
-        public List<KeyValuePair<string, ulong>> WeekScores { get; set => SetValue(ref field, value); } = [];
-        public List<KeyValuePair<string, ulong>> MonthScores { get; set => SetValue(ref field, value); } = [];
-        public List<KeyValuePair<string, ulong>> YearScores { get; set => SetValue(ref field, value); } = [];
+        public List<KeyValuePair<long, ulong>> WeekScores { get; set => SetValue(ref field, value); } = [];
+        public List<KeyValuePair<long, ulong>> MonthScores { get; set => SetValue(ref field, value); } = [];
+        public List<KeyValuePair<long, ulong>> YearScores { get; set => SetValue(ref field, value); } = [];
+    }
+
+    internal static class FactionLookup
+    {
+        public static string GetName(long factionId)
+        {
+            IMyFaction? faction = null;
+            MyAPIGateway.Session.Factions.Factions.TryGetValue(factionId, out faction);
+            return faction?.Name ?? ("Faction " + factionId);
+        }
     }
 }
